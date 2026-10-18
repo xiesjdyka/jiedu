@@ -43,8 +43,8 @@
     },
     {
       "path": "RELEASE_NOTES.md",
-      "bytes": 6083,
-      "sha256": "41c60f07de50d23486e49a9ed580c00653cad385672be2af031afec0bd433734"
+      "bytes": 5588,
+      "sha256": "6bd65de0d48ab8a2ac71c7a2a14b63796228f5dad078e8272a07c7c3c5b08766"
     },
     {
       "path": "SECURITY.md",
@@ -59,7 +59,7 @@
     {
       "path": "VERSION",
       "bytes": 7,
-      "sha256": "6ca2e3356014241331fb2b399428fca23c558e3f3d428edcf4f56eb0fe907069"
+      "sha256": "74c8dcd895e1272a4276c6ceba0b4a0a8d97ff7b1ac9119b8f7a78685e5c45b1"
     },
     {
       "path": "butler-resources.lock.json",
@@ -79,12 +79,12 @@
     {
       "path": "desktop/Cargo.lock",
       "bytes": 123812,
-      "sha256": "105086f6febadde4b3638cdbfc3c55a72454ed47c96978b5b6d632ed4b36ed4b"
+      "sha256": "5d5df03c6a8fa76e593aed50acb49e8557b448cba18670d21dbf0f76293deffc"
     },
     {
       "path": "desktop/Cargo.toml",
       "bytes": 524,
-      "sha256": "618db5364c672758eaa134c3187a4725723f1241f7ecdd5dcf6d0e9468f10219"
+      "sha256": "2267088f581f2ae1dfdb6f0d48593b4b8b83a122b1712173c21058c9c6dc80a5"
     },
     {
       "path": "desktop/build.rs",
@@ -113,8 +113,8 @@
     },
     {
       "path": "desktop/installer.iss",
-      "bytes": 8858,
-      "sha256": "141dc9ef0a9593176c8bec69d68b58c69ced4f7c6c4bc1aaaf6a547d98d16adc"
+      "bytes": 13871,
+      "sha256": "a4274a57876075c3e15a856c6b299e96f1307a9bce87372509a04f90e1bbf90a"
     },
     {
       "path": "desktop/release_version.py",
@@ -129,7 +129,7 @@
     {
       "path": "desktop/tauri.conf.json",
       "bytes": 415,
-      "sha256": "e337252ae7a27bd1fd5abbeb668a8eaf891fae60f4f5a1556bacab6e9abe0f5c"
+      "sha256": "cb4c90f915edd456d5503fcd1512e7966dab535fb36168bc815125f0bc2349de"
     },
     {
       "path": "desktop/ui/index.html",
@@ -188,13 +188,13 @@
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 6807,
-      "sha256": "026f18077acfa2eb043db786155dac3f7a5d448872dc5face797168833486bbf"
+      "bytes": 6703,
+      "sha256": "979f675be5bc3dbd94dd8d2c0559081c68f59ad549b93466211fac685292118b"
     },
     {
       "path": "docs/release-version.md",
-      "bytes": 3504,
-      "sha256": "fec942143871d9d19ba432dddf1d5487072741edbfbbba2f9cdf61bfa860be14"
+      "bytes": 3136,
+      "sha256": "0a09bf7c95f3d1a1d895359684fcd049486c9b888d11408975bb1a3cbacf8d7f"
     },
     {
       "path": "docs/source-install.md",
@@ -208,8 +208,8 @@
     },
     {
       "path": "docs/user-guide.md",
-      "bytes": 11352,
-      "sha256": "61f3ca64460ae82d666f16cc8d6c4bee67a4debf8dc3a94317a5800b94640a3d"
+      "bytes": 11353,
+      "sha256": "32932afcb550fe99d9f727809b82dc112c5d24427e0c81b4b26af6bc3af5e9f7"
     },
     {
       "path": "docs/validation.json",
@@ -239,7 +239,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 23,
-      "sha256": "66bbf9ec4ce98ddb2e48faac62f16456c40a29150e1c51bbc944427fba8df939"
+      "sha256": "286250276dcc9c428c476c908a05ae379163f41e09463b1e9f086619ed1cc000"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -418,8 +418,8 @@
     },
     {
       "path": "knowledge_bridge/core.py",
-      "bytes": 40662,
-      "sha256": "0c3dc7ac1e1ec1f45fceec67c74cf931b72ea773b472d8955d677cbff898d579"
+      "bytes": 41289,
+      "sha256": "870af4453849f24967cf9f066b6ccb0496446fa3e94d3f9dd9f69a3905bbab98"
     },
     {
       "path": "knowledge_bridge/core_bootstrap.py",
@@ -568,8 +568,8 @@
     },
     {
       "path": "knowledge_bridge/local_ocr.py",
-      "bytes": 10929,
-      "sha256": "05ca986072ba3856f6fc9f03fa8839d4962e95952d1f8aa03d59857b42f4ccce"
+      "bytes": 11279,
+      "sha256": "3017df120ac823a47ec0aad66db9065e93b08cb00d4db292e26631654879a715"
     },
     {
       "path": "knowledge_bridge/manual_extraction.py",
@@ -608,8 +608,8 @@
     },
     {
       "path": "knowledge_bridge/online_update.py",
-      "bytes": 26039,
-      "sha256": "7b86c03001ca3cecb473cd7d1d64fb1dda93d516fd0bb0842fe925abe7cbbcea"
+      "bytes": 26539,
+      "sha256": "b691887c390d1e74672566bf93017ddf69b3709361341a9bb99227c68bf5bfb8"
     },
     {
       "path": "knowledge_bridge/organization_review.py",
@@ -834,7 +834,7 @@
     {
       "path": "pyproject.toml",
       "bytes": 1109,
-      "sha256": "1349e501970b732399db58148e459d229282fe6998f757f793fca6891aae7077"
+      "sha256": "65e5b0de9a35dbf708f13487307d2f73c309709a5e226460337c910caee11363"
     },
     {
       "path": "requirements.lock.txt",
@@ -1683,8 +1683,8 @@
     },
     {
       "path": "knowledge_bridge/full_installer_update.py",
-      "bytes": 47318,
-      "sha256": "4c6a795605a8b4bbee8961f39129c7e59f3d0548669e82602bf1afc2dbddf2cf"
+      "bytes": 48966,
+      "sha256": "adb431467031106b16127a5147bbe54aeca67c4427ddd9252dd03443152be350"
     },
     {
       "path": "knowledge_bridge/update_quiesce.py",

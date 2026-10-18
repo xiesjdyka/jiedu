@@ -1,20 +1,19 @@
 # 统一发布版本
 
-根目录 `VERSION` 是程序发布版本的来源。当前候选程序为 `1.1.0-rc.6`，复用未变化的 rc4 原生外壳；程序版本、外壳构建版本和安装器版本分别如实记录。
+根目录 `VERSION` 是程序发布版本的来源。当前候选程序、原生外壳和安装器均为 `1.1.1`。
 
-## rc6 的字段对应
+## 1.1.1 的字段对应
 
 | 位置 | 当前候选的值 |
 | --- | --- |
-| VERSION、关于与托盘的程序版本、设置页 | `1.1.0-rc.6` |
-| pyproject.toml、Python 包版本 | `1.1.0rc6`（同一版本的 PEP 440 写法） |
-| 安装器文件名、ProductVersion 文本 | `Jiedu-1.1.0-rc.6-windows-x64-setup.exe`、`1.1.0-rc.6` |
-| 安装器数字 FileVersion / ProductVersion | `1.1.0.6` |
-| Cargo、Tauri、本包 Cargo.lock、关于另列的外壳构建版本 | `1.1.0-rc.4` |
-| 复用原生 EXE 的 ProductVersion 文本 | `1.1.0-rc.4` |
-| 复用原生 EXE 的数字 FileVersion / ProductVersion | `1.1.0.4` |
+| VERSION、关于与托盘的程序版本、设置页 | `1.1.1` |
+| pyproject.toml、Python 包版本 | `1.1.1` |
+| 安装器文件名、ProductVersion 文本 | `Jiedu-1.1.1-windows-x64-setup.exe`、`1.1.1` |
+| 安装器数字 FileVersion / ProductVersion | `1.1.1.0` |
+| Cargo、Tauri、关于另列的外壳构建版本 | `1.1.1` |
+| 重新编译原生 EXE 的数字 FileVersion / ProductVersion | `1.1.1.0` |
 
-本候选以 `--scope program` 同步程序版本。10 项原生构建输入与依赖锁定文件保持冻结 review9 基线，复用已有原生 EXE；不能把安装器数字版本写成外壳文件版本，也不能为让数字相同而伪改旧 EXE 的属性。安装包运行环境为 Python 3.13.16，其实际字节、解释器启动和功能验收，以安装器 SHA256 对应回执为准。
+本候选同步程序与原生构建版本并重新编译外壳。联网安装器自动下载经固定 SHA256 校验的 Python 3.13.16、向量模型和 OCR 资源；其实际字节、解释器启动与功能验收以安装器及资源回执为准。
 
 Windows 数字字段使用四段数字，第四段对应候选序号；稳定版的第四段为零。[Inno Setup 数字产品版本](https://jrsoftware.org/ishelp/topic_setup_versioninfoproductversion.htm)与[文本产品版本](https://jrsoftware.org/ishelp/topic_setup_versioninfoproducttextversion.htm)是不同字段。安装器从 payload 的 VERSION 派生文件名和版本资源，不另写硬编码候选号。
 

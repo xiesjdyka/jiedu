@@ -142,6 +142,13 @@ def parse_markdown(path: Path):
               "chunk_id":f"{sha(source)[:12]}-{idx:04d}","content":piece,"modified_at":datetime.fromtimestamp(path.stat().st_mtime,timezone.utc).isoformat(),
               "content_hash":h,"knowledge_layer":layer,"project":row_project,**metadata}); idx+=1
     return raw, rows
+def bundled_model_path():
+    """Fixed, read-only model shipped with the program."""
+    if CFG["model_name"]!="BAAI/bge-m3":return None
+    candidate=ROOT/'resources'/'models'/'bge-m3'
+    required=('config.json','modules.json','pytorch_model.bin')
+    return candidate if all((candidate/name).is_file() for name in required) else None
+
 def local_model_status():
     cache=Path(CFG["model_cache"]);model_dir=cache/("models--"+CFG["model_name"].replace("/","--"))
     snapshots=model_dir/"snapshots";complete=[]
@@ -149,6 +156,7 @@ def local_model_status():
         for item in snapshots.iterdir():
             if item.is_dir() and (item/"config.json").is_file() and ((item/"model.safetensors").is_file() or (item/"pytorch_model.bin").is_file()):
                 complete.append(item.name)
+    if bundled_model_path() is not None:complete.append('bundled-bge-m3-5617a9f61b028005a4858fdac845db406aefb181')
     state="loaded" if _model is not None else "loading" if _model_loading else "load_failed" if _model_error else "available_unloaded" if complete else "unavailable"
     runtime={"loaded":"loaded","loading":"loading","load_failed":"failed","available_unloaded":"unloaded","unavailable":"unavailable"}[state]
     precision=configured_model_precision();device=None;actual_precision=None
@@ -178,8 +186,10 @@ def model(*,local_only=False):
             started=time.perf_counter();os.environ["HF_HOME"] = CFG["model_cache"];_model_loading=True
             try:
                 precision=configured_model_precision()
-                candidate=SentenceTransformer(CFG["model_name"],cache_folder=CFG["model_cache"],device=None,
-                                              local_files_only=bool(local_only))
+                bundled=bundled_model_path()
+                candidate=SentenceTransformer(str(bundled) if bundled else CFG["model_name"],
+                                              cache_folder=CFG["model_cache"],device=None,
+                                              local_files_only=True if bundled else bool(local_only))
                 if precision=='fp16':
                     import torch
                     if not torch.cuda.is_available():raise RuntimeError('FP16 向量模型需要可用的 CUDA 设备')

@@ -750,13 +750,27 @@ try {
 def main(argv=None):
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['check-handoff'])
-    parser.add_argument('--request', required=True)
+    parser.add_argument('action', choices=['check-handoff', 'verify-installation'])
+    parser.add_argument('--request')
     parser.add_argument('--program', required=True)
     args = parser.parse_args(argv)
     try:
-        validate_handoff(args.request, args.program)
-        print('Signed update handoff verified; no files changed.')
+        if args.action == 'check-handoff':
+            if not args.request:
+                raise ValueError('缺少更新交接请求')
+            validate_handoff(args.request, args.program)
+            print('Signed update handoff verified; no files changed.')
+        else:
+            program = no_links(args.program)
+            report = verify_installation_inventory(program)
+            bundled = program / 'resources'
+            if not ((bundled / 'models/bge-m3/pytorch_model.bin').is_file()
+                    and (bundled / 'ocr/python/python.exe').is_file()
+                    and all((bundled / 'ocr/models' / name).is_file() for name in (
+                        'PP-OCRv6_det_small.onnx', 'PP-OCRv6_rec_small.onnx',
+                        'ch_ppocr_mobile_v2.0_cls_mobile.onnx'))):
+                raise ValueError('离线模型或 OCR 资源缺失，安装不能视为完成')
+            print(json.dumps({'installed': True, **report}, ensure_ascii=False))
         return 0
     except (ValueError, OSError) as error:
         parser.exit(2, str(error) + '\n')

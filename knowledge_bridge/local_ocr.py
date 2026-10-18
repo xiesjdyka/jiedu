@@ -26,7 +26,12 @@ MODEL_HASHES = {
 
 
 def runtime_root():
-    return Path(os.environ.get('KNOWLEDGE_BRIDGE_OCR_RUNTIME') or component('ocr') or Path(__file__).resolve().parents[1] / 'runtime' / 'ocr')
+    override=os.environ.get('KNOWLEDGE_BRIDGE_OCR_RUNTIME')
+    if override:return Path(override)
+    bundled=Path(__file__).resolve().parents[1]/'resources'/'ocr'
+    if (bundled/'python'/'python.exe').is_file() and all((bundled/'models'/name).is_file() for name in MODEL_HASHES):
+        return bundled
+    return component('ocr') or Path(__file__).resolve().parents[1]/'runtime'/'ocr'
 
 
 def runtime_python(root):
@@ -92,7 +97,9 @@ def recognize_document(data, suffix, *, progress=None, cancel=None, preview_page
             return result('ocr_unavailable','OCR 模型校验不通过；未执行识别')
     def check():
         if cancel and cancel():raise StorageCancelledError('OCR 已取消或保护会话失效')
-    lock=FileLock(str(root/'worker.lock'));acquired=False;proc=None;job=None;threads=[]
+    lock_root=component('cache') or root
+    lock_root.mkdir(parents=True,exist_ok=True)
+    lock=FileLock(str(lock_root/'ocr-worker.lock'));acquired=False;proc=None;job=None;threads=[]
     pages=[];total=None;failure=None;completed=False
     try:
         while not acquired:

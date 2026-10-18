@@ -8,6 +8,39 @@
 #ifndef RuntimePayload
   #define RuntimePayload Payload + "\.jiedu\runtime\python"
 #endif
+#ifndef ResourceBaseURL
+  #error ResourceBaseURL must be explicitly supplied
+#endif
+#ifndef RuntimeSHA256
+  #error RuntimeSHA256 must be explicitly supplied
+#endif
+#ifndef RuntimeArchiveBytes
+  #error RuntimeArchiveBytes must be explicitly supplied
+#endif
+#ifndef RuntimeInstallBytes
+  #error RuntimeInstallBytes must be explicitly supplied
+#endif
+#define RuntimeAsset "jiedu-python-3.13.16.zip"
+#ifndef VectorSHA256
+  #error VectorSHA256 must be explicitly supplied
+#endif
+#ifndef OCRSHA256
+  #error OCRSHA256 must be explicitly supplied
+#endif
+#ifndef VectorArchiveBytes
+  #error VectorArchiveBytes must be explicitly supplied
+#endif
+#ifndef OCRArchiveBytes
+  #error OCRArchiveBytes must be explicitly supplied
+#endif
+#ifndef VectorInstallBytes
+  #error VectorInstallBytes must be explicitly supplied
+#endif
+#ifndef OCRInstallBytes
+  #error OCRInstallBytes must be explicitly supplied
+#endif
+#define VectorAsset "jiedu-bge-m3-5617a9f61b02.zip"
+#define OCRAsset "jiedu-ocr-rapidocr-3.9.2.zip"
 #define VersionHandle FileOpen(Payload + "\.jiedu\program\VERSION")
 #define ReleaseVersion Trim(FileRead(VersionHandle))
 #expr FileClose(VersionHandle)
@@ -35,6 +68,7 @@ MinVersion=10.0.19041
 OutputDir={#Output}
 OutputBaseFilename=Jiedu-{#ReleaseVersion}-windows-x64-setup
 Compression=lzma2/fast
+ArchiveExtraction=full
 SolidCompression=no
 LZMANumBlockThreads=2
 WizardStyle=modern dark
@@ -53,13 +87,21 @@ Name: chinesesimp; MessagesFile: compiler:Languages\ChineseSimplified.isl
 Name: english; MessagesFile: compiler:Default.isl
 
 [Files]
+; All large assets use the selected installation drive as temporary cache.
+Source: "{#ResourceBaseURL}/{#RuntimeAsset}"; DestDir: "{app}\.jiedu\installer-cache"; DestName: "{#RuntimeAsset}"; ExternalSize: {#RuntimeArchiveBytes}; Hash: "{#RuntimeSHA256}"; Flags: external download ignoreversion deleteafterinstall
+Source: "{app}\.jiedu\installer-cache\{#RuntimeAsset}"; DestDir: "{app}\.jiedu\runtime\python"; ExternalSize: {#RuntimeInstallBytes}; Hash: "{#RuntimeSHA256}"; Flags: external extractarchive recursesubdirs ignoreversion
+; Download to the selected installation drive, verify the pinned archive, then
+; extract it. deleteafterinstall removes both ZIPs and empty cache directories.
+Source: "{#ResourceBaseURL}/{#VectorAsset}"; DestDir: "{app}\.jiedu\installer-cache"; DestName: "{#VectorAsset}"; ExternalSize: {#VectorArchiveBytes}; Hash: "{#VectorSHA256}"; Flags: external download ignoreversion deleteafterinstall
+Source: "{app}\.jiedu\installer-cache\{#VectorAsset}"; DestDir: "{app}\.jiedu\program\resources\models\bge-m3"; ExternalSize: {#VectorInstallBytes}; Hash: "{#VectorSHA256}"; Flags: external extractarchive recursesubdirs ignoreversion
+Source: "{#ResourceBaseURL}/{#OCRAsset}"; DestDir: "{app}\.jiedu\installer-cache"; DestName: "{#OCRAsset}"; ExternalSize: {#OCRArchiveBytes}; Hash: "{#OCRSHA256}"; Flags: external download ignoreversion deleteafterinstall
+Source: "{app}\.jiedu\installer-cache\{#OCRAsset}"; DestDir: "{app}\.jiedu\program\resources\ocr"; ExternalSize: {#OCRInstallBytes}; Hash: "{#OCRSHA256}"; Flags: external extractarchive recursesubdirs ignoreversion
 Source: "{#Payload}\界渡.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Payload}\.jiedu\program\desktop\icons\icon.ico"; DestDir: "{app}"; DestName: "jiedu-v1.ico"; Flags: ignoreversion
 Source: "{#Payload}\jiedu-install.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Payload}\.jiedu\package.json"; DestDir: "{app}\.jiedu"; Flags: ignoreversion
 Source: "{#Payload}\.jiedu\install-files.json"; DestDir: "{app}\.jiedu"; Flags: ignoreversion
 Source: "{#Payload}\.jiedu\program\*"; DestDir: "{app}\.jiedu\program"; Excludes: "config.json,AGENTS.md,__pycache__,*.pyc,data,knowledge-space"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#RuntimePayload}\*"; DestDir: "{app}\.jiedu\runtime\python"; Excludes: "__pycache__,*.pyc"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#Payload}\prerequisites\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: NeedsWebView
 
 Source: "{#Payload}\ThirdPartyNotices.zip"; DestDir: "{app}"; Flags: ignoreversion
@@ -105,8 +147,8 @@ Name: "{autodesktop}\界渡"; Filename: "{app}\界渡.exe"; WorkingDir: "{app}";
 Name: "{group}\卸载界渡"; Filename: "{uninstallexe}"
 
 [Run]
-Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "正在准备桌面界面组件，需要联网…"; Flags: waituntilterminated runhidden; Check: NeedsWebView
-Filename: "{app}\界渡.exe"; Description: "启动界渡"; Flags: nowait postinstall skipifsilent
+Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "正在准备桌面界面组件，需要联网…"; Flags: waituntilterminated runhidden; Check: NeedsWebViewAndValidated
+Filename: "{app}\界渡.exe"; Description: "启动界渡"; Flags: nowait postinstall skipifsilent; Check: InstallationValidated
 
 [Code]
 const InstallIdentity = 'jiedu-consumer-install-v1';
@@ -171,13 +213,70 @@ begin
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  FreeBytes, TotalBytes, RequiredBytes: Int64;
+  TargetDrive: String;
 begin
   Result := ValidateDestination;
+  if Result <> '' then Exit;
+  TargetDrive := ExtractFileDrive(ExpandConstant('{app}')) + '\';
+  RequiredBytes := {#RuntimeArchiveBytes} + {#VectorArchiveBytes} + {#OCRArchiveBytes} +
+    {#RuntimeInstallBytes} + {#VectorInstallBytes} + {#OCRInstallBytes} + 536870912;
+  if not GetSpaceOnDisk64(TargetDrive, FreeBytes, TotalBytes) then begin
+    Result := '无法读取所选安装盘的可用空间。'; Exit;
+  end;
+  if FreeBytes < RequiredBytes then begin
+    Result := '所选安装盘空间不足；需要同时容纳程序、临时下载包与离线资源。'; Exit;
+  end;
+  if not GetSpaceOnDisk64(GetTempDir, FreeBytes, TotalBytes) or (FreeBytes < 268435456) then
+    Result := '系统临时盘空间不足，无法安全启动安装器。';
 end;
 
 procedure InitializeWizard;
 begin
   WizardForm.WelcomeLabel2.Caption := '安装界渡桌面程序与独立运行环境，无需预先安装 Python 或 Git。' + #13#10#13#10 +
     '知识库由你在首次启动时选择。升级和卸载保留已有知识、原始档案、配置与同步进度。' + #13#10#13#10 +
-    '桌面界面需要 Microsoft Edge WebView2。OCR 与本地 AI 模型属于可选资源，使用时再准备。';
+    '安装时需联网自动下载并校验向量模型与 OCR；临时下载放在你选定的安装盘，完成后清理。安装完成后两项可离线使用。管家生成模型不附带。';
+end;
+
+var
+  InstallAttempted, InstallValidated: Boolean;
+
+function InstallationValidated: Boolean;
+begin
+  Result := InstallValidated;
+end;
+
+function NeedsWebViewAndValidated: Boolean;
+begin
+  Result := InstallValidated and NeedsWebView;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ProgramDir, PythonExe, Arguments: String;
+  ResultCode: Integer;
+begin
+  if CurStep = ssInstall then InstallAttempted := True;
+  if CurStep = ssPostInstall then begin
+    ProgramDir := ExpandConstant('{app}\.jiedu\program');
+    PythonExe := ExpandConstant('{app}\.jiedu\runtime\python\python.exe');
+    Arguments := '-I -B -m knowledge_bridge.full_installer_update verify-installation --program "' + ProgramDir + '"';
+    InstallValidated := Exec(PythonExe, Arguments, ProgramDir, SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+    if not InstallValidated then Log('Required offline resources failed final file-by-file validation; Setup exit code will be nonzero.');
+  end;
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if (CurPageID = wpFinished) and InstallAttempted and not InstallValidated then begin
+    WizardForm.FinishedHeadingLabel.Caption := '安装未完成';
+    WizardForm.FinishedLabel.Caption := '向量模型或 OCR 资源没有通过完整校验。界渡不会启动。请重新运行安装器并重试下载。';
+  end;
+end;
+
+function GetCustomSetupExitCode: Integer;
+begin
+  if InstallAttempted and not InstallValidated then Result := 7
+  else Result := 0;
 end;
