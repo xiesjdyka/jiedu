@@ -1,0 +1,305 @@
+{
+  "platform": "Windows x64 / CPython 3.12",
+  "prepared_on": "2026-09-07",
+  "runtime_network": false,
+  "source_archives": [
+    {
+      "package": "GEOS",
+      "version": "3.13.1",
+      "file": "geos-3.13.1.tar.bz2",
+      "bytes": 6839955,
+      "sha256": "df2c50503295f325e7c8d7b783aca8ba4773919cde984193850cf9e361dfd28c",
+      "source_url": "https://download.osgeo.org/geos/geos-3.13.1.tar.bz2",
+      "license": "LGPL-2.1-or-later",
+      "purpose": "Corresponding source for GEOS DLLs in Shapely 2.1.2; retain source, build files and notices in distribution. Permit replacement of the dynamic library under LGPL terms."
+    }
+  ],
+  "wheels": [
+    {
+      "package": "antlr4-python3-runtime",
+      "version": "4.9.3",
+      "file": "antlr4_python3_runtime-4.9.3-py3-none-any.whl",
+      "bytes": 144613,
+      "sha256": "f0b2d182a42194ed785cdce9afe1c8fadc2dfdf975135db20c4662017fa7291b",
+      "license": "BSD",
+      "source_url": "https://files.pythonhosted.org/packages/3e/38/7859ff46355f76f8d19459005ca000b6e7012f2f1ca597746cbcd1fbfe5e/antlr4-python3-runtime-4.9.3.tar.gz",
+      "upstream_sha256": "f224469b4168294902bb1efa80a8bf7855f24c99aef99cbefc1bcd3cce77881b",
+      "built_from_sdist": true
+    },
+    {
+      "package": "certifi",
+      "version": "2026.7.22",
+      "file": "certifi-2026.7.22-py3-none-any.whl",
+      "bytes": 136983,
+      "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775",
+      "license": "MPL-2.0",
+      "source_url": "https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl",
+      "upstream_sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775",
+      "built_from_sdist": false
+    },
+    {
+      "package": "charset-normalizer",
+      "version": "3.5.1",
+      "file": "charset_normalizer-3.5.1-cp312-cp312-win_amd64.whl",
+      "bytes": 200551,
+      "sha256": "3617ac3cfd8b9888f145ad89dd6e692285834b0201c6074a5eeaad3fd4d668c2",
+      "license": "MIT",
+      "source_url": "https://files.pythonhosted.org/packages/9d/7a/4c6c298171e6b3e745633180ff59350fc0ca0db1ffd28df1e369e0579f71/charset_normalizer-3.5.1-cp312-cp312-win_amd64.whl",
+      "upstream_sha256": "3617ac3cfd8b9888f145ad89dd6e692285834b0201c6074a5eeaad3fd4d668c2",
+      "built_from_sdist": false
+    },
+    {
+      "package": "colorama",
+      "version": "0.4.6",
+      "file": "colorama-0.4.6-py2.py3-none-any.whl",
+      "bytes": 25335,
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+      "license": "BSD-3-Clause",
+      "source_url": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+      "upstream_sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+      "built_from_sdist": false
+    },
+    {
+      "package": "colorlog",
+      "version": "6.12.0",
+      "file": "colorlog-6.12.0-py3-none-any.whl",
+      "bytes": 12239,
+      "sha256": "30d392604e9110045a2c2aeefc27d7a017abbab63f3a8aee594eac0801df784e",
+      "license": "MIT License",
+      "source_url": "https://files.pythonhosted.org/packages/d4/19/0b6647bf5e331521e55d2b63bfbdc210bd9cd605189273f03614a05f702d/colorlog-6.12.0-py3-none-any.whl",
+      "upstream_sha256": "30d392604e9110045a2c2aeefc27d7a017abbab63f3a8aee594eac0801df784e",
+      "built_from_sdist": false
+    },
+    {
+      "package": "flatbuffers",
+      "version": "25.12.19",
+      "file": "flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "bytes": 26661,
+      "sha256": "7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4",
+      "license": "Apache 2.0",
+      "source_url": "https://files.pythonhosted.org/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "upstream_sha256": "7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4",
+      "built_from_sdist": false
+    },
+    {
+      "package": "idna",
+      "version": "3.19",
+      "file": "idna-3.19-py3-none-any.whl",
+      "bytes": 68550,
+      "sha256": "815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4",
+      "license": "BSD-3-Clause",
+      "source_url": "https://files.pythonhosted.org/packages/57/b0/0e52c878c53f245edd3a11020f20979b3f490f245af532c7cae3027754b5/idna-3.19-py3-none-any.whl",
+      "upstream_sha256": "815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4",
+      "built_from_sdist": false
+    },
+    {
+      "package": "numpy",
+      "version": "2.5.3",
+      "file": "numpy-2.5.3-cp312-cp312-win_amd64.whl",
+      "bytes": 12567828,
+      "sha256": "0a59a421a32580a009e8a1751345bf829631b990dc1794b80514ab722b435def",
+      "license": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+      "source_url": "https://files.pythonhosted.org/packages/3c/a1/accf6d4f0c80c5d9ba9735d6b1550e444180599f34dec69ca01360f717ad/numpy-2.5.3-cp312-cp312-win_amd64.whl",
+      "upstream_sha256": "0a59a421a32580a009e8a1751345bf829631b990dc1794b80514ab722b435def",
+      "built_from_sdist": false
+    },
+    {
+      "package": "omegaconf",
+      "version": "2.3.1",
+      "file": "omegaconf-2.3.1-py3-none-any.whl",
+      "bytes": 79502,
+      "sha256": "3d701d14e9a8828f1edd28bb70b725908b34277cdd72cf7d6a83f94dadc6b6a0",
+      "license": "BSD-3-Clause",
+      "source_url": "https://files.pythonhosted.org/packages/a4/0e/152509871bf30df6fc38569f52a2db9b55dd41aae957adae50a053ac7778/omegaconf-2.3.1-py3-none-any.whl",
+      "upstream_sha256": "3d701d14e9a8828f1edd28bb70b725908b34277cdd72cf7d6a83f94dadc6b6a0",
+      "built_from_sdist": false
+    },
+    {
+      "package": "onnxruntime",
+      "version": "1.29.0",
+      "file": "onnxruntime-1.29.0-cp312-cp312-win_amd64.whl",
+      "bytes": 14001407,
+      "sha256": "4acf2b4948b7ede87221ca6332344b8facdc8059d6ac751a7d367d04532b02dd",
+      "license": "MIT License",
+      "source_url": "https://files.pythonhosted.org/packages/b4/80/5b28f1f1111210fc4a336ddbc6950f468ebf9a6a265420568f4f43fa33ce/onnxruntime-1.29.0-cp312-cp312-win_amd64.whl",
+      "upstream_sha256": "4acf2b4948b7ede87221ca6332344b8facdc8059d6ac751a7d367d04532b02dd",
+      "built_from_sdist": false
+    },
+    {
+      "package": "opencv-python",
+      "version": "5.0.0.93",
+      "file": "opencv_python-5.0.0.93-cp37-abi3-win_amd64.whl",
+      "bytes": 44000345,
+      "sha256": "f90ba04b8f73bc5c3814037699739f0156f597338a98f05956c684e7c3ca10d2",
+      "license": "Apache 2.0",
+      "source_url": "https://files.pythonhosted.org/packages/21/f0/9fa6e85cb10c8eb36a0222d27e50fe381b86ce49a55446bf39f491727564/opencv_python-5.0.0.93-cp37-abi3-win_amd64.whl",
+      "upstream_sha256": "f90ba04b8f73bc5c3814037699739f0156f597338a98f05956c684e7c3ca10d2",
+      "built_from_sdist": false
+    },
+    {
+      "package": "packaging",
+      "version": "26.3",
+      "file": "packaging-26.3-py3-none-any.whl",
+      "bytes": 129956,
+      "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+      "license": "Apache-2.0 OR BSD-2-Clause",
+      "source_url": "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl",
+      "upstream_sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+      "built_from_sdist": false
+    },
+    {
+      "package": "pillow",
+      "version": "12.3.0",
+      "file": "pillow-12.3.0-cp312-cp312-win_amd64.whl",
+      "bytes": 7227137,
+      "sha256": "a2b55dd6b2a4c4b7d87ffa56bdb33fdc5fdb9a462173861a7bc097f17d91cb09",
+      "license": "MIT-CMU",
+      "source_url": "https://files.pythonhosted.org/packages/45/89/da2f7971a317f83d807fdd4065c0af40208e59e692cc43d315a71a0e96d1/pillow-12.3.0-cp312-cp312-win_amd64.whl",
+      "upstream_sha256": "a2b55dd6b2a4c4b7d87ffa56bdb33fdc5fdb9a462173861a7bc097f17d91cb09",
+      "built_from_sdist": false
+    },
+    {
+      "package": "protobuf",
+      "version": "7.36.1",
+      "file": "protobuf-7.36.1-cp310-abi3-win_amd64.whl",
+      "bytes": 456518,
+      "sha256": "51139351435d9b43d88a55eaa49fb6f737fbb478fb0cbf2cf694d1a04a9d3363",
+      "license": "3-Clause BSD License",
+      "source_url": "https://files.pythonhosted.org/packages/db/37/155788a0d8daded960375af604202805308169f9b859419ea0aa370946e2/protobuf-7.36.1-cp310-abi3-win_amd64.whl",
+      "upstream_sha256": "51139351435d9b43d88a55eaa49fb6f737fbb478fb0cbf2cf694d1a04a9d3363",
+      "built_from_sdist": false
+    },
+    {
+      "package": "pyclipper",
+      "version": "1.4.0",
+      "file": "pyclipper-1.4.0-cp312-cp312-win_amd64.whl",
+      "bytes": 104619,
+      "sha256": "d1e5498d883b706a4ce636247f0d830c6eb34a25b843a1b78e2c969754ca9037",
+      "license": "MIT",
+      "source_url": "https://files.pythonhosted.org/packages/97/77/dfea08e3b230b82ee22543c30c35d33d42f846a77f96caf7c504dd54fab1/pyclipper-1.4.0-cp312-cp312-win_amd64.whl",
+      "upstream_sha256": "d1e5498d883b706a4ce636247f0d830c6eb34a25b843a1b78e2c969754ca9037",
+      "built_from_sdist": false
+    },
+    {
+      "package": "pypdfium2",
+      "version": "5.13.0",
+      "file": "pypdfium2-5.13.0-py3-none-win_amd64.whl",
+      "bytes": 3885553,
+      "sha256": "47dcca2a8d507b5fd24f94c3c9d48fb379430f097bc20f01beff6c963ffbcedb",
+      "license": "BSD-3-Clause, Apache-2.0, dependency licenses",
+      "source_url": "https://files.pythonhosted.org/packages/5d/99/a37b6b902457569468ed5908c94e56cb6c4032541f02cf89f723d42a9148/pypdfium2-5.13.0-py3-none-win_amd64.whl",
+      "upstream_sha256": "47dcca2a8d507b5fd24f94c3c9d48fb379430f097bc20f01beff6c963ffbcedb",
+      "built_from_sdist": false
+    },
+    {
+      "package": "PyYAML",
+      "version": "6.0.3",
+      "file": "pyyaml-6.0.3-cp312-cp312-win_amd64.whl",
+      "bytes": 154003,
+      "sha256": "5fcd34e47f6e0b794d17de1b4ff496c00986e1c83f7ab2fb8fcfe9616ff7477b",
+      "license": "MIT",
+      "source_url": "https://files.pythonhosted.org/packages/86/bf/899e81e4cce32febab4fb42bb97dcdf66bc135272882d1987881a4b519e9/pyyaml-6.0.3-cp312-cp312-win_amd64.whl",
+      "upstream_sha256": "5fcd34e47f6e0b794d17de1b4ff496c00986e1c83f7ab2fb8fcfe9616ff7477b",
+      "built_from_sdist": false
+    },
+    {
+      "package": "rapidocr",
+      "version": "3.9.2",
+      "file": "rapidocr-3.9.2-py3-none-any.whl",
+      "bytes": 27275208,
+      "sha256": "04d6b8d151f823d930bd91910555f57bea897c0c44fa6794267b94cf9c1ef9a0",
+      "license": "Apache-2.0",
+      "source_url": "https://files.pythonhosted.org/packages/55/ed/0ee9b9281986974be9d2406ae0134c8d7c91d2fc613f16ffda9701eeda6f/rapidocr-3.9.2-py3-none-any.whl",
+      "upstream_sha256": "04d6b8d151f823d930bd91910555f57bea897c0c44fa6794267b94cf9c1ef9a0",
+      "built_from_sdist": false
+    },
+    {
+      "package": "requests",
+      "version": "2.34.2",
+      "file": "requests-2.34.2-py3-none-any.whl",
+      "bytes": 73075,
+      "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0",
+      "license": "Apache-2.0",
+      "source_url": "https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl",
+      "upstream_sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0",
+      "built_from_sdist": false
+    },
+    {
+      "package": "shapely",
+      "version": "2.1.2",
+      "file": "shapely-2.1.2-cp312-cp312-win_amd64.whl",
+      "bytes": 1722861,
+      "sha256": "743044b4cfb34f9a67205cee9279feaf60ba7d02e69febc2afc609047cb49179",
+      "license": "BSD 3-Clause",
+      "source_url": "https://files.pythonhosted.org/packages/ec/bf/cb6c1c505cb31e818e900b9312d514f381fbfa5c4363edfce0fcc4f8c1a4/shapely-2.1.2-cp312-cp312-win_amd64.whl",
+      "upstream_sha256": "743044b4cfb34f9a67205cee9279feaf60ba7d02e69febc2afc609047cb49179",
+      "built_from_sdist": false
+    },
+    {
+      "package": "six",
+      "version": "1.17.0",
+      "file": "six-1.17.0-py2.py3-none-any.whl",
+      "bytes": 11050,
+      "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
+      "license": "MIT",
+      "source_url": "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl",
+      "upstream_sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
+      "built_from_sdist": false
+    },
+    {
+      "package": "tqdm",
+      "version": "4.70.0",
+      "file": "tqdm-4.70.0-py3-none-any.whl",
+      "bytes": 80184,
+      "sha256": "7f585706bfddbdebf89daac705b2dfcc16890130727d3197ca62c732b4310953",
+      "license": "MPL-2.0 AND MIT",
+      "source_url": "https://files.pythonhosted.org/packages/f9/1c/01bfd571a64e7f270e6bab5e33777debe0edc56759233ce84f27dec92d14/tqdm-4.70.0-py3-none-any.whl",
+      "upstream_sha256": "7f585706bfddbdebf89daac705b2dfcc16890130727d3197ca62c732b4310953",
+      "built_from_sdist": false
+    },
+    {
+      "package": "urllib3",
+      "version": "2.7.0",
+      "file": "urllib3-2.7.0-py3-none-any.whl",
+      "bytes": 131087,
+      "sha256": "9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897",
+      "license": "MIT",
+      "source_url": "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl",
+      "upstream_sha256": "9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897",
+      "built_from_sdist": false
+    }
+  ],
+  "models": [
+    {
+      "file": "PP-OCRv6_det_small.onnx",
+      "sha256": "090f04abcd9d9a7498bc4ebf677e4cb9bdce1fe4197ddb7e529f1ef44e1ff94f",
+      "bytes": 9929594,
+      "wheel": "rapidocr-3.9.2-py3-none-any.whl",
+      "member": "rapidocr/models/PP-OCRv6_det_small.onnx",
+      "license": "Apache-2.0",
+      "license_source": "https://github.com/RapidAI/RapidOCR/blob/v3.9.2/LICENSE",
+      "model_upstream": "https://www.modelscope.cn/models/RapidAI/RapidOCR/files?Revision=v3.9.2"
+    },
+    {
+      "file": "PP-OCRv6_rec_small.onnx",
+      "sha256": "6f327246b50388f3c176ae304bd95767ea6dc0c9ae92153ef8cbe210b3c14884",
+      "bytes": 21234383,
+      "wheel": "rapidocr-3.9.2-py3-none-any.whl",
+      "member": "rapidocr/models/PP-OCRv6_rec_small.onnx",
+      "license": "Apache-2.0",
+      "license_source": "https://github.com/RapidAI/RapidOCR/blob/v3.9.2/LICENSE",
+      "model_upstream": "https://www.modelscope.cn/models/RapidAI/RapidOCR/files?Revision=v3.9.2"
+    },
+    {
+      "file": "ch_ppocr_mobile_v2.0_cls_mobile.onnx",
+      "sha256": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c",
+      "bytes": 585532,
+      "wheel": "rapidocr-3.9.2-py3-none-any.whl",
+      "member": "rapidocr/models/ch_ppocr_mobile_v2.0_cls_mobile.onnx",
+      "license": "Apache-2.0",
+      "license_source": "https://github.com/RapidAI/RapidOCR/blob/v3.9.2/LICENSE",
+      "model_upstream": "https://www.modelscope.cn/models/RapidAI/RapidOCR/files?Revision=v3.9.2"
+    }
+  ],
+  "redistribution": "Ship wheels, models, extracted license/NOTICE files, source_archives and this manifest together. Preserve PDFium third-party notices, MPL-covered Python source and GEOS LGPL corresponding source/build files. Keep GEOS dynamically replaceable and retain LGPL rights in downstream terms. ANTLR wheel was built locally from the checksum-verified PyPI sdist. Base CPython 3.12 is required to prepare the offline venv; this is the OCR resource bundle, not a replacement product installer."
+}

@@ -1,0 +1,86 @@
+{
+  "verified_on": "2026-10-02",
+  "models": [
+    {
+      "id": "qwen35-27b",
+      "name": "千问 Qwen3.5 27B · Q4_K_M",
+      "publisher": "Unsloth（第三方GGUF量化）",
+      "repository": "unsloth/Qwen3.5-27B-GGUF",
+      "revision": "3221f178a6b842d04f1fb42f1c413534adcc0a6a",
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/unsloth/Qwen3.5-27B-GGUF",
+      "model_card": "https://huggingface.co/Qwen/Qwen3.5-27B",
+      "files": [
+        {
+          "name": "Qwen3.5-27B-Q4_K_M.gguf",
+          "bytes": 16740812704,
+          "sha256": "84b5f7f112156d63836a01a69dc3f11a6ba63b10a23b8ca7a7efaf52d5a2d806",
+          "url": "https://huggingface.co/unsloth/Qwen3.5-27B-GGUF/resolve/3221f178a6b842d04f1fb42f1c413534adcc0a6a/Qwen3.5-27B-Q4_K_M.gguf"
+        }
+      ],
+      "bytes": 16740812704,
+      "context_tokens": 262144,
+      "max_output_tokens": 32768,
+      "thinking_mode": "switchable",
+      "notes": "GGUF仅本轮文本问答；模型原生262144，扩展1010000需要单独运行时配置，本机不自动启用。需兼容新版llama.cpp。"
+    },
+    {
+      "id": "deepseek-r1",
+      "name": "DeepSeek R1 671B · UD-IQ1_S",
+      "publisher": "Unsloth（第三方GGUF量化）",
+      "repository": "unsloth/DeepSeek-R1-GGUF",
+      "revision": "4dab99fdb3fea560e5a402b49c6ef11e025321a8",
+      "license": "MIT",
+      "source": "https://huggingface.co/unsloth/DeepSeek-R1-GGUF",
+      "model_card": "https://huggingface.co/deepseek-ai/DeepSeek-R1",
+      "files": [
+        {
+          "name": "DeepSeek-R1-UD-IQ1_S-00001-of-00003.gguf",
+          "bytes": 49349193664,
+          "sha256": "f8a206f03ea08c1cfaab8695c7fb86a72dc1620886093b5860ae550ade9033ef",
+          "url": "https://huggingface.co/unsloth/DeepSeek-R1-GGUF/resolve/4dab99fdb3fea560e5a402b49c6ef11e025321a8/DeepSeek-R1-UD-IQ1_S/DeepSeek-R1-UD-IQ1_S-00001-of-00003.gguf"
+        },
+        {
+          "name": "DeepSeek-R1-UD-IQ1_S-00002-of-00003.gguf",
+          "bytes": 49397904416,
+          "sha256": "775400c9fcf92862fca7af205669bdb84fa9c91f0f747fb2e573027077103fbf",
+          "url": "https://huggingface.co/unsloth/DeepSeek-R1-GGUF/resolve/4dab99fdb3fea560e5a402b49c6ef11e025321a8/DeepSeek-R1-UD-IQ1_S/DeepSeek-R1-UD-IQ1_S-00002-of-00003.gguf"
+        },
+        {
+          "name": "DeepSeek-R1-UD-IQ1_S-00003-of-00003.gguf",
+          "bytes": 41484340384,
+          "sha256": "3ec50e4d2ae64f78eb74dad4d40684c4970d37acfe25adf635a20ff6ec435fb6",
+          "url": "https://huggingface.co/unsloth/DeepSeek-R1-GGUF/resolve/4dab99fdb3fea560e5a402b49c6ef11e025321a8/DeepSeek-R1-UD-IQ1_S/DeepSeek-R1-UD-IQ1_S-00003-of-00003.gguf"
+        }
+      ],
+      "bytes": 140231438464,
+      "context_tokens": 131072,
+      "max_output_tokens": 32768,
+      "thinking_mode": "required",
+      "notes": "固定推理模型，不能关闭原生思考。全参数671B，约140GB文件；需极高内存，本机兼容性尚未测。"
+    },
+    {
+      "id": "r1-distill14b",
+      "name": "DeepSeek R1 蒸馏版 Qwen 14B · Q4_K_M",
+      "publisher": "Unsloth（第三方GGUF量化）",
+      "repository": "unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF",
+      "revision": "7b05b58b41f623e66fc74cd27b35475267b2f3e3",
+      "license": "MIT / Qwen Apache-2.0",
+      "source": "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF",
+      "model_card": "https://huggingface.co/deepseek-ai/DeepSeek-R1",
+      "files": [
+        {
+          "name": "DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf",
+          "bytes": 8988109984,
+          "sha256": "67a7933cf2ad596a393c8e13b30bc4da2d50b283e250b78554aed18817eca31c",
+          "url": "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF/resolve/7b05b58b41f623e66fc74cd27b35475267b2f3e3/DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf"
+        }
+      ],
+      "bytes": 8988109984,
+      "context_tokens": 131072,
+      "max_output_tokens": 32768,
+      "thinking_mode": "required",
+      "notes": "固定推理模型，不能关闭原生思考。这是14B蒸馏版，不是完整671B R1。"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+[project]
+name = "knowledge-bridge"
+version = "1.1.0"
+description = "界渡 Knowledge Bridge：本地优先、权限受控的 AI 知识桥梁"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+  "firecrawl-anydoc==0.2.4",
+  "lancedb==0.36.0", "sentence-transformers==5.7.0", "torch==2.13.0",
+  "fastapi==0.141.1", "uvicorn[standard]==0.52.1", "watchdog==6.0.0",
+  "mcp==2.0.0", "umap-learn==0.5.12", "numpy==2.4.6", "pyarrow==25.0.0",
+  "cryptography==50.0.0", "filelock==3.32.2",
+  "python-dateutil==2.9.0.post0",
+  "Brotli==1.2.0", "zstd==1.5.7.2",
+  "ccl_chromium_reader @ git+https://github.com/cclgroupltd/ccl_chromium_reader.git@ef840de30221c4d65bc96d2f4d9057e9ef2f526d",
+  "ccl_simplesnappy @ git+https://github.com/cclgroupltd/ccl_simplesnappy.git@3d085230baa8c46cf2090ebba29bf6e8eab31087"
+]
+
+[project.scripts]
+kb = "knowledge_bridge.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["knowledge_bridge"]
+
+[tool.hatch.metadata]
+allow-direct-references = true

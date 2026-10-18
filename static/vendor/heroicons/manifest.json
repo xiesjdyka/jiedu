@@ -1,0 +1,78 @@
+{
+  "source": "https://raw.githubusercontent.com/tailwindlabs/heroicons/v2.2.0/",
+  "license": "MIT",
+  "icons": [
+    {
+      "name": "arrow-up",
+      "sha256": "96d0150f6ca19bf60e55389884b69356718bb81f4bace10f2124853610941e46"
+    },
+    {
+      "name": "stop",
+      "sha256": "9e7674f8719647c8b12c8e398c873e52d2467fe891f8a6413aac7bd243df3ddb"
+    },
+    {
+      "name": "ellipsis-horizontal",
+      "sha256": "dd9980eb9dab3e27e0c8507182fea76f156e35a6221c55713454054de550de6c"
+    },
+    {
+      "name": "bars-3",
+      "sha256": "0e76cceaeef6685444adf1ccb47d743d791d30e19181289ce19d3fb5e5c7ed74"
+    },
+    {
+      "name": "x-mark",
+      "sha256": "f44f8d4070a779c324f07a199122b4cc8686b5a8d9705727dc38d0cfd3bb27ec"
+    },
+    {
+      "name": "plus",
+      "sha256": "f3bd7870b4ac4bcb2153705981bdd9663f185c4563af496998803e245aca0d54"
+    },
+    {
+      "name": "adjustments-horizontal",
+      "sha256": "33ccc1e3273217f72e3436f535000036e069935618877e6636124b2b930bbf5e"
+    },
+    {
+      "name": "arrow-left",
+      "sha256": "2b41e74fb69b4e6f36762808b3370b9a156d5baefcc36e3868a57a526c6e8016"
+    },
+    {
+      "name": "chevron-down",
+      "sha256": "2eacb6cecd8f1ab845a2a8417074b0dab9fd9612cdf56d76be45b82adb2933f5"
+    },
+    {
+      "name": "clock",
+      "sha256": "373d9798f3bde27f665fd49fd4b78b6896de13e1b30670c1930d9553cd1ff3e3"
+    },
+    {
+      "name": "book-open",
+      "sha256": "dc4fab6a62dcebe7c1c31096a7062151363b803b62919ba47ef32ba37ad127df"
+    },
+    {
+      "name": "light-bulb",
+      "sha256": "9c46baf011e3e38f45992459e4a692a972426e2e3478fa2f3d6514e0e318066f"
+    },
+    {
+      "name": "pencil-square",
+      "sha256": "21da72fcd66af3e386d554259ff8517124d0a2270975ffa3a69b5aa926959d4c"
+    },
+    {
+      "name": "arrow-down",
+      "sha256": "5236ac3f659a8cc0d98e2fdcf178bfacb0df1e109c00676c70ffdc40ab01385e"
+    },
+    {
+      "name": "document-text",
+      "sha256": "71f9dc980c507b7cfd044b7b322790f826e69cffcb6b06802c898502328a85b5"
+    },
+    {
+      "name": "trash",
+      "sha256": "54ec722a29978d7f64a81d6222e071f88b42d80179216b3b5beccfa9e1ec2135"
+    },
+    {
+      "name": "clipboard-document",
+      "sha256": "31c1926e8c961c0d5ca1287e193721b722f07b20e62364c3e55e26e6456d4bce"
+    },
+    {
+      "name": "paper-clip",
+      "sha256": "fc66340cdf6560e82120c5a092c6ba94cee7aa48be80c42d09c8386ee56aec9e"
+    }
+  ]
+}

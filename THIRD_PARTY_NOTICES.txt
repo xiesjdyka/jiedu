@@ -1,0 +1,56 @@
+Third-party components
+======================
+
+Jiedu project code is licensed under the MIT License in LICENSE. This does
+not replace the licenses or copyright notices of third-party components.
+
+Source assets
+-------------
+Heroicons assets retain their upstream notice in static/vendor/heroicons/LICENSE.
+Keep that notice when redistributing those assets.
+
+Python dependencies
+-------------------
+pyproject.toml declares direct dependencies. requirements.lock.txt pins the
+main Python environment, including the source revisions of the two ccl
+packages. Each dependency remains subject to its own license and notices.
+Dependencies are obtained separately; they are not relicensed as Jiedu code.
+
+Optional OCR resources
+----------------------
+ocr-resources.lock.json records optional OCR packages, model resources,
+checksums and redistribution notes. The source-only distribution does not
+contain these installed runtimes or model binaries. If building a binary
+bundle, preserve all upstream license files and fulfill applicable source
+and notice requirements. In particular, the manifest records corresponding
+source and replacement requirements for GEOS distributed with Shapely.
+The manifest is an inventory, not a replacement for upstream license terms.
+
+Optional local model resources
+-----------------------------
+butler-resources.lock.json identifies the local model, llama.cpp runtime and
+CUDA runtime resources. Their licenses apply separately. A source manifest
+or download URL does not grant permission to redistribute third-party files.
+Review and include the relevant upstream license terms before distributing
+a bundle containing these resources.
+
+Private data
+------------
+User knowledge, conversation archives, credentials, runtime configuration and
+operational logs are not part of the source distribution.
+
+Desktop source dependencies
+---------------------------
+The optional desktop source uses Tauri 2, its plugins, serde_json and their
+transitive Rust dependencies, pinned in desktop/Cargo.lock. No compiled
+runtime is included in this source candidate. Before shipping a binary,
+review the complete dependency license inventory and preserve required
+notices, including WebView2 and Windows runtime distribution conditions.
+
+Dependency inventory
+--------------------
+docs/dependencies.json records exact Python and Rust package versions and
+upstream license metadata, plus fixed Git revisions. Metadata is evidence
+for source preparation, not a substitute for full notices in a binary bundle.
+Use the upstream metadata URLs to check full terms. Optional OCR and local
+model resources are separately inventoried in their resource lock files.

@@ -1,0 +1,106 @@
+{
+  "date": "2026-10-15",
+  "candidate": "1.1.0-rc.1",
+  "system": "Windows 10 Pro x64, existing host; newly downloaded CPython 3.12.10 and empty virtual environment",
+  "exact_dependency_entries_checked": 88,
+  "dependency_check": "passed",
+  "targeted_unit_tests": 26,
+  "synthetic_http_checks": {
+    "first_initialization": true,
+    "page_routes": true,
+    "import_completed": true,
+    "keyword_search_without_model": true,
+    "paired_client_example": true,
+    "invalid_client_rejected": true,
+    "restart_identity_and_counts_preserved": true,
+    "external_original_unchanged": true
+  },
+  "headless_browser": {
+    "engine": "installed Microsoft Edge",
+    "pages": 7,
+    "settings_pages": 4,
+    "script_errors": 0,
+    "horizontal_overflow": false
+  },
+  "not_validated": [
+    "Full consumer installer and uninstall preservation, all Windows editions and every visible control",
+    "Optional OCR/model resource installation in this new environment",
+    "Code signing, native upgrade, online updates and power-loss recovery",
+    "Cloud CI execution and live security report channel",
+    "Real external-provider conversations and long-running unattended organization"
+  ],
+  "boundary": "This is source-preview evidence, not certification of a complete end-user installer or independent security audit.",
+  "native_desktop_existing_host": {
+    "binary_sha256": "c40dd2470da409922f0ca26888bb3fdfe722583d655132afdd76258e206fd849",
+    "passed": true,
+    "checks": {
+      "webview_close_and_tray": {
+        "close_event_received": true,
+        "hidden_after_close": true,
+        "no_focus_requested": true,
+        "real_webview_loaded": true,
+        "test_profile_isolated": true,
+        "tray_present": true,
+        "window_survives_close": true
+      },
+      "second_start_reuses_same_backend": true,
+      "synthetic_data_preserved": true
+    },
+    "test_backend_stopped": true,
+    "binary_build_paths_remapped": true,
+    "known_private_fingerprint_scan": "no findings; not an independent security audit"
+  },
+  "previous_clean_windows_attempt": {
+    "system": "Windows 11 Enterprise LTSC evaluation, isolated Hyper-V guest",
+    "result": "incomplete",
+    "application_tests_started": false,
+    "reason": "Windows setup reached only 21 percent before the four-hour USB test limit; temporary guest and storage were removed.",
+    "counts_as_clean_windows_pass": false
+  },
+  "clean_windows_selected_acceptance": {
+    "os": {
+      "Caption": "Microsoft Windows 11 企业评估版 LTSC",
+      "Version": "10.0.26100",
+      "OSArchitecture": "64 位"
+    },
+    "source_sha256": "1608b10a1e037618e98e6729b8679d07e66123ee71b57a4df385e16f3daa2c58",
+    "exe_sha256": "c40dd2470da409922f0ca26888bb3fdfe722583d655132afdd76258e206fd849",
+    "dependency_checks": 88,
+    "targeted_tests": 26,
+    "guest_checks": {
+      "non_elevated": true,
+      "source_install": true,
+      "targeted_tests": true,
+      "first_use": true,
+      "native_desktop": true
+    },
+    "http_checks": {
+      "first_initialization": true,
+      "page_routes": true,
+      "import_completed": true,
+      "keyword_search_without_model": true,
+      "paired_client_example": true,
+      "invalid_client_rejected": true,
+      "restart_identity_and_counts_preserved": true,
+      "external_original_unchanged": true
+    },
+    "native_checks": {
+      "webview_close_and_tray": {
+        "close_event_received": true,
+        "hidden_after_close": true,
+        "no_focus_requested": true,
+        "real_webview_loaded": true,
+        "test_profile_isolated": true,
+        "tray_present": true,
+        "window_survives_close": true
+      },
+      "second_start_reuses_same_backend": true,
+      "synthetic_data_preserved": true
+    },
+    "test_backend_stopped": true,
+    "temporary_environment_removed": true,
+    "scope_note": "Clean Windows 11 Enterprise LTSC evaluation VM; source install with supplied official Python/Git/PowerShell prerequisites, selected HTTP and instrumented native WebView behavior tests. Not all Windows editions or every visible control.",
+    "passed": true,
+    "report_reconciliation": "Original guest reports passed; host summary UTF-8 decoding failure was reproduced and corrected, then original reports independently verified."
+  }
+}

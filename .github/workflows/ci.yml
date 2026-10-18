@@ -1,0 +1,40 @@
+name: Windows source checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  source-install:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      PYTHONNOUSERSITE: '1'
+      PYTHONUTF8: '1'
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install the exact source environment
+        shell: pwsh
+        run: ./scripts/setup.ps1 -PythonExecutable python -CacheDirectory "$env:RUNNER_TEMP/jiedu-setup"
+      - name: Isolated release checks
+        shell: pwsh
+        run: |
+          $env:TEMP="$env:RUNNER_TEMP/jiedu-tests"
+          $env:TMP=$env:TEMP
+          New-Item -ItemType Directory -Path $env:TEMP -Force | Out-Null
+          ./.venv312/Scripts/python.exe -X utf8 -m unittest tests.test_source_export tests.test_desktop_update tests.test_client_access tests.test_client_pairing tests.test_cold_start_web
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./.venv312/Scripts/python.exe scripts/export_source.py --output "$env:RUNNER_TEMP/jiedu-source.zip"
+  desktop-compile:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Compile the locked desktop source
+        shell: pwsh
+        working-directory: desktop
+        run: cargo build --release --locked
+

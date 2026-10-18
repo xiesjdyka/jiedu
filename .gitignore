@@ -1,0 +1,75 @@
+# Local configuration and secrets
+config.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python environments and caches
+.venv/
+.venv*/
+venv/
+env/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Rebuildable runtime data
+data/
+backups/
+memory_compiler/records_v1.json
+logs/
+runtime/
+cache/
+.cache/
+models/
+huggingface/
+*.lance
+*.lance/
+*.pid
+*.log
+vector_map.json
+*umap*.json
+
+# Build and frontend temporary output
+build/
+dist/
+release/
+*.egg-info/
+node_modules/
+.parcel-cache/
+.vite/
+coverage/
+htmlcov/
+
+# Temporary/editor/OS files
+*.tmp
+*.temp
+*.bak
+*.swp
+~$*
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Workspaces and desktop build products are not source
+/knowledge-space/
+/.jiedu/
+/00_系统/
+/01_当前状态/
+/02_项目/
+/03_知识/
+/90_原始档案/
+/99_收件箱/
+/desktop/target/
+/desktop/gen/
+
+/.setup-cache/
+/.release-check/

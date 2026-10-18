@@ -1,0 +1,8 @@
+{
+  "channel": "stable",
+  "manifest_url": "https://github.com/xiesjdyka/jiedu/releases/latest/download/update.json",
+  "asset_hosts": [
+    "github.com",
+    "release-assets.githubusercontent.com"
+  ]
+}

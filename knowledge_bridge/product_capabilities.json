@@ -1,0 +1,1363 @@
+{
+  "schema_version": 1,
+  "authored_at": "2026-10-01",
+  "purpose": "实现能力说明；代码依据与历史验收边界，不含实时状态或用户私人资料",
+  "topics": [
+    {
+      "id": "workspace",
+      "title": "工作区与迁移",
+      "status": "implemented",
+      "summary": "选择普通文件夹初始化或连接，以稳定ID识别知识库。",
+      "usage": "工作区页中选择文件夹，预览后初始化或连接；整体移动后重新连接。",
+      "details": "六个知识目录与隐藏.jiedu控制区分开；已识别旧布局有迁移预览和任务，原路径关系保留。程序定位读取包标记而非固定外层名称。",
+      "limits": "并非任意目录无损迁移承诺；先预览冲突和未识别资料。整体快照恢复另属未完成能力。",
+      "verification": "代码有初始化、连接、稳定ID及旧布局迁移流程；生产独立包迁移历史记录已核对。",
+      "keywords": [
+        "工作区",
+        "初始化",
+        "连接文件夹",
+        "迁移",
+        "稳定ID",
+        "普通文件夹"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/workspace.py",
+          "sha256": "e121c3538c4c0e47d6b1300309c7f382ab0d0b6bca2b3b6d6e4467bac0988d98",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/workspace_migration.py",
+          "sha256": "15375208c6080ff0eff942c25663de93f3e5fed61c9e9a6a0c57e0361ed921bf",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/package_layout.py",
+          "sha256": "51fe9555389711248d127e5655206eac964891c4645f5dc8bf5f0066088eb6b4",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/knowledge_base.py",
+          "sha256": "2aec91cc778b588932771bf42b38a462733234e8f093eafd68fb3cdd92f61197",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_workspace_foundation.py",
+          "sha256": "d032199a92fbc892a01b213c4b7f642211feb8bbf490bd54b639748c258798ce",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_portable_package.py",
+          "sha256": "8599e165ab6e7b4caacf974b5614ae9eecd951a6d618fba075938f5d90d408c5",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "overview",
+      "title": "首页与检索计数",
+      "status": "implemented",
+      "summary": "首页中心显示正式知识可检索片段，另列知识文件、语义向量和关联项目。",
+      "usage": "首页查看正式知识检索状态；普通资料在知识页，归档/整理/Wiki进度在各自页面。",
+      "details": "长文可拆为多个检索片段，因此大数字不等于文件数。知识文件是已纳入检索的文件，语义向量帮助按含义定位，关联项目来自项目资料；普通资料另计。",
+      "limits": "首页检索数字统计正式知识，不包含全部原始对话和附件，也不是候选/写入进度卡。计数为查询时点，不宣称全库已整理。",
+      "verification": "首页聚合与整理回执代码可核对；历史实测计数不保证当前数字。",
+      "keywords": [
+        "首页",
+        "数量",
+        "计数",
+        "进度",
+        "卡片",
+        "待核对"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/web.py",
+          "sha256": "7595ee928dcd63f2688c8b17ad89cb66f552764d3eab6b735ca8b2da526299a7",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/organization_review.py",
+          "sha256": "c727be8b34d9820ab98f2dcfc81098ce1d6405c8e69317aad9498129d7e26929",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/knowledge_objects.py",
+          "sha256": "6b2ada443a19a1ca0c3e3363c06ff7b20b3ae2b126d5d71a698c1e8c31023cbe",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/core.py",
+          "sha256": "0c3dc7ac1e1ec1f45fceec67c74cf931b72ea773b472d8955d677cbff898d579",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_organize_loading.py",
+          "sha256": "7e6fe744cf11a29d0f3256524b40b28aea46883e19f2718686798b26c3744378",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "objects",
+      "title": "知识对象与资料导入",
+      "status": "implemented",
+      "summary": "浏览知识树，预览导入目录或资料包，保存原件及派生正文。",
+      "usage": "知识工作区选择导入，先检查预览，再启动任务；任务可查看进度并取消。",
+      "details": "对象记录来源、存储策略、版本、附件关系与转换结果；公开/受保护内容在逻辑树中区分。支持按对象查看正文和原件。",
+      "limits": "失败或不支持格式仍保留原件并显示状态；导入不等于确认长期事实。不要宣称自动理解所有混乱资料。",
+      "verification": "对象与导入代码及隔离验收存在；当前任何一次具体导入成功需查该任务结果。",
+      "keywords": [
+        "导入",
+        "原件",
+        "对象",
+        "文件夹",
+        "资料包",
+        "附件",
+        "知识树",
+        "浏览"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/knowledge_objects.py",
+          "sha256": "6b2ada443a19a1ca0c3e3363c06ff7b20b3ae2b126d5d71a698c1e8c31023cbe",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/object_reader.py",
+          "sha256": "44ffc3390ca0a2ce374e30b781c7000f669002bbd4400b9859b1b6638aa8bb49",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/document_converter.py",
+          "sha256": "8bcef4cdcdd346f7cc1c0715d525e8c2f6ee1bc6d4c51fa92cde3f2c270fc7f7",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_knowledge_objects.py",
+          "sha256": "c37872a97d98473c471e46e9ee035755513b4a527b16eff2957e842bea13a79f",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "conversion",
+      "title": "本地文档转换",
+      "status": "limited",
+      "summary": "受支持文本和Office文档可派生Markdown，原件保留。",
+      "usage": "导入后检查转换状态；打开派生正文并回原件核对。",
+      "details": "普通路径支持md/txt/json/html/xml/yaml，以及anydoc声明的Office、ODF、RTF、EPUB、CSV等格式；受保护内存转换仅文本及docx/xlsx/pptx/pdf/csv，PDF走本地OCR。",
+      "limits": "支持表是转换路径，不保证任意文件排版/公式/媒体无损；缺依赖、超限或失败明确显示，不能宣传所有格式已验收。内存输入16MiB、输出32MiB。",
+      "verification": "转换代码与已有混合材料验收可核对；受保护格式与普通路径支持表不同。",
+      "keywords": [
+        "转换",
+        "格式",
+        "Word",
+        "Excel",
+        "PowerPoint",
+        "Office",
+        "Markdown",
+        "docx",
+        "xlsx",
+        "pptx",
+        "CSV",
+        "EPUB"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/document_converter.py",
+          "sha256": "8bcef4cdcdd346f7cc1c0715d525e8c2f6ee1bc6d4c51fa92cde3f2c270fc7f7",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/knowledge_objects.py",
+          "sha256": "6b2ada443a19a1ca0c3e3363c06ff7b20b3ae2b126d5d71a698c1e8c31023cbe",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_import_retrieval_archive.py",
+          "sha256": "5b399ebd54e9b745beb394618c57702074bc1b62c5712158337df375fe8f76c5",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "ocr",
+      "title": "离线OCR",
+      "status": "limited",
+      "summary": "图片及PDF可本机识别为可阅读文字，不默认上传文件。",
+      "usage": "知识 → 导入资料后检查识别结果。普通原件与可读文字分别保存在收件箱导入目录及其_派生知识目录；选择收件箱范围搜索特征词，打开来源并核对原图。管家可选待确认资料（收件箱）；外部模型还需单独允许收件箱外发。",
+      "details": "图片支持png/jpg/jpeg/bmp/webp/tif/tiff；使用离线OCR资源，单并发、可取消，资源缺失时不会运行期自动下载。 缺资源时原件仍保存，结果明确为识别不可用；按发行包资源准备说明修复离线OCR组件后重试导入。源码安装不包含OCR环境与模型，运行期不会自动下载。",
+      "limits": "16MiB输入、最多20页、每页1200万像素、最长边2400、180秒；表格、公式、手写、阅读顺序不保证无损，分数不证明正确。",
+      "verification": "离线OCR代码与既往资源/样本验收存在；本目录不检测当前资源就绪。",
+      "keywords": [
+        "OCR",
+        "扫描",
+        "图片",
+        "PDF",
+        "识别",
+        "离线"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/local_ocr.py",
+          "sha256": "05ca986072ba3856f6fc9f03fa8839d4962e95952d1f8aa03d59857b42f4ccce",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/ocr_worker.py",
+          "sha256": "0713825d6603fb6cd2a52cdc2aaf16507146f6a308d38cfc0fdf0cf6ffc2c65a",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/document_converter.py",
+          "sha256": "8bcef4cdcdd346f7cc1c0715d525e8c2f6ee1bc6d4c51fa92cde3f2c270fc7f7",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_local_ocr.py",
+          "sha256": "2715919fe9104e4f352b09299da995857d83ae3a889be9da8b6d9ceb6cff2e2b",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "search",
+      "title": "分范围检索与来源阅读",
+      "status": "implemented",
+      "summary": "正式知识、原始证据、收件箱分开定位，有版本和连续分页。",
+      "usage": "选择范围搜索，打开命中资料，再连续读取原文和前后文。",
+      "details": "混合检索结合关键词与向量；显式关键词不启动嵌入。命中有来源路径、版本、片段位置；文档/会话分页可续接并检测变化。",
+      "limits": "搜索不是完整历史审查；不可用时诚实降级并给原因。管家目前只提供正式/证据两范围，不把收件箱自动纳入正式知识。",
+      "verification": "检索、分页与证据权限代码及既往真实混合检索验收存在。",
+      "keywords": [
+        "搜索",
+        "检索",
+        "来源",
+        "引用",
+        "分页",
+        "关键词",
+        "向量",
+        "混合",
+        "前后文",
+        "收件箱"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/retrieval.py",
+          "sha256": "a8914ca5aba0108ab202782feeea765cb11a3bf021751a0f9d1dc5064905c34e",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/source_reading.py",
+          "sha256": "f14236a043c59a53e4d6f6f68844968d4c3a7618213ae86da3e1c89e2280fc7f",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/search_scopes.py",
+          "sha256": "6918feea8641e3c011d3cd7756687efd22064a1e62c974b3e082d25aa9e8d958",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/passage_search.py",
+          "sha256": "4ea0814ce194b80bcffcaaf731c0b1c40b1c07463db8fa4d15b0d9d0de27d5aa",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_passage_retrieval.py",
+          "sha256": "84e50617b863054c7e9c01f373e7584d8053a94033f028288189be38d9c2bbff",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_compatibility_search.py",
+          "sha256": "7e72a49e2a375509e2f4b3747318752d440fc77d38aaf31b521495349b9e1302",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "codex",
+      "title": "Codex历史与增量归档",
+      "status": "limited",
+      "summary": "本机独立采集活动和已归档对话，历史导入可暂停续接。",
+      "usage": "对话档案查看首次历史进度、配置范围、暂停/继续与立即检查。",
+      "details": "同会话多物理分片合并，稳定消息ID去重；历史和新增分批处理、断点落盘。正文/附件/未知格式/读取错误分项展示。内部大记录可有界核对后过滤。",
+      "limits": "源已丢失附件不能补造；超大公开正文/内嵌附件仍有分段边界。显式analysis/reasoning或已知工具/代理route按结构排除，未知channel/recipient待核对，缺省字段兼容；commentary、正文代码例与正常讨论逐字保留，不按关键词删正文。逐消息整理的资格检查不等于整份conversation.md/Wiki已逐条投影。隔离验收不代表生产历史已完整补采，读取到末尾也不等于完整归档。",
+      "verification": "Codex历史及超大内部记录有定向/隔离与真实只读探针；完整生产补采需逐源查看实际覆盖。",
+      "keywords": [
+        "Codex",
+        "历史导入",
+        "增量",
+        "分片",
+        "暂停",
+        "续接",
+        "大记录"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/codex_source_adapter.py",
+          "sha256": "d748f3438729cd831095d8316220dbfb9e1894da74094f562a4edc1181535079",
+          "basis": "implementation_inspected_20261001"
+        },
+        {
+          "path": "knowledge_bridge/codex_history.py",
+          "sha256": "3bbce7ad1cf2b58af63d7c1b40b0e6f8c2947ad495d701486c8e474da0cb1f22",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/codex_large_records.py",
+          "sha256": "2ec0a62364ec266b17424274f9b6001e923ba02e67f14390fc27388e152b513d",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_codex_history.py",
+          "sha256": "b8d8e9f60032bee36e6bbc454e1c6c30830a92bdaa649b78434341c5bc5367f0",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_codex_large_records.py",
+          "sha256": "6d50f8d5ccee755f508f57b17fcd832e16ceb21ccc0a2cecfb8bfd02900ab6ec",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "hermes",
+      "title": "Hermes本机归档",
+      "status": "limited",
+      "summary": "独立监听可见正文，支持迟到附件和修订记录。",
+      "usage": "AI连接页检查Hermes，档案页读取正文、附件和修订状态。",
+      "details": "数字消息ID游标用于连续采集；可见用户/助手消息与工具/内部记录分开，附件后补和消息修订保持来源。监听异常有重试与线程健康检查。",
+      "limits": "原始记录不自动成为当前事实。content与tool_calls并存时保留可见正文，未知display_kind保留；仅在可用channel/recipient字段明确内部时排除，不猜补缺失属性或已清理内容。原始证据可单独展示提示/工具记录；逐消息整理保护不代表整份conversation.md/Wiki已逐条投影。历史补档与当前版本分开，不按正文关键词删真实发言。",
+      "verification": "既往生产监听恢复、附件/修订与独立读档验收存在；实时同步时间另查运行记录。",
+      "keywords": [
+        "Hermes",
+        "数字ID",
+        "迟到附件",
+        "修订",
+        "监听",
+        "工具过滤"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/hermes_session_adapter.py",
+          "sha256": "7a024645c337f441a61a2c3c2e2fd5e27a1a2d6dcdfe576dffaa9bb811fdf9b7",
+          "basis": "implementation_inspected_20261001"
+        },
+        {
+          "path": "knowledge_bridge/archive_store.py",
+          "sha256": "0f89e459b58e188ed6464ddf5daf04e8f7553de7d5d371d8fdf2a1e989bd0963",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/conversation_visibility.py",
+          "sha256": "e6720ea103214047e5eca89907ecbba3f86c711b6c85760c6b322eec8c84fb7c",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_hermes_session_adapter.py",
+          "sha256": "387cf13251c59827b4d007b5a1be28dbdad59d5b590dfa3e3539173a202ab74b",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_hermes_worker_recovery.py",
+          "sha256": "6c191c35f3951d160fdd1d809a5ab9fbc2ee9e73fb9435c778e45cc08ea42fea",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "sources",
+      "title": "其他AI来源与归档覆盖",
+      "status": "limited",
+      "summary": "已配对客户端可主动提交消息，来源身份由主人绑定。",
+      "usage": "连接与权限中绑定来源并授权聊天保存；查看档案实际已收到的范围。",
+      "details": "通用MCP推送支持稳定消息ID及分次附件；保存idea/link到收件箱需独立权限。内置来源标签不等于独立本机采集器。",
+      "limits": "客户端推送只证明所提交内容，不能保证助手尾部或源端完整历史；链接记录不等于获取原件。豆包与ChatGPT自动归档当前暂停，不能承诺自动全量采集。",
+      "verification": "source_connections推送边界与来源注册代码可核对；暂停状态来自当前阶段已确认记录。",
+      "keywords": [
+        "来源",
+        "其他AI",
+        "Claude",
+        "自定义AI",
+        "推送",
+        "聊天保存",
+        "收集",
+        "链接"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/source_connections.py",
+          "sha256": "bc72e28d86d3ffd85930b84061bc4882d7cfc05c90ccc8e404a312a45529444a",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/archive_store.py",
+          "sha256": "0f89e459b58e188ed6464ddf5daf04e8f7553de7d5d371d8fdf2a1e989bd0963",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/inbox_capture.py",
+          "sha256": "45bb28ae23ff242da216cacb3903e49b36f6be30091798d2fd176ffe769a6605",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/source_adapters.py",
+          "sha256": "d04e149375a43b2141af756a09642a826343a41fbcd98e0332c42814cca5de5a",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_generic_pairing.py",
+          "sha256": "be277d56775fa243b3f8e34cebff13fdb1aae109a87b5dc17f4bf5565a8663e1",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "paused",
+      "title": "豆包与ChatGPT自动归档",
+      "status": "paused",
+      "summary": "自动归档暂停，已有缓存/适配器不等于完整历史。",
+      "usage": "需要时先检查来源覆盖和显式启用范围；当前不自动启动。",
+      "details": "豆包本机结构缓存是局部发现；ChatGPT桥可在调用时收到所提交的可见消息。保留已有证据与适配器。",
+      "limits": "源端清理历史、缺失附件和助手尾部不能补造；不宣传独立完整自动归档已经交付。",
+      "verification": "当前阶段暂停边界结合source_connections与适配器代码；不是因为有接口就认定已开启。",
+      "keywords": [
+        "豆包",
+        "Doubao",
+        "ChatGPT",
+        "自动归档",
+        "暂停"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/doubao_session_adapter.py",
+          "sha256": "89b8dafc8b704dea5060933d7174cc0eb06d4abfa0e2db04bb5d4fa2d245f861",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/doubao_indexeddb_source.py",
+          "sha256": "b335910c8f4d5ca8aa09870d2756156737c59bc4ef5e69c8bb110be4d17975dc",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/chatgpt_adapter.py",
+          "sha256": "a6b13518469d403765bbe2ccb8b93d78e691d8fba4bd3eee86c6a2dec9be6e3b",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/source_connections.py",
+          "sha256": "bc72e28d86d3ffd85930b84061bc4882d7cfc05c90ccc8e404a312a45529444a",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_doubao_session_adapter.py",
+          "sha256": "8aa7dfc7a007939879ec3f4390d8bbda76002ccad542ab408b509dcb7048fd30",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_chatgpt_adapter.py",
+          "sha256": "fd322aa5db404c92bf21474a6bcb1d677b21d85aa9c7743f5774aa71a3029a65",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "access",
+      "title": "AI接入与权限",
+      "status": "implemented",
+      "summary": "配对、配置、读知识、保存聊天和操作权限分开管理。",
+      "usage": "AI连接新增客户端，检查配置预览再应用；按需要开关权限。",
+      "details": "独立身份令牌、配置确认、密钥轮换、撤销和删除；授权可按范围/会话，敏感请求走已有确认。MCP读取和候选提交不自动获得正式写权限。",
+      "limits": "撤销客户端访问与停止本机归档是不同动作；旧历史不随权限撤销自动删除。受保护读取不授权导出、改写或公开派生内容。",
+      "verification": "配对、权限与撤销代码/既往入口验收可核对。",
+      "keywords": [
+        "MCP",
+        "配对",
+        "接入",
+        "权限",
+        "令牌",
+        "撤销",
+        "轮换",
+        "Agent",
+        "连接"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/client_pairing.py",
+          "sha256": "5668e58cf3360a42244c3e70f2c37ac238c76f0e38fca6896582ec66e2c87f55",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/client_access.py",
+          "sha256": "260257f4a8251e32c6679376880b1c296cbbabbd0ba97317e141c807d929ce93",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/client_config.py",
+          "sha256": "00d107dc10e23d49e85a6526258e3142081639312bbca61ce57e6a8c1102771f",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/mcp_server.py",
+          "sha256": "eeed47ea3bdac6bdbc1fb162fbd0a1bb1a8d9f2191406373a8c01bdac0cec361",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/ai_access.py",
+          "sha256": "8c0b6e0104b17a20c1c5745f17039b55e7b9d0733c04f899869bef2b60610595",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_client_pairing.py",
+          "sha256": "628255bb9a7ee75dbdf431817cc21be8e158c753142608adc9e7102f0b9a4fb0",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_connection_deletion.py",
+          "sha256": "13ba744650ca3b8fcea453509b7ddc9305196e2f9470e1e2fc11095c26d84382",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "core",
+      "title": "Core背景与角色隔离",
+      "status": "implemented",
+      "summary": "外部AI按权限取得基础上下文，产品管家保持自己的身份。",
+      "usage": "在知识库配置核心资料；客户端通过初始化背景入口读取获准内容。",
+      "details": "背景加载与版本回退有记录；规划协作资料只属于相应外部角色，开发者和本地管家不得因此变成规划者。产品问题使用能力目录，不读取规划角色规则。工作区可选择核心背景文件并查看新会话启动指令；这是显式背景入口，不是完整历史。",
+      "limits": "背景不是全部记忆；原始对话不是确认画像。用户资料中的命令不产生产品工具权限。",
+      "verification": "Core与bootstrap代码可核对；产品管家只读边界由local_butler/web门禁实现。",
+      "keywords": [
+        "Core",
+        "核心资料",
+        "背景",
+        "初始化背景",
+        "角色",
+        "画像",
+        "协作规则"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/core_bootstrap.py",
+          "sha256": "438da10fb5cc8b3671be0ab5aa42aa5552d49d9b970d1fc8b9b44f2a2f01ec4f",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/context_retrieval.py",
+          "sha256": "44ebac11890b4c0421ed6ed25aee85655a87ccc222fe05371239926cfd93c249",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/core.py",
+          "sha256": "0c3dc7ac1e1ec1f45fceec67c74cf931b72ea773b472d8955d677cbff898d579",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/local_butler.py",
+          "sha256": "13fdc4dcd0d2c2aa102eeb761fd9d56743a2dfdb71d79b064831f4446b927ecc",
+          "basis": "implementation_inspected_20261001"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_core_bootstrap.py",
+          "sha256": "7632c3600d6dcc66de108b7282c26e16aad9de569aa1b62f0c6f3efb9dc5e26e",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "candidates",
+      "title": "整理建议与正式写入",
+      "status": "implemented",
+      "summary": "建议进入候选，预览差异、核对来源，再由Writer受控应用。",
+      "usage": "整理中心→待核对打开建议，检查目标和证据，审核后预览及应用。",
+      "details": "候选记录目标基线、版本化证据和实际写入回执；来源/目标变化阻止过期覆盖，幂等重试有边界。长期画像/规则/冲突依权限策略确认。",
+      "limits": "收到候选不表示已写入，来源存在也不证明语义正确。受保护派生的通用正式写路径仍有限制，不能绕成公开资料。",
+      "verification": "候选、Writer授权、竞态/过期基线测试和既往正式应用回读存在。",
+      "keywords": [
+        "候选",
+        "建议",
+        "审核",
+        "差异",
+        "预览",
+        "Writer",
+        "写入",
+        "待核对"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/organizer.py",
+          "sha256": "5c19fa5c113f1c82700efac32fe655d009c20c1f8757f3aeba592b28e2d72c07",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/production_writer.py",
+          "sha256": "aa86f0b6b54db503fe1514425d0726be7d88d72bce8cfc523e49ed3925095c85",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/writer_core.py",
+          "sha256": "264027c0bc09922a34b016c8804a7b10e3109dd6c81eb28735b1f7d8ec51b649",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/memory_pipeline.py",
+          "sha256": "da3669bd4dd95981dfa8a6d344ad03a62c56f6dce6bf8c93d595e6ad755d27b4",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_candidate_writer_authorization.py",
+          "sha256": "a1573bebd466cc78b3146ce73d4f9f5108bc5a1a7b1800bbfd23cc08c1877d4e",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "undo",
+      "title": "版本与撤销",
+      "status": "limited",
+      "summary": "已写入版本可核对并按条件撤销，保留后续用户修改。",
+      "usage": "在对应候选/写入记录中查看版本，检查撤销预览和结果。",
+      "details": "版本记录原基线与写入结果；撤销检测目标变化，不能默默覆盖后来编辑。Core背景也有独立版本入口。",
+      "limits": "单次写入撤销不是整库快照还原；多文件应用不承诺全局原子事务。",
+      "verification": "Writer与Core回退代码及定向授权/版本测试存在。",
+      "keywords": [
+        "撤销",
+        "版本",
+        "回退",
+        "undo",
+        "回滚"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/writer_core.py",
+          "sha256": "264027c0bc09922a34b016c8804a7b10e3109dd6c81eb28735b1f7d8ec51b649",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/production_writer.py",
+          "sha256": "aa86f0b6b54db503fe1514425d0726be7d88d72bce8cfc523e49ed3925095c85",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/core_bootstrap.py",
+          "sha256": "438da10fb5cc8b3671be0ab5aa42aa5552d49d9b970d1fc8b9b44f2a2f01ec4f",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_candidate_writer_authorization.py",
+          "sha256": "a1573bebd466cc78b3146ce73d4f9f5108bc5a1a7b1800bbfd23cc08c1877d4e",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "projects",
+      "title": "项目与跨对话关联",
+      "status": "limited",
+      "summary": "项目页提供状态和关联对话定位，跨对话整理走候选。",
+      "usage": "打开项目卡片，展开关联列表并进入真实档案。",
+      "details": "关联对话入口是定位；项目整理需读取来源、目标基线，提交有依据的候选再按权限应用。",
+      "limits": "关联成功不等于项目状态已更新；历史描述不能代替实时项目结论。没有处理覆盖应说明时间和缺口。",
+      "verification": "项目关联入口有生产点击与档案回读验收；跨对话候选协议可核对代码。",
+      "keywords": [
+        "项目",
+        "关联",
+        "跨对话",
+        "淘宝",
+        "项目状态",
+        "定位"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/memory_control.py",
+          "sha256": "7f44bec670e966658b3814560d54b80dd936b792bf5b2c779b5c3c997344c883",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/continuous_organization.py",
+          "sha256": "09ffc8d81bc6f6f513e35c239dd28eae4dd69d7b679f859739f1f56a8736c66a",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/memory_pipeline.py",
+          "sha256": "da3669bd4dd95981dfa8a6d344ad03a62c56f6dce6bf8c93d595e6ad755d27b4",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": []
+    },
+    {
+      "id": "continuous",
+      "title": "外部持续整理与覆盖",
+      "status": "limited",
+      "summary": "外部AI分批完整读取获准资料，按版本记录处理和续接。",
+      "usage": "主人配置明确范围，外部客户端领取任务，连续读完来源及目标后提交。",
+      "details": "固定清单与覆盖游标区分未读/已读/处理/失败/过期；恢复重新核对权限和版本，已写目标保留，不把活跃新增无限并入旧批。",
+      "limits": "进度是实际递送/回执，不证明模型理解正确；多目标非原子，冲突与未知留待核对。不开启未经授权全库整理。",
+      "verification": "持续整理和组织协议有隔离/实际试行与覆盖核验；不能据历史批次宣称全库完成。",
+      "keywords": [
+        "持续整理",
+        "外部整理",
+        "覆盖",
+        "游标",
+        "断点",
+        "恢复",
+        "organization"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/continuous_organization.py",
+          "sha256": "09ffc8d81bc6f6f513e35c239dd28eae4dd69d7b679f859739f1f56a8736c66a",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/organizer.py",
+          "sha256": "5c19fa5c113f1c82700efac32fe655d009c20c1f8757f3aeba592b28e2d72c07",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/organization_review.py",
+          "sha256": "c727be8b34d9820ab98f2dcfc81098ce1d6405c8e69317aad9498129d7e26929",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_continuous_organization.py",
+          "sha256": "a7a6d2876c3a0288e694a91c143e3f6456818c96fe78dfdf15826d011304189c",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "wiki",
+      "title": "知识Wiki与每日任务",
+      "status": "limited",
+      "summary": "Wiki沿既有知识目录整理，记录来源、批次和版本依据。",
+      "usage": "知识Wiki页检查批次、待处理、证据与暂停/继续；每日任务需实际绑定调度。",
+      "details": "固定批次来源边界、分页读取、候选及Writer共用主链；daily run有成功/失败回执，恢复不冒充计划执行成功，新增资料进入下一批。页面等待AI或中断表示任务尚未完成，应检查外部客户端和实际回执，不能称自动成功。",
+      "limits": "Wiki启动不自动安装每日调度；读完不等于正式写完。来源变化要复核，历史失败保留，未补跑任务不能宣称完成。",
+      "verification": "Wiki每日中断恢复与证据复核代码/既往定向验收存在；当前调度另查运行事实。",
+      "keywords": [
+        "Wiki",
+        "每日",
+        "调度",
+        "批次",
+        "阅读",
+        "证据",
+        "重核对"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/knowledge_wiki.py",
+          "sha256": "45c7cb1f2555c6b2f98164fcd126f807917110e4ddb47661ed55c138701ca928",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/wiki_daily_runs.py",
+          "sha256": "0b079746e2d22ab2c51634d7f3b313d440d42892b0f93fe15ff26a5a786f2c9e",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/wiki_reading.py",
+          "sha256": "4fa0fc039c235710c986815f85956319e1016b77e8154faed8c739a8e8436d7c",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/wiki_reverification.py",
+          "sha256": "2e8f7ec039764e33eeccf25114d998b133c183f660695ca1e1b9c3701f4037ed",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/wiki_history.py",
+          "sha256": "be40fb6431119b0c7e49ee354fc6e214b870654dd3df189bbb949cb6bd6f1522",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_wiki_daily_runs.py",
+          "sha256": "429f18540a412b26c806c4ee71f3d2d2451381f11d20764692570af2193e8729",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_wiki_history_snapshots.py",
+          "sha256": "54c7519260bb7c7f97d9f89d8705fcd8366ea5da44832bd2de5d08f791fff8ac",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "butler",
+      "title": "管家问答与授权工具",
+      "status": "limited",
+      "summary": "管家可选择本机模型、外部兼容服务或本机 Hermes；各接入的工具与上下文能力分别标明。",
+      "usage": "管家设置中选择模型、专用密钥、能力和外发范围；本轮开启工具后逐项设置禁止、确认或允许。",
+      "details": "独立服务配置、DeepSeek原始思考回放、工具回执、确认窗口、取消、对话恢复、Writer候选写入与撤销；指定文件夹有预览与恢复记录，联网单独开启。",
+      "limits": "本候选外部兼容 API 使用本对话同一接入配置下最近最多8对已完成问答，按容量整对省略并提示；工作区或工具派生历史、旧本地与其他配置、全库和画像不自动外发。图片需确认支持的模型，应用限额单张8MiB、每轮4张合计16MiB；每会话未发送草稿同额，可刷新恢复，24小时仅清理未绑定原件，已发送原图保留。Hermes仅文字问答、不执行界渡工具。受保护正文不能经本链路外发。",
+      "verification": "外部兼容工具链有合成 HTTP 验收；本机 Hermes 的 DeepSeek 配置已通过真实连续问答、重启恢复、流式取消与再问。不能外推为所有服务商已实测。",
+      "keywords": [
+        "管家",
+        "思考",
+        "生成",
+        "额度",
+        "最大",
+        "对话",
+        "本地模型",
+        "中文概述",
+        "复制",
+        "草稿"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/local_butler.py",
+          "sha256": "13fdc4dcd0d2c2aa102eeb761fd9d56743a2dfdb71d79b064831f4446b927ecc",
+          "basis": "implementation_inspected_20261001"
+        },
+        {
+          "path": "knowledge_bridge/butler_provider.py",
+          "sha256": "a043a0e037a8b6dfa14c709949f2c65a42cb874fd181c42eb529885ed830456e",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/butler_tools.py",
+          "sha256": "91fc9b2514c154aab7362c503760f31e8da80ba87cd0c5cbaad218182f662cc8",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/bounded_files.py",
+          "sha256": "8ba7b6a66d92b39cbf96cda258f5c2e062cb7688b0b464696afb52c7fa7756cf",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/butler_import.py",
+          "sha256": "341549c31497d0663682fb8d2bc5882e32c85868d10afa9932cc77c041c924bd",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/butler_network.py",
+          "sha256": "11ee993cef52f1ebe26c31c5b51e75de6987732f09992c1ef65c894a9d30540c",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_butler_generation.py",
+          "sha256": "f2fd927934756d585596c55a0c84354045dc9666128d4bf2d2acc2a23c84ce83",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_local_butler.py",
+          "sha256": "ca16615706b3ecdfac597ca0ca185cba74ed189990aade1980b67b2f066a53b5",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_butler_product_repair.py",
+          "sha256": "34e30320ffcd4aba096eedff7efda1f97ee8203546347f5255c43a20350e1185",
+          "kind": "13_targeted_tests_passed_2026-09-30"
+        }
+      ]
+    },
+    {
+      "id": "protection",
+      "title": "可选保护与普通模式",
+      "status": "implemented",
+      "summary": "普通文件体验默认可用，保护层按主人选择启用。",
+      "usage": "设置→需要时设置密码保护，检查当前模式；启用后按设置解锁或锁定。",
+      "details": "受控存储真实加密和完整性校验；普通/受保护在逻辑树标识。已有保护需检查恢复材料、会话授权和自动锁定；保护关闭有恢复流程。",
+      "limits": "同文件系统权限可直接读公开文件；明文导出和外部原件不受保护。不能保证管理员或控制解密进程者无法取得内容，不自动迁移全部资料。",
+      "verification": "保护/设备访问/可选口令及关闭流程代码和既往受控验收存在。",
+      "keywords": [
+        "保护",
+        "加密",
+        "普通模式",
+        "口令",
+        "密码",
+        "解锁",
+        "锁定",
+        "设备"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/protected_storage.py",
+          "sha256": "08d341c26ae7f8d25ce54e78a339c3e9fa251640433424aef472c2e62eb84c07",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/protection_control.py",
+          "sha256": "92376e641128252a977cc720d7643708e3757c4bddfd2ea49e2aec4fdbea0bcc",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/device_keys.py",
+          "sha256": "629e0645fd4bdf5f78ddaf3b3b05d4bf8b570e4f82dee4fb58f44e09e695aef7",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/protection_exit.py",
+          "sha256": "ecfd620361631f027c8df8334fc3e39815083910ad0a38042224a32b98512d1f",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_protection_control.py",
+          "sha256": "c16e4fe6c29f7b00da9bb7140d6d8d693912d8a0d4868b353083926be42a086a",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_protection_exit.py",
+          "sha256": "de507705fa2c13283388e6d29a6960b49afd804c578ed8fa095cadb86dc779aa",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "export",
+      "title": "授权原件读取与导出边界",
+      "status": "limited",
+      "summary": "授权后可读取原件和正文；退出保护将受保护资料还原为本机普通文件。",
+      "usage": "知识对象打开原件；设置中授权退出保护前核对密码、同名冲突及恢复记录。",
+      "details": "退出保护先导出并校验受保护对象，再按原逻辑路径落为本机普通文件，保留旧密文备份和恢复记录；同路径不同内容阻止覆盖。",
+      "limits": "这是将仍存在的受保护对象转为本机普通文件，不是恢复已删除资料或上传到公共服务。客户端阅读不等于批量导出授权，完整整库快照还原仍未完成。",
+      "verification": "knowledge_objects.exit_protection_to_open校验密码/对象SHA/目标冲突并记录退出事务，protection_control.disable_after_export保留旧密文；test_protection_exit.py为已有依据。",
+      "keywords": [
+        "导出",
+        "下载",
+        "原件读取",
+        "明文",
+        "恢复资料"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/object_reader.py",
+          "sha256": "44ffc3390ca0a2ce374e30b781c7000f669002bbd4400b9859b1b6638aa8bb49",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/protected_storage.py",
+          "sha256": "08d341c26ae7f8d25ce54e78a339c3e9fa251640433424aef472c2e62eb84c07",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/protection_exit.py",
+          "sha256": "ecfd620361631f027c8df8334fc3e39815083910ad0a38042224a32b98512d1f",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/protection_control.py",
+          "sha256": "92376e641128252a977cc720d7643708e3757c4bddfd2ea49e2aec4fdbea0bcc",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/knowledge_objects.py",
+          "sha256": "6b2ada443a19a1ca0c3e3363c06ff7b20b3ae2b126d5d71a698c1e8c31023cbe",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_object_reading.py",
+          "sha256": "c793ca975c50e55486445604010af4059cb50b58c92d229a057b10bfed4a8fda",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_protection_exit.py",
+          "sha256": "de507705fa2c13283388e6d29a6960b49afd804c578ed8fa095cadb86dc779aa",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "resources",
+      "title": "后台索引与资源让路",
+      "status": "limited",
+      "summary": "增量索引有进度与续算，前台聊天时后台协作让路。",
+      "usage": "查看索引任务和错误；需要时手动重建或取消，查询降级理由。",
+      "details": "每批保存进度，时间预算/源变化保留续接；完整代校验后发布。管家串行本机推理、闲置自动释放所属模型。",
+      "limits": "索引未全部追平时不能宣称全库fresh；让路不保证所有硬件负载或固定耗时，不自动改变GPU/model参数。",
+      "verification": "既往生产让路/续算/闲置释放观察与索引一致性代码可核对。",
+      "keywords": [
+        "后台",
+        "索引",
+        "GPU",
+        "资源",
+        "让路",
+        "性能",
+        "闲置",
+        "降级",
+        "重建"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/evidence_updates.py",
+          "sha256": "acd7068259cef6e4acdb82e91d84006cb05f0305387172c23eb5ea059d64bdfe",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/evidence_index.py",
+          "sha256": "7f2f355b26e770aaebed5638479183a67839fd820142c843afdf2618b5219e69",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/interactive_priority.py",
+          "sha256": "222bdd7ed79536a2ea36bc222b5fdb5f6fdf698c94d84af4572415e6cf2da4cb",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/index_gate.py",
+          "sha256": "313fc2772411a791dc4a360bd04bef12c7cc5864fc984515e45ab91ab245cdbc",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/butler_runtime.py",
+          "sha256": "e7485948b723dd0c3276032d9c5013558e1e36b650942ea21aa6e9a7fb3c3cfe",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_active_index_generation.py",
+          "sha256": "c1e3461e9f824c0c6161c5080c56d8c897f5ebc719b48a3baf632edf9ebd56fc",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "package",
+      "title": "本地独立包与启动生命周期",
+      "status": "limited",
+      "summary": "程序、运行时和控制资料集中在.jiedu，启动器绑定所属进程。",
+      "usage": "使用现有界渡启动入口；设置中检查生命周期状态和错误。",
+      "details": "包标记定位工作区与组件，普通文件夹不依赖Obsidian/Git；已有自包含包和Windows本机运行时。启动/停止核验进程身份。",
+      "limits": "安装器候选已生成，本机隔离安装、首次启动、重复安装、签名程序更新与卸载保留资料通过；本候选全新 Windows 验收和公开发布渠道仍待完成。",
+      "verification": "原生 WebView、关闭隐藏、托盘和重复启动复用后台已实测；公开发布前继续核对最终候选。",
+      "keywords": [
+        "安装",
+        "启动",
+        "独立包",
+        "生命周期",
+        "运行时",
+        "Obsidian",
+        "Git"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/package_layout.py",
+          "sha256": "51fe9555389711248d127e5655206eac964891c4645f5dc8bf5f0066088eb6b4",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/portable_entry.py",
+          "sha256": "995da6ac49d9c20e0c006cfcd68f5b31803881c4cd79ca864be237aaf6f738a8",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/desktop_launcher.py",
+          "sha256": "4ffb53712b3a05660f504a4eefc922d3904a041f00e3b6aaa82e338aa95d27be",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/bridge_launcher.py",
+          "sha256": "1b78a3557fc490fd48888ede48dea4701b6e267b885a191edca3a0416e2172b6",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/process_runtime.py",
+          "sha256": "684bb2dab8eca13709a4b509488bef01b68382a6dac985053ecd6f499ccb039b",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_portable_package.py",
+          "sha256": "8599e165ab6e7b4caacf974b5614ae9eecd951a6d618fba075938f5d90d408c5",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_launcher_runtime.py",
+          "sha256": "836aeeb7177ff418d63d96ef5254998867c54e576042a5df28499f35829b91af",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "unfinished",
+      "title": "明确未完成的能力",
+      "status": "unfinished",
+      "summary": "整体快照恢复、任意格式无损转换、所有智能体历史采集和全库无人值守整理仍未完成；消费者发布尚有验收门槛。",
+      "usage": "遇到这些需求先核对范围，保留原件和现有恢复记录。",
+      "details": "当前已有原件保全、Writer单次撤销、局部迁移和组件包，不把它们当作通用整库恢复。未知来源、旧记录缺证及未补跑整理维持缺口。",
+      "limits": "没有承诺全历史采集、全库整理完成、绝对安全或模型回答必然正确。产品目标只是计划依据，不能作为已实现验收。",
+      "verification": "当前阶段明确未完成边界，结合现有恢复/转换/包代码；无完整能力验收依据。",
+      "keywords": [
+        "未完成",
+        "计划",
+        "限制",
+        "快照",
+        "恢复",
+        "任意格式",
+        "通用安装",
+        "全部",
+        "成熟"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/wiki_snapshots.py",
+          "sha256": "ec32b67bc2d41d87bcaf103f6ee8ba10607b9aff7227664443b39f4f5d4b893a",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/document_converter.py",
+          "sha256": "8bcef4cdcdd346f7cc1c0715d525e8c2f6ee1bc6d4c51fa92cde3f2c270fc7f7",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/portable_entry.py",
+          "sha256": "995da6ac49d9c20e0c006cfcd68f5b31803881c4cd79ca864be237aaf6f738a8",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": []
+    },
+    {
+      "id": "packages",
+      "title": "外部整理包与结果导入",
+      "status": "limited",
+      "summary": "选择会话导出整理包，外部处理后导入结果到候选。",
+      "usage": "整理中心→外部整理包：选范围、导出、查看或下载；收到结果后显式导入。",
+      "details": "包保存来源版本及所选消息范围，结果检查引用、目标和候选状态；暂缓与待处理分别记录，重复已处理版本可核对。",
+      "limits": "等待外部处理不是已经提炼；导入成功不代表正式写入，源变化、无效引用与失败明确保留。导出会让所选内容离开本机边界，由用户决定去向。",
+      "verification": "实现代码与test_manual_extraction.py可核对；本次未重跑真实外部处理。",
+      "keywords": [
+        "整理包",
+        "导出包",
+        "外部处理",
+        "手动提炼",
+        "结果导入"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/manual_extraction.py",
+          "sha256": "9ddf1225fc27c806d1245c108b44c4b1458016a5828ab5dc964e19aa26975858",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/memory_pipeline.py",
+          "sha256": "da3669bd4dd95981dfa8a6d344ad03a62c56f6dce6bf8c93d595e6ad755d27b4",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_manual_extraction.py",
+          "sha256": "9aab4248f4aeb6f1cdd694ad6f5bb3eab7bcc29a736c196d5f4cff38690ef6cc",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "provider",
+      "title": "可选外部模型服务与桥接",
+      "status": "limited",
+      "summary": "管家可选择独立配置的外部兼容模型；旧桥接接口保留各自配置。",
+      "usage": "既有模型服务配置/桥接入口按需设置和测试；没有配置不代表Codex日常整理未启用。",
+      "details": "外部OpenAI-compatible调用会发送本轮问题、获准检索上下文；自动提炼按所选会话包发送材料。凭据按引用存储，只有显式使用该链才发送；本地管家不调用它。",
+      "limits": "模型端点、密钥和能力不互相复用。不同供应商的思考参数按协议选择；未观察探测结果不能声称支持。网页和Brave搜索独立配置且默认关闭。",
+      "verification": "ai_chat_bridge/automatic_extraction/provider_config实现可核对，test_ai_chat_bridge.py与provider配置测试是已有依据；不宣称当前外部服务在线验收。",
+      "keywords": [
+        "Provider",
+        "外部模型",
+        "服务配置",
+        "API",
+        "OpenAI-compatible",
+        "桥接",
+        "直接调用",
+        "自动提炼"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/ai_chat_bridge.py",
+          "sha256": "6b36a4355999ae8afcfd1f543cabdc2ca00518f44ff375de709ea2a650ef8889",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/automatic_extraction.py",
+          "sha256": "74ab629381d9d3d4560fad22990ce23cec7709c684b9338e01355a747fb417dd",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/provider_config.py",
+          "sha256": "2d56c90ae1c09ab7920b8fafbd2403f878261c116a42e0d7d6a3aeaea28894ef",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/chatgpt_adapter.py",
+          "sha256": "a6b13518469d403765bbe2ccb8b93d78e691d8fba4bd3eee86c6a2dec9be6e3b",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_ai_chat_bridge.py",
+          "sha256": "8796fec1aca22a89482c6be6fcdbd64995f24ed09552d414cdac2d70ad748060",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_ai_chat_provider_config.py",
+          "sha256": "6c64180b6900eb340b9ea3d218410fdf5a67988cae70deccebb73b79fcfac914",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "analysis",
+      "title": "兼容知识分析接口",
+      "status": "limited",
+      "summary": "保留向量空间、相似片段和关系图分析接口。",
+      "usage": "这是兼容分析能力，当前主导航不提供完整分析工作流；需要时核对现有入口与索引。",
+      "details": "正式知识向量投影缺失时明确返回未生成；生成要求Owner确认；相似度只用于定位，关系图基于已有数据。",
+      "limits": "接口存在不代表当前投影可用或用户入口已验收；相似度和图连线不能证明语义事实。不得把它们计作成熟主流程。",
+      "verification": "web.py/core.py实现存在；本次未做生产投影/图谱完整验收。",
+      "keywords": [
+        "图谱",
+        "关系图",
+        "向量空间",
+        "可视化",
+        "相似片段",
+        "投影"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/web.py",
+          "sha256": "7595ee928dcd63f2688c8b17ad89cb66f552764d3eab6b735ca8b2da526299a7",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/core.py",
+          "sha256": "0c3dc7ac1e1ec1f45fceec67c74cf931b72ea773b472d8955d677cbff898d579",
+          "basis": "implementation_inspected"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_compatibility_search.py",
+          "sha256": "7e72a49e2a375509e2f4b3747318752d440fc77d38aaf31b521495349b9e1302",
+          "kind": "existing_test_not_reexecuted_by_catalog"
+        }
+      ]
+    },
+    {
+      "id": "hermes_chat",
+      "title": "通过本机 Hermes 连续问答",
+      "status": "limited",
+      "summary": "管家可选择本机已安装并配置模型的 Hermes，复用其软件运行环境。",
+      "usage": "管家模型设置 → Hermes → 检测并使用；之后在管家中发送问题。",
+      "details": "界渡保留自己的对话。最近同一配置下最多八轮已完成问答、合计最多16KB历史随本轮提供；服务重启后可继续。支持流式输出和取消。公开产品能力说明按问题提供给模型。",
+      "limits": "当前仅问答，不执行界渡工具、不自动读取知识库、不继承原 Hermes 会话和私人记忆。思考与输出由 Hermes 管理。已实测 DeepSeek 配置；其他兼容服务尚未逐家实测。自定义服务地址暂不支持。使用会消耗 Hermes 所配置服务的额度。",
+      "verification": "本轮真实软件调用已通过首轮、重启后连续问答、输出中取消、取消后再问；原 Hermes 配置只读。",
+      "keywords": [
+        "Hermes",
+        "本机软件",
+        "连续问答",
+        "代号",
+        "记住上一轮"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/hermes_client.py",
+          "sha256": "3a19cfc92f4af052d20752ed063ca3731148d665953d208f22a4028849d27449",
+          "basis": "candidate_implementation"
+        },
+        {
+          "path": "knowledge_bridge/local_butler.py",
+          "sha256": "13fdc4dcd0d2c2aa102eeb761fd9d56743a2dfdb71d79b064831f4446b927ecc",
+          "basis": "candidate_implementation"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_hermes_bridge.py",
+          "sha256": "6890a86e7f88d674b25b02ef60c22813e58d4cda016098ce8ee396387ae3f33b",
+          "kind": "test_source_not_full_coverage"
+        }
+      ]
+    },
+    {
+      "id": "software_update",
+      "title": "桌面安装与检查更新",
+      "status": "limited",
+      "summary": "候选安装器带独立 Python 运行环境；设置页可主动检查签名更新。",
+      "usage": "运行 Windows x64 安装器，选择专用安装目录；首次启动选择知识工作区。设置 → 关于界渡与更新 → 检查更新。",
+      "details": "安装器无需预装 Python/Git；缺少 WebView2 时调用微软安装入口。程序更新先验证发布信息签名、有效期、版本和文件哈希，写入失败可回退。运行环境依赖变化需完整安装器。",
+      "limits": "当前公开更新渠道尚未发布，不能宣称已上线；候选安装器无商业代码签名。新安装器的全新 Windows 验收仍待完成，旧源码版本的虚拟机验收不能替代本版本。安装器不内置 OCR、语义模型或本地聊天模型。",
+      "verification": "本机隔离安装、无旧配置首次启动、重复安装保留资料、签名程序更新重启、卸载保留资料和进度已通过；新候选全新 Windows 与真实公网更新发布未验收。",
+      "keywords": [
+        "安装器",
+        "软件更新",
+        "检查更新",
+        "升级",
+        "卸载"
+      ],
+      "evidence": [
+        {
+          "path": "knowledge_bridge/online_update.py",
+          "sha256": "ef4bb26de2539e614c6a76e04995d7d6a9f1b55cfb2aabba2be6e0a751cdc94f",
+          "basis": "candidate_implementation"
+        },
+        {
+          "path": "knowledge_bridge/desktop_update.py",
+          "sha256": "5f92471045eff0d82604701de3cf6f4e779588919ff882821f06a6a5444037d4",
+          "basis": "candidate_implementation"
+        },
+        {
+          "path": "desktop/installer.iss",
+          "sha256": "250d3b6629dcd0fc7735db20e74b5f8841dfab5912d65e1a7832855a7e6e20b3",
+          "basis": "candidate_implementation"
+        }
+      ],
+      "verification_records": [
+        {
+          "path": "tests/test_online_update.py",
+          "sha256": "63e81e707f8c38e560ec6ee2f054a46dd4ee0166af8a3a7c2724937bafa1a95c",
+          "kind": "test_source_not_full_coverage"
+        },
+        {
+          "path": "tests/test_desktop_update.py",
+          "sha256": "eb07fea8f54471b099fb42f6c8924cad574e74a1ecc5b15a4e3493db97db42d9",
+          "kind": "test_source_not_full_coverage"
+        }
+      ]
+    }
+  ]
+}

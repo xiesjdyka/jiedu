@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#151718">
+  <title>界渡 · 私人知识域</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/jiedu-32.png">
+  <link rel="stylesheet" href="/static/style.css?v=20261017-neutral-controls">
+  <link rel="stylesheet" href="/static/design-system.css?v=20261017-neutral-controls">
+  <link rel="stylesheet" href="/static/butler.css?v=20261017-neutral-controls">
+  <script defer src="/static/vendor/echarts-5.6.0.min.js"></script>
+</head>
+<body>
+  <div id="testEnvironmentBanner" class="test-environment-banner" role="status" hidden>隔离验收环境 · 数据与配置独立于正式工作区</div>
+  <div id="brandSequence" class="brand-sequence" aria-label="界渡正在建立跨域连接">
+    <div class="sequence-space" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="sequence-domain domain-private"><span>私人知识域</span><i></i><i></i><i></i><i></i><i></i><i></i><b></b><b></b></div>
+    <div class="sequence-gateway"><div class="gateway-orbits" aria-hidden="true"><i></i><i></i><i></i></div><b class="sequence-brand">界渡<img src="/static/brand/jiedu-256.png" width="48" height="48" alt="" aria-hidden="true"></b><span id="sequenceStatus">私人知识域与外部智能域</span><button type="button" id="enterJiedu" class="secondary">进入工作区</button></div>
+    <div class="sequence-domain domain-agent"><span>外部智能域</span><i></i><i></i><i></i><i></i><i></i><i></i><b></b><b></b></div>
+    <div class="sequence-flow flow-out" aria-hidden="true"><i></i><i></i><i></i></div><div class="sequence-flow flow-in" aria-hidden="true"><i></i><i></i></div>
+    <nav class="sequence-links" aria-label="界渡说明入口">
+      <button id="openAboutJiedu" type="button">了解界渡</button>
+      <button id="openJieduGuide" type="button">使用指南</button>
+    </nav>
+  </div>
+  <section id="aboutJiedu" class="brand-info-page" aria-labelledby="aboutJieduTitle" hidden>
+    <header class="brand-info-header"><button class="brand-info-back" type="button" data-close-brand-info>返回开屏</button><span>界渡 · 产品说明</span></header>
+    <main class="brand-info-main">
+      <div class="brand-info-hero"><small>BOUNDARY FERRY</small><h1 id="aboutJieduTitle">了解界渡</h1><p>界渡连接本地知识与外部AI，让不同客户端在知识库主人（最终确认人）的授权下，共享同一套可追溯、可控制的长期知识。</p></div>
+      <div class="brand-info-grid">
+        <article><span>01</span><h2>为什么叫界渡</h2><p>“界”是私有知识与外部模型之间的安全边界，“渡”是通过受控接口完成知识读取、指令传递与经验回流。</p></article>
+        <article><span>02</span><h2>两个知识域</h2><p>私人知识域是用户控制的本地Markdown文件夹，保存核心背景、项目状态、正式知识与原始证据；外部智能域是Hermes、Codex及未来接入的其他AI客户端。</p></article>
+        <article><span>03</span><h2>界渡的职责</h2><p>界渡不替AI思考，也不替知识库主人决策。它负责权限、检索、证据追溯、会话归档和受控写入，让知识跨域而不失去主权。</p></article>
+        <article><span>04</span><h2>通信接口与核心背景</h2><p>MCP是AI与界渡通信的标准接口；Core是“核心背景”，由用户选定的长期稳定文件完整组合，新AI优先读取它来了解用户与协作原则。</p></article>
+        <article><span>05</span><h2>状态、原始会话与正式知识</h2><p>项目状态回答“现在做到哪里”；原始会话保存逐字证据；待确认知识经过差异预览、最终确认和正式写入后才成为长期知识，三个层次互不冒充。</p></article>
+        <article><span>06</span><h2>知识如何回流</h2><p>AI先读取核心背景，再按需读取项目状态与检索历史；新经验先归档到原始会话，经知识提炼产生建议，只有主人审核确认后才进入正式知识。</p></article>
+        <article><span>07</span><h2>解决什么问题</h2><p>它解决传统聊天记忆分散、跨会话丢失、证据不可追溯、多个 AI 各自孤立，以及自动写入缺少控制的问题。</p></article>
+        <article><span>08</span><h2>适用场景</h2><p>适合长期项目协作、个人创业、产品与工程决策、跨 AI 接力、历史复盘，以及需要本地数据边界的个人知识工作。</p></article>
+      </div>
+      <section class="brand-info-flow"><b>私人知识域</b><i></i><strong>界渡</strong><i></i><b>外部智能域</b><p>多个AI客户端可以更换，用户掌握的知识底座保持一致；最终读取与写入权限始终由知识库主人决定。</p></section>
+    </main>
+  </section>
+  <section id="jieduGuide" class="brand-info-page" aria-labelledby="jieduGuideTitle" hidden>
+    <header class="brand-info-header"><button class="brand-info-back" type="button" data-close-brand-info>返回开屏</button><span>界渡 · 使用说明</span></header>
+    <main class="brand-info-main guide-main">
+      <div class="brand-info-hero"><small>OPERATING GUIDE</small><h1 id="jieduGuideTitle">使用指南</h1><p>从保存资料、查找出处到确认知识，按你的起点开始。</p></div>
+      <div class="guide-steps">
+        <section><em>01</em><div><h2>从你的资料开始</h2><p>还没有资料，先选一个保存位置；已有文件或 Obsidian，可直接连接原目录，也可将外部资料导入当前知识库。</p><button type="button" class="copy-button" data-start-path="new">还没有资料</button> <button type="button" class="copy-button" data-start-path="existing">已有文件或 Obsidian</button></div></section>
+        <section><em>02</em><div><h2>资料在 AI 聊天里</h2><p>先看该来源是否支持自动采集。连接成功只表示能使用知识；“对话档案”中出现正文才表示已保存。未支持的聊天可先从原产品导出，再导入文件。</p><button type="button" class="copy-button" data-start-path="chats">查看 AI 来源</button> <button type="button" class="copy-button" data-guide-page="archives">查看已保存对话</button></div></section>
+        <section><em>03</em><div><h2>保存第一份资料</h2><p>选择外部文件夹，扫描后核对保存位置，再确认导入。原文件保留；内容更正与重复信息可在整理时核对。</p><button type="button" class="copy-button" data-guide-page="import">导入资料</button></div></section>
+        <section><em>04</em><div><h2>提问并查看出处</h2><p>选择正式知识、原始证据或待确认资料，输入问题。在所选范围内查找，打开来源核对前后文。</p><button type="button" class="copy-button" data-guide-page="search">搜索资料</button></div></section>
+        <section><em>05</em><div><h2>整理与保存知识</h2><p>进入整理中心选择当前资料，交给外部 AI 整理；返回的是建议。核对正文和来源后，点击“确认保存到知识页”。来源或知识页已变化时先重新整理，原始资料继续保留。</p><button type="button" class="copy-button" data-guide-page="memory">打开整理中心</button></div></section>
+        <section><em>06</em><div><h2>查看进度或处理问题</h2><p>聊天是否保存看“对话档案”，整理建议看“整理中心”；连接和最近保存结果看“AI连接”。服务问题可在设置中查看。</p><button type="button" class="copy-button" data-guide-page="access">AI 连接</button> <button type="button" class="copy-button" data-guide-page="protection">打开设置</button></div></section>
+      </div>
+      <details class="guide-advanced"><summary>高级说明</summary><p>Embedding是把文本转换成可比较的语义向量；LanceDB是本地向量索引，用于按语义查找知识；UMAP把真实向量投影为二维地图。它们由界渡维护，日常无需手动重建。SHA-256只检测文件变化与完整性，不能阻止其他进程读取明文文件；严格隔离依赖客户端沙箱或操作系统权限。</p></details>
+    </main>
+  </section>
+  <aside class="sidebar">
+    <section class="identity" aria-label="用户身份">
+      <div class="system-mark" role="img" aria-label="界渡"><img src="/static/brand/jiedu-256.png" width="40" height="40" alt=""></div>
+      <button class="identity-copy" id="editProfile" title="编辑用户名">
+        <strong id="displayName">我</strong>
+        <small>个人知识财富系统</small>
+      </button>
+      <button class="icon-button identity-edit" id="editProfileIcon" title="编辑身份" aria-label="编辑身份">···</button>
+    </section>
+    <div class="side-rule"><span>跨域知识基础设施</span></div>
+    <nav aria-label="控制台导航" class="task-navigation">
+      <span class="nav-group">日常任务</span>
+      <button class="active" data-page="overview"><i></i><span>首页</span></button>
+      <button data-page="butler"><i></i><span>管家</span></button>
+      <button data-page="files"><i></i><span>知识</span></button>
+      <button data-page="archives"><i></i><span>对话档案</span></button>
+      <button data-page="memory"><i></i><span>整理中心</span></button>
+      <button data-page="wiki"><i></i><span>知识 Wiki</span></button>
+      <button data-page="access"><i></i><span>AI连接</span></button>
+      <span class="nav-group nav-settings-label">系统</span>
+      <button data-page="protection"><i></i><span>设置</span></button>
+    </nav>
+    <footer><span class="pulse-dot"></span><div><b>边界受控</b><small>资料保存在本机</small></div></footer>
+  </aside>
+
+  <main>
+
+    <header class="topbar">
+      <div class="page-heading"><span class="eyebrow" id="eyebrow">Boundary Observatory</span><h1 id="title">界渡状态</h1><p id="subtitle">观察私人知识域与外部智能之间的真实连接</p></div>
+      <div class="system-status"><span class="pulse-dot"></span><div><small>界渡链路</small><b id="status">正在连接</b></div></div>
+    </header>
+
+    <section id="butler" class="page">
+      <div class="butler-layout">
+        <button id="butlerDrawerBackdrop" class="butler-drawer-backdrop" type="button" aria-label="关闭会话侧栏" hidden></button>
+        <aside id="butlerSidebar" class="butler-history" aria-label="管家会话">
+          <div class="butler-brand"><img class="butler-brand-logo" src="/static/brand/jiedu-32.png" width="32" height="32" alt=""><strong>界渡</strong><span>智能管家</span><button id="butlerCollapseSidebar" class="butler-icon-button butler-desktop-only" type="button" title="收起侧栏" aria-label="收起侧栏" data-butler-icon="bars-3"></button><button id="butlerCloseSidebar" class="butler-icon-button butler-mobile-only" type="button" aria-label="关闭会话侧栏" data-butler-icon="x-mark"></button></div>
+          <button id="butlerNew" class="butler-new" type="button"><span class="butler-icon" data-butler-icon="pencil-square"></span>新对话</button>
+          <nav id="butlerSessions" aria-label="最近对话"></nav>
+          <div class="butler-sidebar-footer"><button id="butlerProductHelp" type="button"><span class="butler-icon" data-butler-icon="book-open"></span>界渡能做什么</button><button id="butlerTrash" type="button"><span class="butler-icon" data-butler-icon="clock"></span>已归档对话</button><button id="butlerBack" type="button"><span class="butler-icon" data-butler-icon="arrow-left"></span>返回知识工作区</button></div>
+        </aside>
+        <div class="butler-chat is-empty">
+          <header class="butler-topbar"><button id="butlerMenuButton" class="butler-icon-button" type="button" aria-label="打开会话侧栏" aria-controls="butlerSidebar" aria-expanded="false" data-butler-icon="bars-3"></button><h2 id="butlerConversationTitle">新对话</h2><button id="butlerSettingsButton" class="butler-text-button" type="button" aria-label="对话设置">设置</button></header>
+          <div class="butler-welcome"><div class="butler-welcome-title"><img class="butler-welcome-logo" src="/static/brand/jiedu-256.png" width="40" height="40" alt=""><h3>今天想聊些什么？</h3></div><p>从一句提问开始。</p></div><div id="butlerMessages" class="butler-messages" aria-label="对话内容"><div id="butlerReading" class="butler-reading"><div class="butler-empty"><h3>今天想聊些什么？</h3><p>从一句提问开始，把想法与知识连起来。</p></div></div></div>
+          <div class="butler-bottom"><button id="butlerLatest" class="butler-latest" type="button" aria-label="回到最新消息" hidden data-butler-icon="arrow-down"></button>
+            <div id="butlerRunStatus" class="butler-run-status" hidden><span id="butlerProgress" role="status" aria-live="polite">准备就绪</span><span id="butlerElapsed"></span></div><div id="butlerRecoveryBar" class="butler-recovery-bar" hidden><span id="butlerRecoveryNote"></span><button id="butlerAnswerDirectly" type="button">跳过思考并回答</button></div>
+            <form id="butlerForm"><div id="butlerAttachmentDrafts" class="butler-attachment-drafts" aria-label="待发送图片" aria-live="polite" hidden></div><label for="butlerQuestion" class="butler-sr-only">向管家提问</label><textarea id="butlerQuestion" rows="2" maxlength="524288" placeholder="给界渡发送消息"></textarea>
+              <div class="butler-compose-actions"><div class="butler-compose-options"><button type="button" id="butlerThinking" class="butler-pill" aria-pressed="false"><span class="butler-icon" data-butler-icon="light-bulb"></span><span>深度思考 · 关</span></button><button type="button" id="butlerLengthButton" class="butler-pill" aria-haspopup="dialog" aria-controls="butlerLengthPopover"><span id="butlerLengthLabel">生成长度</span><span class="butler-icon" data-butler-icon="chevron-down"></span></button><select id="butlerLimit" hidden aria-label="生成上限"><option value="auto" selected>自动</option><option value="512">512</option><option value="1024">1024</option><option value="2048">2048</option><option value="4096">4096</option><option value="max">最大</option></select></div>
+                <div class="butler-send-actions"><input id="butlerImageInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden><button id="butlerAttach" class="butler-icon-button butler-attach-button" type="button" aria-label="添加图片" title="添加图片" data-butler-icon="paper-clip"></button><button id="butlerCancel" class="butler-send" type="button" aria-label="停止生成" title="停止生成" hidden data-butler-icon="stop"></button><button id="butlerSend" class="butler-send" type="submit" aria-label="发送消息" title="发送消息" data-butler-icon="arrow-up"></button></div>
+              </div>
+            <p id="butlerAttachmentHelp" class="butler-attachment-help" role="status" hidden></p></form><p class="butler-footnote">对话保存在本机。内容由 AI 生成，重要信息请核对来源。</p>
+          </div>
+        </div>
+      </div>
+      <div id="butlerSessionMenu" class="butler-popover" popover="auto"><button id="butlerDeleteSession" type="button"><span class="butler-icon" data-butler-icon="trash"></span>归档对话</button><button id="butlerPermanentDeleteSession" type="button"><span class="butler-icon" data-butler-icon="trash"></span>永久删除…</button></div>
+      <div id="butlerLengthPopover" class="butler-popover butler-length-popover" popover="auto" role="dialog" aria-label="生成长度"><h3>生成长度</h3><div id="butlerLengthOptions"></div><p>思考与回答共用额度，上限不代表必须写满。</p><details><summary>额度说明</summary><p>最大受所选模型单次输出上限与本轮剩余上下文共同约束。较长生成可能等待更久，可随时停止。</p></details></div>
+      <dialog id="butlerProductDialog" class="butler-dialog" aria-labelledby="butlerProductTitle"><form method="dialog" class="butler-dialog-head"><h2 id="butlerProductTitle">界渡能做什么</h2><button class="butler-icon-button" aria-label="关闭产品说明" data-butler-icon="x-mark"></button></form><p class="product-help-intro">先走通一份资料：导入 → 在收件箱搜索 → 打开出处 → 管家选对应范围并核对来源 → 整理建议预览 → 确认写入。新导入资料还未确认；归档、生成建议和正式保存是不同阶段。</p><label class="product-help-search" for="butlerProductSearch"><span>搜索功能与用法</span><input id="butlerProductSearch" type="search" placeholder="例如：导入 PDF、保存对话、整理知识"></label><div class="product-help-browser"><nav id="butlerProductGroups" aria-label="按任务浏览"></nav><section class="product-help-results" aria-labelledby="butlerProductGroupTitle"><div class="product-help-heading"><h3 id="butlerProductGroupTitle">查找与导入资料</h3><span id="butlerProductCount" role="status"></span></div><div id="butlerProductTopics"></div></section></div></dialog><dialog id="butlerSettingsDialog" class="butler-dialog"><form method="dialog" class="butler-dialog-head"><h2>对话设置</h2><button class="butler-icon-button" aria-label="关闭对话设置" data-butler-icon="x-mark"></button></form><label class="butler-setting-field" for="butlerScope">检索范围<select id="butlerScope"><option value="formal">正式知识</option><option value="evidence">原始证据</option><option value="inbox">待确认资料（收件箱）</option></select></label><p id="butlerModel">正在读取模型状态</p><details id="butlerSteps"><summary>处理记录</summary><ol id="butlerStepList"></ol><button id="butlerJobSnapshot" type="button" hidden>查看当时的运行记录</button></details><p class="butler-settings-note">Enter发送，Shift+Enter换行。思考与回答由所选模型生成，重要信息请核对来源。</p></dialog>
+      <dialog id="butlerDraftDialog" class="butler-dialog"><form method="dialog" class="butler-dialog-head"><h2>保留现有草稿</h2><button aria-label="关闭草稿提示" data-butler-icon="x-mark"></button></form><p>输入框已有未发送内容。可以把这条提问追加到末尾，再一起编辑。</p><pre id="butlerDraftPreview"></pre><div class="butler-draft-actions"><button id="butlerKeepDraft" type="button">继续编辑现有草稿</button><button id="butlerAppendDraft" type="button">追加这条提问</button></div></dialog><dialog id="butlerEvidenceDialog" class="butler-dialog"><form method="dialog" class="butler-dialog-head"><h2 id="butlerEvidenceTitle">回答来源</h2><button class="butler-icon-button" aria-label="关闭回答详情" data-butler-icon="x-mark"></button></form><div id="butlerEvidenceBody"></div></dialog>
+      <dialog id="butlerSource" class="wide-dialog"><form method="dialog"><button class="secondary" aria-label="关闭来源">关闭</button></form><h2 id="butlerSourceTitle">来源</h2><p id="butlerSourceNote"></p><h3>本轮提供给模型的片段</h3><pre id="butlerSentSource"></pre><h3>当前原文（分页读取）</h3><pre id="butlerCurrentSource"></pre><button id="butlerSourceNext" class="secondary" type="button" hidden>继续读取原文</button></dialog>
+      <dialog id="butlerTrashDialog" class="wide-dialog"><form method="dialog"><button class="secondary">关闭</button></form><h2>已归档对话</h2><p>归档后从侧栏收起，取消归档即可继续对话。已停止的请求不会自动恢复。</p><div id="butlerTrashList"></div></dialog><dialog id="butlerSnapshot" class="wide-dialog"><form method="dialog"><button class="secondary" aria-label="关闭运行记录">关闭</button></form><h2>当时的运行记录</h2><p>这是回答时保存的记录，保留当时的时间与数值。需要最新状态时，可以再问一次。</p><div id="butlerSnapshotBody"></div></dialog>
+    </section>
+
+    <section id="overview" class="page active">
+      <section class="home-quick-start" aria-label="首页快捷入口"><div class="home-start-actions"><span>快捷入口</span><button type="button" data-home-action="search">搜索资料</button><button type="button" data-home-action="import">导入资料</button><button type="button" data-home-action="archives">查看对话</button><button type="button" data-home-action="access">连接 AI</button><button type="button" data-home-action="guide">使用指南</button></div><p id="homeNextState">正在读取工作区…</p></section>
+      <details id="homeOnboarding" class="home-onboarding"><summary>第一次使用？从这里开始</summary><div class="starting-paths">
+        <article><h3>还没有资料</h3><p>先选保存位置，之后随时添加。</p><button type="button" class="copy-button" data-start-path="new">创建知识库</button></article>
+        <article><h3>已有文件或 Obsidian</h3><p>连接原目录，或导入当前知识库。</p><button type="button" class="copy-button" data-start-path="existing">连接已有目录</button><button type="button" class="copy-button" data-guide-page="import">导入资料</button></article>
+        <article><h3>资料在 AI 聊天</h3><p>查看支持的来源和已保存记录。</p><button type="button" class="copy-button" data-start-path="chats">查看 AI 来源</button></article>
+      </div></details>
+      <div class="overview-grid boundary-overview">
+        <article class="primary-readout instrument-stage boundary-stage">
+          <div class="domain-plane knowledge-domain"><span>私人知识域</span><small>你的资料 · 本机保存 · 自主选择</small><div class="domain-nodes"><i></i><i></i><i></i><i></i></div></div>
+          <div class="knowledge-dial gateway-core" aria-label="正式知识检索片段数量"><div class="dial-orbit orbit-a"></div><div class="dial-orbit orbit-b"></div><div class="dial-core"><small>界渡</small><div class="readout-value" id="primaryCount">—</div><span>段知识可检索</span></div></div>
+          <div class="domain-plane agent-domain"><span>外部智能域</span><small>模型 · 智能体 · 标准接口</small><div class="agent-signal"><i></i><i></i><i></i></div></div>
+          <div class="boundary-flow"><i></i><i></i></div>
+          <div class="readout-axis"><span>工作区状态</span><b></b><span id="activityState">读取中</span></div>
+        </article>
+        <div id="metrics" class="metric-rail instrument-cluster"></div>
+        <article class="system-panel"><div class="panel-title"><span>工作区状态</span><small>详细诊断</small></div><div id="detail"></div></article>
+        <article class="layer-panel"><div class="panel-title"><span>知识域构成</span><small>DOMAIN LAYERS</small></div><div id="layerDistribution"></div></article>
+      </div>
+    </section>
+
+    <section id="ai-chat" class="page">
+      <div class="bridge-status-workspace">
+        <section class="bridge-status-console"><div class="memory-section-head"><div><h2>界渡桥状态</h2><p>界渡只向获授权的AI提供本地知识上下文，不调用模型，也不替AI生成回答。</p></div><span class="memory-state ready">运行中</span></div><div id="bridgeStatusPanel"><div class="memory-test-empty"><span>正在读取桥接状态</span></div></div></section>
+        <section class="bridge-route"><span>ChatGPT / Codex / Hermes / 其他AI客户端</span><i></i><b>MCP / Bridge 请求</b><i></i><strong>界渡</strong><i></i><span>本地知识库</span></section>
+      </div>
+    </section>
+
+    <section id="archives" class="page"><div id="archivesHub" class="memory-hub archive-hub"></div></section>
+
+    <section id="wiki" class="page" aria-label="知识 Wiki"><div id="wikiHub" class="memory-hub" aria-live="polite"></div></section>
+
+    <section id="files" class="page">
+      <div class="knowledge-object-hub">
+        <section class="knowledge-object-toolbar" aria-labelledby="knowledgeObjectHeading"><div><span class="access-kicker">统一知识树</span><h2 id="knowledgeObjectHeading">知识档案</h2><p>公开、受保护与待确认资料使用同一套对象目录；锁定时不显示受保护内容的名称和路径。</p></div><div class="knowledge-object-actions"><button id="openKnowledgeImport" class="primary" type="button">导入资料</button><button id="previewKnowledgeMigration" class="secondary" type="button" disabled>迁移所选到保护层</button></div></section>
+        <div id="knowledgeObjectMetrics" class="knowledge-object-metrics" aria-live="polite"></div>
+        <div class="workspace-grid file-workspace">
+          <aside class="rail-panel file-list"><div class="panel-title"><span>资料列表</span><small id="fileCount">—</small></div><div class="knowledge-object-filters" role="group" aria-label="存储状态筛选"><button type="button" class="active" data-object-filter="all">全部</button><button type="button" data-object-filter="open">公开</button><button type="button" data-object-filter="protected">受保护</button><button type="button" data-object-filter="pending">待确认</button></div><div id="fileList"></div></aside>
+          <article class="content-panel reader"><div id="reader"><div class="empty"><span>选择左侧资料查看</span><p>查看正文、来源与保存状态</p></div></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="search" class="page">
+      <div class="memory-test-tabs" role="tablist"><button class="active" data-memory-test-tab="diagnostic">搜索资料</button><button data-memory-test-tab="answer">记忆链测试（高级）</button></div>
+      <div id="sharedQueryPanel" class="search-console">
+        <div class="query-shell">
+          <label class="query-prefix" for="sharedQueryInput">问题</label>
+          <input id="sharedQueryInput" autocomplete="off" spellcheck="false">
+          <button id="sharedClearQuery" class="clear-query" title="清空" aria-label="清空">×</button>
+          <div id="diagnosticQueryControls" class="shared-query-controls"><label>查找范围<select id="searchScope" aria-label="知识范围"><option value="formal" selected>正式知识</option><option value="evidence">原始证据</option><option value="inbox">待确认资料</option></select></label><details class="search-advanced"><summary>高级选项</summary><div><label>匹配方式<select id="mode"><option value="hybrid" selected>混合匹配</option><option value="keyword">段落匹配</option><option value="vector">语义匹配</option></select></label><label>返回数量<select id="resultLimit"><option value="10" selected>10 条</option><option value="20">20 条</option><option value="50">50 条</option></select></label><label>限定目录（可选）<input id="searchFolder" placeholder="例如 02_项目/项目名" maxlength="500"></label></div></details></div>
+          <button id="sharedQuerySubmit" class="execute"></button>
+        </div>
+        <div class="search-meta"><span id="sharedQueryHint"></span><span id="sharedQueryState"></span></div>
+      </div>
+      <section id="sharedResultShell" class="shared-result-shell">
+        <div id="memoryAnswerPanel" class="memory-test-panel active">
+          <div id="memoryTestResult" class="memory-chain-result is-empty"><div class="memory-test-empty"><span>回答将在这里显示</span></div></div>
+        </div>
+        <div id="retrievalDiagnosticPanel" class="memory-test-panel">
+          <div id="searchTelemetry" class="search-telemetry" hidden></div>
+          <div id="results" class="result-stream"><div class="empty compact"><span>输入问题，查找出处</span><p>只查所选范围；打开来源核对完整上下文。</p></div></div>
+        </div>
+      </section>
+    </section>
+
+    <section id="map" class="page">
+      <div class="visual-shell">
+        <div class="viz-toolbar"><div><b>语义空间</b><span>真实 Embedding / UMAP 二维投影 · <em id="mapCount">—</em></span></div><div class="map-controls"><select id="layerFilter" aria-label="来源过滤"><option value="all">全部知识</option><option value="raw_chat">原始聊天</option><option value="current">当前状态</option><option value="project">项目</option><option value="system">系统规则</option><option value="other">其他知识</option></select><span id="mapZoom" class="map-zoom">1.0×</span><button id="returnSelected" class="copy-button" hidden>回到选中点</button><button id="fitMap" class="copy-button">适应全图</button></div></div>
+        <div id="mapChart" class="chart vector-canvas-shell" aria-label="向量地图"><div id="mapLoading" class="visual-loading" hidden>正在加载向量地图…</div><canvas id="vectorCanvas" tabindex="0"></canvas><div id="vectorTooltip" class="vector-tooltip" hidden></div></div>
+        <aside id="mapInspector" class="inspector"><div class="inspector-empty"><span>节点详情</span><p>点击知识节点查看完整信息</p></div></aside>
+      </div>
+    </section>
+
+    <section id="graph" class="page">
+      <div class="visual-shell">
+        <div class="viz-toolbar"><div><b>明确关系拓扑</b><span>目录 / Wikilink / Markdown 链接</span></div><div class="legend"><i class="folder-dot"></i>知识层<i class="doc-dot"></i>文档<span class="project-legend" hidden><i class="project-dot"></i>项目</span></div></div>
+        <div id="graphChart" class="chart" aria-label="知识关系图"><div id="graphLoading" class="visual-loading" hidden>正在加载知识关系…</div></div>
+        <aside id="graphInspector" class="inspector"><div class="inspector-empty"><span>节点详情</span><p>点击节点查看确定性关系</p></div></aside>
+      </div>
+    </section>
+
+    <section id="memory" class="page">
+      <div class="memory-hub">
+        <section class="memory-status-deck"><div class="panel-title"><span>长期记忆层</span><small>真实状态</small></div><div id="memoryLayers" class="memory-layers"></div></section>
+        <section class="memory-metrics" id="memoryMetrics"></section>
+        <section class="raw-session-console"><div class="memory-section-head"><div><h2>原始会话档案</h2><p>浏览已保存的双方原文与可取得的附件。各来源是否正在自动归档，请在“AI连接 → 自动归档状态”分别查看。</p></div><span class="memory-state">已保存的会话</span></div><div class="project-memory-grid"><div id="rawSessionList" class="memory-project-list"></div><article id="rawSessionDetail" class="memory-project-detail"><div class="empty compact"><span>原始会话</span><p>选择会话查看逐字原文</p></div></article></div></section>
+        <section class="raw-session-console"><div class="memory-section-head"><div><h2>Codex 自动归档</h2><p>补齐本地历史，同时持续保存新消息；可随时暂停并从已保存的进度继续。</p></div><button id="refreshCodexArchive" class="copy-button">刷新状态</button></div><div id="codexArchiveStatus" class="interface-list"><div class="memory-test-empty"><span>正在读取 Codex 归档状态</span></div></div></section>
+        <section class="raw-session-console"><div class="memory-section-head"><div><h2>Hermes 自动归档</h2><p>本机采集器独立保存公开对话与可取得的附件。旧 MCP 知识读取连接尚未纳入“已配对客户端”管理，两条连接状态分别显示。</p></div><button id="refreshHermesArchive" class="copy-button">刷新状态</button></div><div id="hermesArchiveStatus" class="interface-list"><div class="memory-test-empty"><span>正在读取 Hermes 归档状态</span></div></div></section>
+        <section class="memory-bootstrap-console">
+          <div class="memory-section-head"><div><h2>正式核心背景</h2><p>Core（核心背景）由用户配置的长期稳定文件完整组合；项目状态按需读取，不混入核心背景</p></div><button id="refreshMemory" class="copy-button">刷新预览</button></div>
+          <div class="memory-tabs" role="tablist"><button class="active" data-memory-doc="stable_core">稳定核心记忆<small>Stable Core</small></button><button data-memory-doc="live_context">当前动态记忆<small>Live Context</small></button><button data-memory-doc="bootstrap">最终启动记忆<small>Bootstrap</small></button></div>
+          <div id="memoryDocMeta" class="memory-doc-meta"></div><pre id="memoryDocBody" class="memory-doc-body selectable">正在读取…</pre>
+          <div class="memory-doc-actions"><button id="copyMemoryDoc" class="copy-button">复制正文</button><button id="showMemorySource" class="copy-button">查看来源证据</button></div>
+        </section>
+        <section class="project-memory-console">
+          <div class="memory-section-head"><div><h2>项目记忆</h2><p>正式项目档案与当前状态</p></div></div>
+          <div class="project-memory-grid"><div id="memoryProjectList" class="memory-project-list"></div><article id="memoryProjectDetail" class="memory-project-detail"><div class="empty compact"><span>项目档案</span><p>选择项目查看真实状态</p></div></article></div>
+        </section>
+        <section class="memory-awareness-console">
+          <div class="memory-section-head"><div><h2>AI现在知道什么</h2><p>从当前启动记忆与项目真相源读取，不添加推测</p></div><span id="awarenessStatus" class="memory-state draft">正在读取</span></div>
+          <div id="memoryKnown" class="memory-awareness-grid"></div>
+          <div class="memory-unknown-head"><h2>AI还不知道什么</h2><p>仅列出当前数据可以确认的真实缺口</p></div>
+          <div id="memoryUnknown" class="memory-gap-list"></div>
+        </section>
+        <section class="pending-memory-console organize-suggestions">
+          <div class="memory-section-head"><div><h2>把对话整理成可用的知识</h2><p>把聊天中的进展、决定和经验整理到项目页或知识页，原始聊天继续保存在“对话档案”。</p><p>查看建议的正文、来源和保存位置，核对后保存。</p></div></div>
+          <div class="suggestion-overview" aria-live="polite"><span><strong id="pendingMemoryCount">—</strong> 条待核对</span><small id="suggestionCountNote">正在检查建议的可用状态</small></div>
+          <div class="pending-workspace" id="suggestionWorkspace"><div id="pendingMemoryList" class="pending-list"></div><section id="candidateReviewPanel" class="candidate-review-panel" hidden><button id="backToSuggestions" type="button" class="copy-button">← 返回建议列表</button><div id="pendingMemoryDetail" class="pending-detail"></div></section></div>
+        </section>
+        <details id="organizationTools" class="pending-memory-console organize-tools"><summary>整理工具与设置</summary><p class="organize-automation-note">主动选择资料、交给外部 AI 整理，或配置可选模型。浏览和查看现有建议不需要先设置模型。</p>
+          <div id="continuousTasks">正在读取整理状态…</div>
+          <details id="manualSourcesPanel" class="organize-disclosure"><summary><b>来源阅读进度与手动选择</b><span id="extractionModeSummary">正在读取可选来源</span></summary><p>这里按实际阅读记录展示来源进度，也可手动选择资料交给 AI。</p><div id="originalArchiveManager" class="original-archive-manager"></div><div id="manualExtraction" class="manual-extraction"></div></details>
+          <details id="externalAITools" class="organize-disclosure"><summary><b>高级：交给外部AI整理</b><span>下载提炼包、导入返回结果</span></summary><div id="externalManualWorkbench"></div></details>
+          <details id="organizeProviderSettings" class="organize-disclosure"><summary><b>设置整理方式</b><span id="providerSummary">手动整理或连接自己的模型</span></summary><p>直接调用模型（可选）：<span id="organizeAutomationState">正在读取</span> <button id="configureOrganization" class="copy-button" type="button">查看模型设置</button></p><div id="providerStatus"></div></details>
+        </details>
+        <section class="attachment-console" hidden aria-hidden="true"><div class="memory-section-head"><div><h2>界渡内部附件存储</h2><p>暂作内部兼容存储，后续按Session迁移</p></div></div><div id="attachmentMetrics" class="attachment-metrics"></div></section>
+      </div>
+    </section>
+    <section id="protection" class="page">
+      <div class="protection-hub">
+        <section class="protection-hero" aria-labelledby="protectionHeading">
+          <div><span class="protection-kicker">本机运行</span><h2 id="protectionHeading">本机设置</h2><p id="protectionSummary">正在读取当前状态…</p></div>
+          <span id="protectionState" class="protection-state" role="status" aria-live="polite">读取中</span>
+        </section>
+        <section id="protectionPanel" class="protection-panel" aria-live="polite" aria-busy="true">
+          <div class="protection-loading"><span></span><p>正在确认保护层状态</p></div>
+        </section>
+        <section class="protection-truth">
+          <div><b>当前事实</b><p>现有知识、项目状态和原始档案仍是普通文件；启用保护层不会自动迁移它们。</p></div>
+          <details><summary>技术与安全边界</summary><p>受保护对象使用认证加密保存在工作区内。它不能防御已经获得口令或恢复密钥的程序，也不能防御控制已解锁界渡进程、读取进程内存、Windows 管理员或 SYSTEM。</p></details>
+        </section>
+        <details class="access-compatibility settings-diagnostics"><summary><span><b>服务维护与诊断</b><small>端口、桥接服务、重启与详细诊断</small></span></summary><div class="access-compatibility-body">
+          <section class="bridge-service-console"><div class="memory-section-head"><div><h2>AI桥接服务</h2><p>查看本机桥接服务状态；客户端身份和权限仍在“AI连接”管理。</p></div></div><div id="aiBridgeService"></div></section>
+          <section class="bridge-lifecycle-console"><div class="memory-section-head"><div><h2>界渡生命周期</h2><p>使用现有正式启动器管理本机服务，不建立开机自启动</p></div><span id="bridgeLifecycleState" class="memory-state">正在读取</span></div><div class="bridge-lifecycle-actions"><strong id="bridgeLifecycleLabel">界渡状态读取中</strong><button id="restartBridge" class="copy-button">重启界渡</button><button id="stopBridge" class="danger-button">关闭界渡</button></div></section>
+          <section class="data-security-console"><div class="memory-section-head"><div><h2>本机连接设置</h2><p>查看并校验本机接口；Host 固定为 127.0.0.1。</p></div></div><div id="localAISecurity" class="local-ai-security"></div><div class="local-config-controls"><label>MCP连接方式<select id="mcpMode"><option value="stdio">stdio</option><option value="localhost_http">localhost HTTP</option></select></label><label>Console端口<input id="consolePort" type="number" min="1024" max="65535"></label><button id="saveLocalConfig" class="copy-button">校验并保存</button><p>修改后需重启对应接口；不会建立公网入口。</p></div></section>
+          <details class="write-permission-console diagnostic-record"><summary><span><b>诊断 / 验收记录</b><small id="diagnosticSummary">Session切换：读取中 · 附件归档：读取中</small></span></summary><div id="liveAcceptance" class="interface-list"></div></details>
+        </div></details>
+      </div>
+    </section>
+    <section id="access" class="page"><div class="access-hub">
+      <section class="client-access-console" aria-labelledby="clientAccessHeading">
+        <div class="client-access-head"><div><span class="access-kicker">本机 AI 连接</span><h2 id="clientAccessHeading">客户端与权限</h2><p>连接客户端后，按知识范围和操作设置权限。</p></div><button id="pairClient" class="primary" type="button">+ 配对客户端</button></div>
+        <ol class="client-access-journey" aria-label="客户端权限设置流程"><li><i>1</i><span>选择客户端</span></li><li><i>2</i><span>完成配对</span></li><li><i>3</i><span>设置权限</span></li><li><i>4</i><span>一次性请求</span></li><li><i>5</i><span>查看记录</span></li></ol>
+        <div id="clientAccessControl" class="client-access-workspace" aria-live="polite" aria-busy="true"><div class="client-access-loading"><span></span><p>正在确认客户端身份与权限…</p></div></div>
+        <p class="client-access-boundary">公开文件的权限只约束经界渡的访问；它不能阻止同权限程序直接读取普通文件。</p>
+      </section>
+    </div></section>
+    <section id="weight" class="page"><div class="weight-hub">
+      <section class="weight-session-console"><div class="memory-section-head"><div><h2>当前会话</h2><p>只展示客户端实际同步给界渡的会话数据</p></div><button id="refreshWeight" class="copy-button">刷新状态</button></div><div id="weightSession" class="weight-session-grid"></div></section>
+      <section class="weight-status-console"><div class="memory-section-head"><div><h2>权重状态</h2><p>重新注入核心前置背景，防止长对话中用户画像、协作规则和长期偏好被稀释。</p></div><span id="weightState" class="memory-state">机制已就绪</span></div><button id="boostWeight" class="execute">立即提升权重</button><p id="weightHint" class="weight-hint">正在读取正式核心背景状态</p><details class="core-preview"><summary>内容预览与当前状态</summary><div id="corePreviewMeta"></div><pre id="corePreviewText"></pre></details></section>
+      <section class="weight-settings-console"><div class="memory-section-head"><div><h2>权重提升提醒</h2><p id="weightCadence">每 30 轮提醒一次</p></div></div><div id="weightSettings" class="weight-settings"></div><p class="weight-settings-note">只提醒，不强制刷新。</p></section>
+    </div></section>
+  </main>
+
+  <dialog id="profileDialog"><form method="dialog" id="profileForm"><div class="dialog-head"><div><small>本地界面偏好</small><h2>编辑身份</h2></div><button value="cancel" class="icon-button" aria-label="关闭">×</button></div><label for="username">显示名称</label><input id="username" maxlength="80" autocomplete="off"><p>保存在当前浏览器，不会写入知识库。</p><div class="dialog-actions"><button value="cancel" class="secondary">取消</button><button value="default" id="saveProfile" class="primary">保存</button></div></form></dialog>
+  <dialog id="projectEditDialog" class="wide-dialog"><form method="dialog" id="projectEditForm"><div class="dialog-head"><div><small>项目真相源</small><h2 id="projectEditTitle">编辑当前状态</h2></div><button value="cancel" class="icon-button" aria-label="关闭">×</button></div><label for="projectEditContent">当前状态 Markdown</label><textarea id="projectEditContent" spellcheck="false"></textarea><div id="projectDiff" class="project-diff selectable" hidden></div><p>必须先生成Diff并确认；保存前系统会自动备份旧文件。</p><div class="dialog-actions"><button value="cancel" class="secondary">取消</button><button type="button" id="previewProjectDiff" class="secondary">预览 Diff</button><button type="button" id="confirmProjectSave" class="primary" disabled>确认并保存</button></div></form></dialog>
+  <dialog id="clientConfigDialog" class="wide-dialog"><form method="dialog"><div class="dialog-head"><div><small>本地客户端配置</small><h2 id="clientConfigTitle">连接配置预览</h2></div><button value="cancel" class="icon-button" aria-label="关闭">×</button></div><div class="config-target"><span>目标配置文件</span><code id="clientConfigPath" class="selectable"></code></div><pre id="clientConfigDiff" class="client-config-diff selectable"></pre><p>确认后才会修改客户端配置；写入前自动备份，失败时保留回滚依据。</p><div class="dialog-actions"><button value="cancel" class="secondary">取消</button><button type="button" id="copyClientConfig" class="secondary">复制配置</button><button type="button" id="confirmClientConfig" class="primary">确认并应用</button></div></form></dialog>
+  <dialog id="clientPermissionDialog" class="wide-dialog"><form method="dialog"><div class="dialog-head"><div><small>客户端独立权限</small><h2 id="clientPermissionTitle">工具权限</h2></div><button value="cancel" class="icon-button" aria-label="关闭">×</button></div><p id="clientPermissionHint"></p><div id="clientToolPermissions" class="client-tool-permissions"></div><div class="dialog-actions"><button value="cancel" class="primary">完成</button></div></form></dialog>
+  <dialog id="customClientDialog"><form method="dialog" id="customClientForm"><div class="dialog-head"><div><small>通用本地客户端</small><h2>新建客户端</h2></div><button type="button" data-close-custom-client class="icon-button" aria-label="关闭">×</button></div><label>显示名称<input id="customClientName" maxlength="80" placeholder="例如：我的本地智能体"></label><label>client_id<input id="customClientId" maxlength="64" pattern="[a-z0-9][a-z0-9_-]{1,63}" placeholder="例如：my_agent"></label><p>创建后获得独立的本地 stdio 配置、访问开关、工具权限和调用状态。</p><div class="dialog-actions"><button type="button" data-close-custom-client class="secondary">取消</button><button type="submit" class="primary">创建客户端</button></div></form></dialog>
+  <dialog id="pairClientDialog"><form id="pairClientForm" class="pair-flow-form"><div class="dialog-head"><div><small>第 1 步 / 共 3 步 · 设置连接</small><h2>添加一个 AI 连接</h2></div><button type="button" data-close-pair class="icon-button" aria-label="关闭">×</button></div><div class="pair-flow-body"><label>连接哪个AI<select id="pairedClientType"><option value="codex">Codex</option><option value="hermes">Hermes Agent</option><option value="custom">自定义</option></select><small id="pairPresetNote">选择后自动填写名称和避重连接标识。</small></label><label>连接显示名<input id="pairedClientName" maxlength="80" required></label><label id="pairProductLabel" hidden>产品名称<input id="pairedProductFamily" maxlength="80" placeholder="例如：豆包"><small>同产品的多个连接共享产品目录，各会话保持独立身份。</small></label><details class="pairing-advanced"><summary>高级设置</summary><label>连接标识<input id="pairedClientId" maxlength="64" pattern="[a-z0-9][a-z0-9_-]{1,63}" required><small>由界渡自动生成，用于认证，通常无需修改；不是显示名，也不是产品归档目录。</small></label><label>连接方式<select id="pairedClientTransport"><option value="stdio">MCP STDIO</option><option value="localhost_http" disabled>HTTP · 通用配对尚未就绪</option></select></label></details><fieldset id="genericReadChoices"><legend>该连接的初始权限</legend><p>品牌只决定配置模板，不改变权限。允许表示该客户端可持续使用所选能力；每次询问会进入一次性确认。</p><label>读取已整理知识<select data-pair-permission="formal"><option value="deny">拒绝</option><option value="ask">每次询问</option><option value="allow" selected>允许连续读取</option></select><small>项目总览、状态和可复用知识，位于01_当前状态、02_项目、03_知识等正式目录。</small></label><label>读取原始聊天与附件<select data-pair-permission="evidence"><option value="deny">拒绝</option><option value="ask">每次询问</option><option value="allow" selected>允许连续读取</option></select><small>90_原始档案中的原始对话与附件，用于回查依据。</small></label><label>读取收件箱资料<select data-pair-permission="inbox"><option value="deny">拒绝</option><option value="ask">每次询问</option><option value="allow" selected>允许连续读取</option></select><small>99_收件箱中的待处理资料；读取权限不包含保存或修改。</small></label><label>提交知识修改建议<select data-pair-permission="formal_write"><option value="deny">拒绝</option><option value="ask" selected>每次询问</option></select><small>只提交待审核候选，不会直接正式写入。</small></label><label>允许此 AI 提交聊天与附件<select data-pair-permission="archive_write"><option value="deny">暂停</option><option value="ask">每次询问</option><option value="allow" selected>允许：提交时可正常追加</option></select><small>仅允许本连接提交的内容追加保存，不会因此自动取得该 AI 的历史。</small></label><p>受保护知识只能在权限页单独授予本次会话，锁定后失效。</p></fieldset><p id="pairAcquisitionNote" class="pair-acquisition-note" role="status"></p><p class="form-feedback" id="pairClientError" role="alert" aria-live="polite"></p></div><div class="dialog-actions"><button type="button" data-close-pair class="secondary">取消</button><button type="submit" class="primary">下一步：核对设置</button></div></form></dialog>
+  <dialog id="clientSecretDialog" class="wide-dialog"><form method="dialog" class="pair-flow-form"><div class="dialog-head"><div><small>第 2 步 / 共 3 步 · 核对并确认</small><h2 id="clientSecretTitle">配对与配置预览</h2></div><button id="cancelClientPairingIcon" type="button" class="icon-button" aria-label="取消配对">×</button></div><div class="pair-flow-body"><p id="clientSecretIntro">此时尚未创建正式身份，也未修改客户端配置。确认后才会先安全写入配置，再提交身份和初始权限。</p><div class="pairing-config-summary"><div><span>目标配置文件</span><code id="clientPairingPath" class="selectable"></code></div><div><span>备份与回滚</span><small id="clientPairingRollback"></small></div><div><span>生效方式</span><small id="clientPairingRestart"></small></div></div><pre id="clientPairingPreview" class="client-config-diff selectable"></pre><details class="pairing-permission-preview"><summary>初始权限预览</summary><div id="clientPairingPolicies"></div></details><details class="pairing-secret-advanced"><summary>高级：一次性查看与复制配对秘密</summary><p>自动配置无需手工复制。秘密不写入浏览器存储，关闭或刷新后无法再次获取。</p><code id="clientSecretValue" class="recovery-key selectable"></code><button id="copyClientSecret" type="button" class="secondary">复制一次性秘密</button></details><div id="clientPairingNextSteps"></div><p class="form-feedback" id="clientPairingError" role="alert"></p></div><div class="dialog-actions"><button id="cancelClientPairing" type="button" class="secondary">取消</button><button id="finishClientSecret" type="button" class="primary">确认配对并应用配置</button></div></form></dialog>
+  <dialog id="clientActionDialog"><form method="dialog"><div class="dialog-head"><div><small>高风险身份操作</small><h2 id="clientActionTitle">确认操作</h2></div><button value="cancel" class="icon-button" aria-label="关闭">×</button></div><p id="clientActionMessage"></p><div class="dialog-actions"><button value="cancel" class="secondary">取消</button><button type="button" id="confirmClientAction" class="danger-button">确认</button></div></form></dialog>
+  <dialog id="knowledgeObjectDialog" class="wide-dialog knowledge-object-dialog"><form method="dialog"><div class="dialog-head"><div><small id="knowledgeObjectDialogKicker">确定性存储策略</small><h2 id="knowledgeObjectDialogTitle">导入资料</h2></div><button value="cancel" class="icon-button" aria-label="关闭">×</button></div><div id="knowledgeObjectDialogBody"></div><p id="knowledgeObjectDialogError" class="form-feedback" role="alert"></p><div class="dialog-actions"><button value="cancel" class="secondary">取消</button><button type="button" id="knowledgeObjectDialogPrimary" class="primary">生成预览</button></div></form></dialog>
+  <input id="manualResultFile" type="file" accept="application/json,.json" hidden>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <dialog id="genericDeliveryDialog" class="wide-dialog"><form method="dialog" class="pair-flow-form"><div class="dialog-head"><div><small id="genericDeliveryStep">第 3 步 / 共 3 步 · 填入客户端</small><h2 id="genericDeliveryTitle">复制连接配置并启用</h2></div><button type="button" id="closeGenericDelivery" class="icon-button" aria-label="关闭配置交付">×</button></div><div class="pair-flow-body"><div id="genericDeliveryBody"></div><p id="genericDeliveryError" role="alert"></p></div><div class="dialog-actions"><button type="button" id="copyGenericSecret" class="secondary" hidden>复制连接密钥</button><button type="button" id="genericConfigured" class="primary">已填入，返回查看验证状态</button></div></form></dialog>
+  <script defer src="/static/wiki.js?v=20261007-customer-r10b"></script>
+  <script defer src="/static/codex-archive.js?v=20261012-attachment-recovery-r2"></script>
+  <script defer src="/static/app.js?v=20261014-idle-polling"></script>
+  <script defer src="/static/butler-controls.js?v=20261017-neutral-controls"></script>
+  <script defer src="/static/butler.js?v=20261017-neutral-controls"></script>
+  <script defer src="/static/workspace-shell.js?v=20261007-customer-r10b"></script>
+<script defer src="/static/software-update.js?v=20261017-auto-update"></script></body>
+</html>
+
+
+

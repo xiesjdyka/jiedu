@@ -1,0 +1,12 @@
+{
+  "vault_root": "knowledge-space",
+  "database_path": "data/lancedb",
+  "state_path": "data/state.json",
+  "map_path": "data/vector_map.json",
+  "model_name": "BAAI/bge-m3",
+  "model_cache": "data/models",
+  "host": "127.0.0.1",
+  "port": 8765,
+  "max_chunk_chars": 1800,
+  "overlap_chars": 180
+}
