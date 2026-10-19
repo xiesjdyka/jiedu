@@ -82,7 +82,8 @@ fn run_python(program:&Path,module:&str,args:&[&str])->Result<String,String> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 fn port(program:&Path)->u16 {
-    let p=update_stop::local_data(program).join("bridge-settings.json");
+    let Ok(local)=update_stop::local_data(program) else {return 8765};
+    let p=local.join("bridge-settings.json");
     std::fs::read(p).ok().and_then(|b|serde_json::from_slice::<serde_json::Value>(&b).ok())
         .and_then(|v|v["console"]["port"].as_u64()).unwrap_or(8765) as u16
 }
@@ -134,6 +135,10 @@ fn main(){
         let Some(program)=program else {app.handle().exit(0);return Ok(())};
         if !python(&program).is_file() || !program.join("knowledge_bridge/desktop_launcher.py").is_file(){
             app.dialog().message("未找到完整的界渡运行环境。请选择包含 .jiedu 的已有工作区。").title("界渡").kind(MessageDialogKind::Error).blocking_show();
+            app.handle().exit(1);return Ok(())
+        }
+        if let Err(error)=update_stop::local_data(&program){
+            app.dialog().message(format!("工作区连接无效：{error}")).title("界渡").kind(MessageDialogKind::Error).blocking_show();
             app.handle().exit(1);return Ok(())
         }
         // An update helper owns restart. A second shortcut click must not restart

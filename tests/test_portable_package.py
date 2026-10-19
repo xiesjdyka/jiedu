@@ -53,6 +53,44 @@ class PortablePackageTests(unittest.TestCase):
             (program.parent/'package.json').write_text(json.dumps(marker),'utf-8')
             with self.assertRaises(ValueError):component('python',program)
 
+    def test_application_connection_reuses_workspace_and_control_without_copy(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workspace = root / 'old-workspace'
+            context = initialize_workspace(workspace)
+            original_control = workspace / '.jiedu/control'
+            original_control.mkdir()
+            (original_control / 'knowledge-base.json').write_text(
+                json.dumps({'vault_path': '@package-workspace'}), 'utf-8')
+            program = root / 'new-app/.jiedu/program'
+            program.mkdir(parents=True)
+            (program.parent / 'package.json').write_text(json.dumps({
+                'format_version': 1, 'layout': 'jiedu-application-v1',
+                'program': 'program', 'control': 'control'}), 'utf-8')
+            reference = program.parent / 'control-reference.json'
+            reference.write_text(json.dumps({'format': 'jiedu-workspace-connection-v1',
+                'workspace': str(workspace), 'workspace_id': context.workspace_id}), 'utf-8')
+            self.assertIsNone(component('workspace', program))
+            self.assertEqual(original_control, component('control', program))
+            self.assertEqual(workspace, resolve_workspace_root(program, original_control))
+            other_control = root / 'other-control'
+            other_control.mkdir()
+            (other_control / 'knowledge-base.json').write_text(
+                json.dumps({'vault_path': '@package-workspace'}), 'utf-8')
+            with self.assertRaisesRegex(ValueError, '控制目录不一致'):
+                resolve_workspace_root(program, other_control)
+            from knowledge_bridge import knowledge_base
+            with patch('knowledge_bridge.workspace.PROGRAM_ROOT', program), \
+                 patch('knowledge_bridge.workspace.LOCAL_DATA_ROOT', original_control), \
+                 patch.object(knowledge_base, 'CONFIG_PATH', original_control / 'knowledge-base.json'):
+                self.assertEqual(str(workspace), knowledge_base.load()['vault_path'])
+            self.assertEqual('@package-workspace', json.loads(
+                (original_control / 'knowledge-base.json').read_text('utf-8'))['vault_path'])
+            reference.write_text(json.dumps({'format': 'jiedu-workspace-connection-v1',
+                'workspace': str(workspace), 'workspace_id': 'wrong'}), 'utf-8')
+            with self.assertRaisesRegex(ValueError, 'identity mismatch'):
+                component('control', program)
+
     def test_initialize_empty_and_existing_preserves_user_files_and_excludes_dependencies(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)/'existing';(root/'03_知识').mkdir(parents=True)

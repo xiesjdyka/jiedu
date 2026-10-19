@@ -5,9 +5,43 @@ use serde_json::Value;
 
 pub struct StopRequest { pub token:String, pub launch_id:String }
 
-pub fn local_data(program:&Path)->PathBuf {
-    std::env::var_os("KNOWLEDGE_BRIDGE_LOCAL_DATA").filter(|v|!v.is_empty())
-        .map(PathBuf::from).unwrap_or_else(||program.parent().unwrap().join("control"))
+pub fn local_data(program:&Path)->Result<PathBuf,String> {
+    if let Some(path)=std::env::var_os("KNOWLEDGE_BRIDGE_LOCAL_DATA").filter(|v|!v.is_empty()) {
+        return Ok(PathBuf::from(path));
+    }
+    let package=program.parent().ok_or("Program package location is invalid")?;
+    let reference=package.join("control-reference.json");
+    match fs::symlink_metadata(&reference) {
+        Err(error) if error.kind()==std::io::ErrorKind::NotFound => return Ok(package.join("control")),
+        Err(_) => return Err("Workspace connection cannot be inspected".into()),
+        Ok(_) => {}
+    }
+    let package_data=read_json(&package.join("package.json"),65536)
+        .ok_or("Program package marker is invalid")?;
+    if package_data["layout"].as_str()==Some("jiedu-self-contained-v1") {
+        return Ok(package.join("control"));
+    }
+    if package_data["layout"].as_str()!=Some("jiedu-application-v1") {
+        return Err("Program package layout is invalid".into());
+    }
+    let value=read_json(&reference,4096).ok_or("Workspace connection is invalid")?;
+    let workspace=value["workspace"].as_str().ok_or("Workspace path is missing")?;
+    let workspace=PathBuf::from(workspace);
+    let identity=value["workspace_id"].as_str().filter(|v|!v.is_empty()).ok_or("Workspace identity is missing")?;
+    if value["format"].as_str()!=Some("jiedu-workspace-connection-v1") || !workspace.is_absolute()
+        || workspace.parent().is_none() || !clean_path(&workspace) {
+        return Err("Workspace connection is unsafe".into());
+    }
+    let manifest=read_json(&workspace.join(".jiedu/workspace.json"),65536)
+        .ok_or("Connected workspace manifest is invalid")?;
+    if manifest["workspace_id"].as_str()!=Some(identity) {
+        return Err("Connected workspace identity mismatch".into());
+    }
+    let control=workspace.join(".jiedu/control");
+    if !control.is_dir() || !clean_path(&control) {
+        return Err("Connected workspace control is invalid".into());
+    }
+    Ok(control)
 }
 fn clean_path(path:&Path)->bool {
     path.ancestors().all(|p|fs::symlink_metadata(p).map(|m|m.file_attributes()&0x400==0).unwrap_or(false))
@@ -42,7 +76,7 @@ fn read_json(path:&Path,limit:u64)->Option<Value> {
     serde_json::from_slice(&fs::read(path).ok()?).ok()
 }
 pub fn pending(program:&Path)->Option<StopRequest> {
-    let local=local_data(program);
+    let local=local_data(program).ok()?;
     let state=read_json(&local.join("runtime/bridge-runtime.json"),65536)?;
     if !same_path(&state["bridge_dir"],program) {return None;}
     let launch_id=state["launch_id"].as_str()?;
@@ -51,7 +85,7 @@ pub fn pending(program:&Path)->Option<StopRequest> {
     validate(&request,launch_id,program,&local,now)
 }
 pub fn acknowledge(program:&Path,request:&StopRequest)->std::io::Result<()> {
-    let runtime=local_data(program).join("runtime");
+    let runtime=local_data(program).map_err(|error|std::io::Error::new(std::io::ErrorKind::PermissionDenied,error))?.join("runtime");
     if !clean_path(&runtime) {return Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied,"Invalid update runtime directory"));}
     let path=runtime.join(format!("update-stop-{}-native.json",request.token));
     if path.exists(){return Ok(());}

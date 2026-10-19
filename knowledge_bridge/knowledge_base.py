@@ -8,8 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .core import ROOT, VAULT
-from .package_layout import component
-from .workspace import active_workspace, initialize_workspace, is_workspace, load_workspace, local_path
+from .package_layout import component, connected_workspace, package_root
+from .workspace import active_workspace, configured_workspace_root, initialize_workspace, is_workspace, load_workspace, local_path
 
 CONFIG_PATH = local_path("knowledge-base.json")
 AUDIT_PATH = active_workspace().audit / "knowledge-base.json"
@@ -33,7 +33,7 @@ def load() -> dict:
         saved = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         saved = {}
-    vault = component("workspace", ROOT) or Path(saved.get("vault_path") or VAULT).resolve()
+    vault = configured_workspace_root()
     core_files = saved.get("core_files") if isinstance(saved.get("core_files"), list) else []
     return {
         "vault_path": str(vault),
@@ -49,7 +49,10 @@ def _write(data: dict) -> dict:
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     tmp = CONFIG_PATH.with_suffix(".tmp")
     stored = dict(data)
-    if component("workspace", ROOT) is not None:
+    package = package_root(ROOT)
+    connected = connected_workspace(package) if package is not None else None
+    if component("workspace", ROOT) is not None or (connected is not None and
+            Path(stored.get("vault_path") or "").resolve() == connected):
         stored["vault_path"] = "@package-workspace"
     tmp.write_text(json.dumps(stored, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, CONFIG_PATH)

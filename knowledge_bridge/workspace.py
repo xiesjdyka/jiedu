@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-from .package_layout import component
+from .package_layout import component, connected_workspace, package_root
 
 PROGRAM_ROOT = Path(__file__).resolve().parents[1]
 LOCAL_DATA_ROOT = Path(os.environ.get("KNOWLEDGE_BRIDGE_LOCAL_DATA") or (component("control", PROGRAM_ROOT) or PROGRAM_ROOT / "data")).expanduser().resolve()
@@ -218,6 +218,14 @@ def resolve_workspace_root(program_root: Path, local_data: Path, *, override: st
             pass
     if not isinstance(selected, str) or not selected.strip():
         return program_root / 'knowledge-space'
+    if selected == '@package-workspace':
+        package = package_root(program_root)
+        connected = connected_workspace(package) if package is not None else None
+        if connected is None:
+            raise ValueError('原工作区连接缺失，请重新选择知识库')
+        if Path(local_data).resolve() != connected / '.jiedu' / 'control':
+            raise ValueError('工作区连接与控制目录不一致，请明确选择知识库')
+        return connected
     candidate = Path(selected).expanduser()
     if not candidate.is_absolute() and '..' in candidate.parts:
         raise ValueError('请明确选择知识库目录，不能从程序的父目录推断知识库')

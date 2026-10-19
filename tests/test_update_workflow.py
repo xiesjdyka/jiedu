@@ -215,6 +215,27 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             installation_owner(self.program, registry_reader=self.registry)
 
+    @unittest.skipUnless(os.name == 'nt', 'Windows drive-root semantics')
+    def test_first_level_install_allowed_but_drive_root_rejected(self):
+        drive_root = Path(self.root.anchor)
+        with self.assertRaisesRegex(ValueError, '磁盘根目录'):
+            installation_owner(drive_root / '.jiedu/program', registry_reader=lambda: [])
+        try:
+            first_level = tempfile.TemporaryDirectory(prefix='jiedu-owner-', dir=drive_root)
+        except PermissionError:
+            self.skipTest('Cannot create a first-level fixture on this drive')
+        with first_level as path:
+            target = Path(path)
+            shutil.copytree(self.target, target, dirs_exist_ok=True)
+            program = target / '.jiedu/program'
+            rows = lambda: [{'scope': 'user', 'location': str(target)}]
+            self.assertEqual(installation_owner(program, registry_reader=rows)['target'], str(target))
+            (program.parent / 'package.json').write_text(json.dumps({
+                'format_version': 1, 'layout': 'jiedu-self-contained-v1',
+                'program': 'program', 'workspace': '..'}), 'utf-8')
+            with self.assertRaisesRegex(ValueError, '自包含工作区.*资料无需搬移'):
+                installation_owner(program, registry_reader=rows)
+
     def test_handoff_rechecks_signed_bytes_and_target_not_arbitrary_command(self):
         self.updater._save('channel-envelope.json', json.loads(self.envelope()))
         artifact = self.updater.root / 'verified.jiedu'

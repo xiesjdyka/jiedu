@@ -192,8 +192,10 @@ def model(*,local_only=False):
                                               local_files_only=True if bundled else bool(local_only))
                 if precision=='fp16':
                     import torch
-                    if not torch.cuda.is_available():raise RuntimeError('FP16 向量模型需要可用的 CUDA 设备')
-                    candidate.to('cuda');candidate.half()
+                    # The bundled CPU runtime must still read workspaces configured
+                    # on a CUDA machine. Keep the preference and use FP32 on CPU.
+                    if torch.cuda.is_available():
+                        candidate.to('cuda');candidate.half()
                 _model=candidate
                 _model_error=None;_model_load_ms=round((time.perf_counter()-started)*1000,1)
             except Exception as exc:

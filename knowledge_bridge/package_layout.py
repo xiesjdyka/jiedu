@@ -18,13 +18,51 @@ def package_root(program_root: Path | None = None) -> Path | None:
     return control
 
 
+def connected_workspace(control: Path) -> Path | None:
+    """A validated application connection may reuse an existing workspace control."""
+    reference = control / 'control-reference.json'
+    if not reference.exists() and not reference.is_symlink():
+        return None
+    if reference.is_symlink() or reference.stat().st_size > 4096:
+        raise ValueError('Invalid Jiedu workspace connection')
+    try:
+        data = json.loads(reference.read_text('utf-8-sig'))
+        workspace = Path(data['workspace'])
+        if (data.get('format') != 'jiedu-workspace-connection-v1'
+                or not workspace.is_absolute() or workspace == Path(workspace.anchor)
+                or not data.get('workspace_id')):
+            raise ValueError('Invalid Jiedu workspace connection')
+        for part in (workspace, *workspace.parents):
+            if part.is_symlink() or (hasattr(part, 'is_junction') and part.is_junction()):
+                raise ValueError('Linked Jiedu workspace connection')
+        workspace = workspace.resolve(strict=True)
+        workspace_control = workspace / '.jiedu'
+        local_data = workspace_control / 'control'
+        manifest = workspace_control / 'workspace.json'
+        if any(path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction())
+               for path in (workspace_control, local_data, manifest)):
+            raise ValueError('Linked Jiedu workspace connection')
+        if not local_data.is_dir():
+            raise ValueError('Jiedu workspace control is missing')
+        existing = json.loads(manifest.read_text('utf-8-sig'))
+        if existing.get('workspace_id') != data['workspace_id']:
+            raise ValueError('Jiedu workspace connection identity mismatch')
+        return workspace
+    except (OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError('Invalid Jiedu workspace connection') from exc
+
+
 def component(name: str, program_root: Path | None = None) -> Path | None:
     control = package_root(program_root)
     if control is None:
         return None
     data = json.loads((control / 'package.json').read_text('utf-8-sig'))
-    if name=='workspace' and data.get('layout')=='jiedu-application-v1':
-        return None # Installed software follows the saved workspace choice, never its installation directory.
+    if data.get('layout') == 'jiedu-application-v1' and name == 'control':
+        connected = connected_workspace(control)
+        if connected is not None:
+            return connected / '.jiedu' / 'control'
+    if data.get('layout') == 'jiedu-application-v1' and name == 'workspace':
+        return None # Installed software follows the saved workspace choice.
     value = Path(data[name])
     if name == 'workspace':
         if str(value) != '..':

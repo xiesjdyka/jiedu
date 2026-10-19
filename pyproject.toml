@@ -1,10 +1,10 @@
 [project]
 name = "knowledge-bridge"
-version = "1.1.1"
+version = "1.1.2"
 description = "界渡 Knowledge Bridge：本地优先、权限受控的 AI 知识桥梁"
+authors = [{name = "希儿"}]
 readme = "README.md"
 license = "MIT"
-authors = [{ name = "希儿" }]
 requires-python = ">=3.11"
 dependencies = [
   "firecrawl-anydoc==0.2.4",

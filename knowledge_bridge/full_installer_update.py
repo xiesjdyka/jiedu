@@ -147,7 +147,7 @@ def installation_owner(program, *, registry_reader=None):
     if program.name != 'program' or program.parent.name != '.jiedu':
         raise ValueError('未识别此程序的完整安装归属，请使用安装器手动升级')
     target = no_links(program.parent.parent)
-    if target.parent == target or len(target.parts) < 3:
+    if target.parent == target:
         raise ValueError('拒绝在磁盘根目录执行升级')
     try:
         package = json.loads((program.parent / 'package.json').read_text('utf-8-sig'))

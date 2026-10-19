@@ -44,7 +44,7 @@
     {
       "path": "RELEASE_NOTES.md",
       "bytes": 5588,
-      "sha256": "6bd65de0d48ab8a2ac71c7a2a14b63796228f5dad078e8272a07c7c3c5b08766"
+      "sha256": "28a3d2e70c7a9bcbf1f0e1e8fa79f9a942d9a8ce9e4e55747c18bcca027f2f1e"
     },
     {
       "path": "SECURITY.md",
@@ -59,7 +59,7 @@
     {
       "path": "VERSION",
       "bytes": 7,
-      "sha256": "74c8dcd895e1272a4276c6ceba0b4a0a8d97ff7b1ac9119b8f7a78685e5c45b1"
+      "sha256": "8456accd9a842531ca2aa6832c731ed07597335b35bbdb470044c5365e8fdc82"
     },
     {
       "path": "butler-resources.lock.json",
@@ -79,12 +79,12 @@
     {
       "path": "desktop/Cargo.lock",
       "bytes": 123812,
-      "sha256": "5d5df03c6a8fa76e593aed50acb49e8557b448cba18670d21dbf0f76293deffc"
+      "sha256": "f1d8aab8e33b14c9e5634510bd02a2de14b9d3b55a9c0cd4318c2bae50653b7a"
     },
     {
       "path": "desktop/Cargo.toml",
       "bytes": 524,
-      "sha256": "2267088f581f2ae1dfdb6f0d48593b4b8b83a122b1712173c21058c9c6dc80a5"
+      "sha256": "710ac2df0ab95518e40de0ec58560e2f9a95f6322ab88fd8d0eed3e35e5751a5"
     },
     {
       "path": "desktop/build.rs",
@@ -123,13 +123,13 @@
     },
     {
       "path": "desktop/src/main.rs",
-      "bytes": 17256,
-      "sha256": "45f5c74a8ca5da8bf5d1da6bb576bd0ea18e646309dd14446302aa2e2b40eaca"
+      "bytes": 17559,
+      "sha256": "a720b81449f2763b9d6a2d59d937582188a83e79e7eb949e5adc438f81ceb277"
     },
     {
       "path": "desktop/tauri.conf.json",
       "bytes": 415,
-      "sha256": "cb4c90f915edd456d5503fcd1512e7966dab535fb36168bc815125f0bc2349de"
+      "sha256": "a0b4eb0f993cbe2f99556e9f919da8fbc3fad3479038fea57333578d02346d38"
     },
     {
       "path": "desktop/ui/index.html",
@@ -189,12 +189,12 @@
     {
       "path": "docs/release-status.md",
       "bytes": 6703,
-      "sha256": "979f675be5bc3dbd94dd8d2c0559081c68f59ad549b93466211fac685292118b"
+      "sha256": "64f686b7c9adc4477ddf57368c0a4b50923b931c1a06d20012cad188d4700043"
     },
     {
       "path": "docs/release-version.md",
       "bytes": 3136,
-      "sha256": "0a09bf7c95f3d1a1d895359684fcd049486c9b888d11408975bb1a3cbacf8d7f"
+      "sha256": "37dc2c31f5759c9db1899213f4df1198e0e84b38788e7e4192507067dfb6cfcf"
     },
     {
       "path": "docs/source-install.md",
@@ -209,7 +209,7 @@
     {
       "path": "docs/user-guide.md",
       "bytes": 11353,
-      "sha256": "32932afcb550fe99d9f727809b82dc112c5d24427e0c81b4b26af6bc3af5e9f7"
+      "sha256": "9ba6dc52e4d763023a49e58abed557b1f02552a3168ad280923a4e2548bd3c8b"
     },
     {
       "path": "docs/validation.json",
@@ -239,7 +239,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 23,
-      "sha256": "286250276dcc9c428c476c908a05ae379163f41e09463b1e9f086619ed1cc000"
+      "sha256": "26135f738f5c175cfc1e73d80324de9b6b394a7e2cd977e03e9fc747045049f4"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -418,8 +418,8 @@
     },
     {
       "path": "knowledge_bridge/core.py",
-      "bytes": 41289,
-      "sha256": "870af4453849f24967cf9f066b6ccb0496446fa3e94d3f9dd9f69a3905bbab98"
+      "bytes": 41391,
+      "sha256": "c8377fd06c171033afe5362fd3dd1f1c08d8afa504e9975f77779344b40eadb2"
     },
     {
       "path": "knowledge_bridge/core_bootstrap.py",
@@ -518,8 +518,8 @@
     },
     {
       "path": "knowledge_bridge/knowledge_base.py",
-      "bytes": 15885,
-      "sha256": "2aec91cc778b588932771bf42b38a462733234e8f093eafd68fb3cdd92f61197"
+      "bytes": 16111,
+      "sha256": "d992c2cb6bd344377e5324e7daef26aef3ddd962476b83520d0e11e93b077aa1"
     },
     {
       "path": "knowledge_bridge/knowledge_entities.py",
@@ -628,8 +628,8 @@
     },
     {
       "path": "knowledge_bridge/package_layout.py",
-      "bytes": 2655,
-      "sha256": "51fe9555389711248d127e5655206eac964891c4645f5dc8bf5f0066088eb6b4"
+      "bytes": 4785,
+      "sha256": "18c3514a6cd837bab04c4c6b014192385dd9ada2866f3936fa2d5a55922c438d"
     },
     {
       "path": "knowledge_bridge/passage_search.py",
@@ -788,8 +788,8 @@
     },
     {
       "path": "knowledge_bridge/workspace.py",
-      "bytes": 9542,
-      "sha256": "e121c3538c4c0e47d6b1300309c7f382ab0d0b6bca2b3b6d6e4467bac0988d98"
+      "bytes": 10066,
+      "sha256": "5bbf7a0ee58407dfccf2622115aceeea4c6375b654c89121ee53720ae6800f34"
     },
     {
       "path": "knowledge_bridge/workspace_migration.py",
@@ -833,8 +833,8 @@
     },
     {
       "path": "pyproject.toml",
-      "bytes": 1142,
-      "sha256": "ff627384debc9917a392a600f8623409c8b6b740293d6ce02cdd5afbec8dd14c"
+      "bytes": 1140,
+      "sha256": "9c7820f61c1ebfd777d35f46c69a80c6af441694c7fd7bd35c5f43775e4bda71"
     },
     {
       "path": "requirements.lock.txt",
@@ -1408,8 +1408,8 @@
     },
     {
       "path": "tests/test_index_consistency.py",
-      "bytes": 17001,
-      "sha256": "50f915f38ea537e0fd792e1eb1f27f546299e165e5b36441d6b09c225c24ca50"
+      "bytes": 16961,
+      "sha256": "b7c0894012a831750202947d6bbb4a34a41d7b931f0e52f76d4d265ea5b4084b"
     },
     {
       "path": "tests/test_index_retention.py",
@@ -1518,8 +1518,8 @@
     },
     {
       "path": "tests/test_portable_package.py",
-      "bytes": 5024,
-      "sha256": "8599e165ab6e7b4caacf974b5614ae9eecd951a6d618fba075938f5d90d408c5"
+      "bytes": 7553,
+      "sha256": "eaeb7cdee33285f2391ce78b05cda474311120ed1ba1cbade393ac509e3f85a5"
     },
     {
       "path": "tests/test_product_chain.py",
@@ -1678,13 +1678,13 @@
     },
     {
       "path": "desktop/src/update_stop.rs",
-      "bytes": 5293,
-      "sha256": "e953e8e76da4c9281009086f1b7fdb9bd3dd398f972ece76ce2c48993459f3de"
+      "bytes": 7175,
+      "sha256": "02cb7f4f0e01b2eb231f6265d3c0101ffae10e0ecb8373d3a3f2463a44ad6085"
     },
     {
       "path": "knowledge_bridge/full_installer_update.py",
-      "bytes": 48966,
-      "sha256": "adb431467031106b16127a5147bbe54aeca67c4427ddd9252dd03443152be350"
+      "bytes": 48941,
+      "sha256": "8aeedc471a78f4bf8e8153b9126f592e7dd95e82d73d2b1957d6b3438b08b706"
     },
     {
       "path": "knowledge_bridge/update_quiesce.py",
@@ -1713,8 +1713,8 @@
     },
     {
       "path": "tests/test_update_workflow.py",
-      "bytes": 36110,
-      "sha256": "c0e94f0786a1294ce8cde283d7a1210da98f015a494913f9f210fcc827ccf06d"
+      "bytes": 37407,
+      "sha256": "999dbc7cf5700fb65d7eafffadef22595906bb058a3a7ce1f8c6bebbcfbfa1ad"
     }
   ]
 }

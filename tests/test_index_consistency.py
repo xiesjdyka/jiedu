@@ -76,17 +76,16 @@ class IndexGenerationTests(unittest.TestCase):
             self.assertEqual(.5,result['throttle_duty_cycle']);self.assertEqual(0,result['throttle_wait_seconds'])
             self.assertTrue((context.index_root('evidence')/'active-vector.json').is_file())
 
-    def test_failed_fp16_setup_does_not_publish_partial_model(self):
+    def test_fp16_preference_falls_back_to_cpu_float32_without_cuda(self):
         import knowledge_bridge.core as core
         marker=object()
         with patch.dict(os.environ,{'KNOWLEDGE_BRIDGE_MODEL_PRECISION':'fp16'},clear=False), \
              patch.object(core,'_model',None),patch.object(core,'_model_error',None), \
              patch('sentence_transformers.SentenceTransformer',return_value=marker), \
              patch('torch.cuda.is_available',return_value=False):
-            with self.assertRaisesRegex(RuntimeError,'CUDA'):
-                core.model(local_only=True)
-            self.assertIsNone(core._model)
-            self.assertEqual('load_failed',core.local_model_status()['state'])
+            self.assertIs(core.model(local_only=True),marker)
+            self.assertIs(core._model,marker)
+            self.assertEqual('loaded',core.local_model_status()['state'])
             self.assertEqual(4,core.configured_embedding_batch_size())
 
     def test_evidence_build_can_cancel_without_switching_pointer(self):
