@@ -28,8 +28,8 @@
     },
     {
       "path": "LICENSE",
-      "bytes": 1075,
-      "sha256": "9a8eb5aa464e5cec625ce5b8df2c2f3374fecf60a90bf971648c855499ffbf73"
+      "bytes": 1113,
+      "sha256": "50025ba754ac63629e74c3df1d3e333d190d09f268f0e410472213d3ef860e10"
     },
     {
       "path": "QUICK_START.md",
@@ -833,8 +833,8 @@
     },
     {
       "path": "pyproject.toml",
-      "bytes": 1109,
-      "sha256": "65e5b0de9a35dbf708f13487307d2f73c309709a5e226460337c910caee11363"
+      "bytes": 1142,
+      "sha256": "ff627384debc9917a392a600f8623409c8b6b740293d6ce02cdd5afbec8dd14c"
     },
     {
       "path": "requirements.lock.txt",
