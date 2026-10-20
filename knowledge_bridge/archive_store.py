@@ -714,7 +714,12 @@ class ArchiveStore:
             body.extend((f"## MESSAGE {row['message_id']}｜{row['role'].upper()}", "", row["original_text"], ""))
             message_attachments = [value for (message_id, _), value in attachment_latest.items()
                                    if message_id == row.get("message_id")] or row.get("attachments", [])
+            shown=set()
             for attachment in message_attachments:
+                key=(attachment.get('sha256'), attachment.get('original_name')) if attachment.get('sha256') else (
+                    'reference', attachment.get('source_reference'))
+                if key in shown:continue
+                shown.add(key)
                 body.append(f"- 附件：{attachment.get('original_name')}（{attachment.get('sha256') or '缺失'}）")
             if message_attachments:
                 body.append("")

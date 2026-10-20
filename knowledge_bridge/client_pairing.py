@@ -22,8 +22,8 @@ def _now() -> str:
 
 
 POLICY_DEFAULTS = {
-    "formal": "allow", "evidence": "allow", "inbox": "allow",
-    "formal_write": "ask", "archive_write": "allow",
+    "formal": "allow", "evidence": "allow", "inbox": "allow", "workspace": "allow",
+    "formal_write": "allow", "archive_write": "allow", "inbox_write": "allow",
 }
 FIXED_SAFE_POLICIES = (
     ("protected", "search", "deny"),
@@ -75,8 +75,8 @@ class PairingTransactionManager:
             while f"{base}_{number}" in active:number+=1
             return f"{base}_{number}"
         return [
-            {"id":"codex","label":"Codex","display_name":"我的 Codex","suggested_claimed_id":unique("codex"),"configuration":"verified_template","transport":"stdio","template_note":"写入已验证的 Codex MCP 配置模板；应用后需要重启 Codex。"},
-            {"id":"hermes","label":"Hermes Agent","display_name":"我的 Hermes","suggested_claimed_id":unique("hermes"),"configuration":"verified_template","transport":"stdio","template_note":"写入已验证的 Hermes MCP 配置模板。"},
+            {"id":"codex","label":"Codex","display_name":"我的 Codex","suggested_claimed_id":unique("codex"),"configuration":"verified_template","transport":"stdio","template_note":"连接后由界渡后台补齐可读取的本机 JSONL 历史并持续采集；MCP 配置应用后需重启 Codex。"},
+            {"id":"hermes","label":"Hermes Agent","display_name":"我的 Hermes","suggested_claimed_id":unique("hermes"),"configuration":"verified_template","transport":"stdio","template_note":"连接后由界渡后台补齐可访问历史并持续采集新消息。"},
             {"id":"doubao_work","label":"豆包工作版","display_name":"我的豆包工作版","suggested_claimed_id":unique("doubao_work"),"configuration":"local_source_auto_detect","transport":"stdio","template_note":"自动发现豆包已落盘的工作会话并持续归档；不会修改豆包文件。"},
             {"id":"custom","label":"自定义","display_name":"我的 AI","suggested_claimed_id":unique("custom_ai"),"configuration":"manual_fields","transport":"stdio","template_note":"交付完整 STDIO 命令、独立参数和环境变量；不会猜测客户端格式。"},
         ]
@@ -86,8 +86,12 @@ class PairingTransactionManager:
         choices=POLICY_DEFAULTS|dict(value or {})
         if set(choices)!=set(POLICY_DEFAULTS) or any(v not in {'allow','ask','deny'} for v in choices.values()):
             raise ValueError('权限范围或允许方式无效')
-        policies=[(scope,op,choices[scope]) for scope in ('formal','evidence','inbox') for op in ('search','read')]
-        policies.extend([('formal','context',choices['formal']),('formal','submit_candidate',choices['formal_write']),('evidence','raw_archive',choices['archive_write'])])
+        policies=[(scope,op,choices[scope]) for scope in ('formal','evidence','inbox','workspace') for op in ('search','read')]
+        policies.extend([('formal','context',choices['formal']),('inbox','context',choices['inbox']),
+                         ('workspace','context',choices['workspace']),
+                         ('formal','submit_candidate',choices['formal_write']),
+                         ('evidence','raw_archive',choices['archive_write']),
+                         ('inbox','save_inbox',choices['inbox_write'])])
         policies.extend(FIXED_SAFE_POLICIES)
         return policies
 
@@ -120,7 +124,7 @@ class PairingTransactionManager:
                     "archive_source":prepared["archive_source"],"source_adapter":adapter_plan,"config":{key:preview[key] for key in ("target_path","diff","changed","backup_directory","rollback","restart_required")},
                     "initial_policies":[{"scope":scope,"operation":operation,"decision":decision}
                                         for scope,operation,decision in policies],
-                    "raw_archive_note":"品牌只决定配置模板，不决定权限。加密关闭时，已认证客户端的普通读取固定开放；受保护知识仍需单独授予本次会话。自动归档是独立能力，本次配对不代表已经启用或覆盖历史。"}
+                    "raw_archive_note":"品牌只决定配置模板，不决定权限；普通权限可逐项关闭，受保护知识需单独授予本次会话。首次确认后界渡后台会补齐可访问历史并持续采集新消息；已有暂停或范围设置保持不变。提交候选仍需 Owner 审核。"}
 
     def begin_rotation(self, internal_id: str) -> dict:
         with self._lock:
@@ -173,6 +177,8 @@ class PairingTransactionManager:
         with self._lock:
             self._expire();row=self._pending.pop(pairing_id,None)
             if not row or row.get("kind")=="rotation":raise ValueError("配对预览已取消或过期，请重新开始")
+            prior_local_source = row['adapter'] in {'codex','hermes'} and any(
+                client.get('client_type') == row['adapter'] for client in self.registry.list_clients())
             config_result=None;committed=None
             try:
                 if row.get('config_token'):config_result=config_apply(row["config_token"])
@@ -184,8 +190,12 @@ class PairingTransactionManager:
                 self.registry.audit("pairing_transaction",committed["claimed_id"],
                                     committed["internal_id"],"success",adapter=row["adapter"])
                 SourceConnections(self.registry.context).bind(committed['internal_id'],row['prepared']['archive_source'])
-                if row['adapter'] in {'manual','doubao_work'}:return {'paired':True,'client':committed,'manual_configuration':row['adapter']=='manual','delivery':row['delivery'],'restart_required':False,'local_source_collection':row['adapter']=='doubao_work'}
-                return {"paired":True,"client":committed,
+                if row['adapter'] in {'manual','doubao_work'}:
+                    result={'paired':True,'client':committed,'manual_configuration':row['adapter']=='manual',
+                            'delivery':row['delivery'],'restart_required':False,
+                            'local_source_collection':row['adapter']=='doubao_work'}
+                else:
+                    result={"paired":True,"client":committed,
                         "config":{"target_path":config_result["path"],
                                   "backup":config_result["backup"],
                                   "before_sha256":config_result["before_sha256"],
@@ -199,6 +209,28 @@ class PairingTransactionManager:
                 if config_result:config_rollback(config_result)
                 elif row.get('config_token'):config_cancel(row["config_token"])
                 raise
+            # The pairing is now committed. Never start scanning on preview,
+            # cancellation, failed commit, credential rotation or an existing source.
+            if row['adapter'] == 'codex':
+                result['auto_archive'] = 'existing_settings_preserved'
+                if not prior_local_source:
+                    try:
+                        from .codex_source_adapter import CodexSourceAdapter
+                        if CodexSourceAdapter(self.registry.context).enable_for_first_pairing():
+                            result['auto_archive'] = 'enabled'
+                    except Exception as exc:
+                        result['auto_archive'] = 'activation_failed'
+                        result['collection_warning'] = f'连接已配对；后台归档启用失败（{type(exc).__name__}），请在对话档案中手动启用。'
+            elif row['adapter'] == 'hermes':
+                result['auto_archive'] = 'existing_settings_preserved'
+                if not prior_local_source:
+                    try:
+                        from .hermes_session_adapter import enable_history_for_first_pairing
+                        result['auto_archive'] = enable_history_for_first_pairing()
+                    except Exception as exc:
+                        result['auto_archive'] = 'activation_failed'
+                        result['collection_warning'] = f'连接已配对；历史补齐启用失败（{type(exc).__name__}），请在对话档案中手动启用。'
+            return result
 
     def pending_count(self) -> int:
         with self._lock:self._expire();return len(self._pending)

@@ -10,7 +10,32 @@ from .session_manager import session_start,session_append,session_status,list_se
 from .conversation_visibility import hermes_exclusions, message_structure_reason
 from .session_manager import ARCHIVE_ROOT,_archive_path
 STATE=active_workspace().sync/"hermes-adapter.json"
-DEFAULT_DB=Path(os.getenv("LOCALAPPDATA",Path.home()/"AppData"/"Local"))/"hermes"/"state.db"
+def db_candidates():
+    local=Path(os.getenv('LOCALAPPDATA') or Path.home()/'AppData'/'Local')
+    roaming=Path(os.getenv('APPDATA') or Path.home()/'AppData'/'Roaming')
+    values=[os.getenv('KNOWLEDGE_BRIDGE_HERMES_DB'), local/'hermes'/'state.db',
+            roaming/'hermes'/'state.db', Path.home()/'.hermes'/'state.db']
+    result=[];seen=set()
+    for value in values:
+        if not value:continue
+        path=Path(value).expanduser()
+        token=os.path.normcase(str(path.resolve()))
+        if token not in seen:seen.add(token);result.append(path)
+    return result
+
+
+def selected_db_path():
+    for path in db_candidates():
+        if not path.is_file():continue
+        try:
+            with closing(sqlite3.connect(f'file:{path.resolve().as_posix()}?mode=ro',uri=True,timeout=1)) as db:
+                tables={row[0] for row in db.execute("select name from sqlite_master where type='table'")}
+                if {'sessions','messages'} <= tables:return path
+        except (OSError,sqlite3.Error):continue
+    return db_candidates()[0]
+
+
+DEFAULT_DB=selected_db_path()
 _lock=threading.RLock()
 _worker_thread=None
 _worker_error=None
@@ -67,12 +92,52 @@ def _attachments(session_id,message_id,message_order,items,*,return_changed=Fals
         changed=append_rows(root,out)
     return (out,changed) if return_changed else out
 
-def initialize(db_path=DEFAULT_DB):
+def initialize(db_path=None):
+    db_path=Path(db_path) if db_path is not None else selected_db_path()
     with _lock:
         state=_load()
+        previous=state.get('db_path')
+        if previous and Path(previous).resolve()!=db_path.resolve():
+            state.setdefault('previous_sources',[]).append({
+                'db_path':previous,'cursor':state.get('cursor'),
+                'history':state.get('history'),'closed_at':_now(),
+                'reason':'selected_source_changed'})
+            prior_history=state.get('history')
+            state['cursor']=None
+            if prior_history and prior_history.get('status')!='paused':
+                state['history']=None
+                state['auto_history_pending']=True
+            # An Owner pause belongs to the old source and remains intact.
+            # Resuming a different database still requires explicit review.
         if state.get("cursor") is None:
             with closing(_connect(db_path)) as db:state["cursor"]=db.execute("select coalesce(max(id),0) from messages").fetchone()[0]
         state.update({"status":"watching","db_path":str(db_path),"last_error":None});_save(state);return state
+
+def enable_history_for_first_pairing(db_path=None):
+    """Queue bounded historical backfill after a new Hermes source is selected."""
+    from .memory_control import interface_state
+    db_path=Path(db_path) if db_path is not None else selected_db_path()
+    with _lock:
+        state=_load()
+        if (state.get('history') is not None or state.get('status')=='paused' or
+                not interface_state()['interfaces']['save_raw_conversation']['enabled']):
+            return 'existing_settings_preserved'
+        state['auto_history_pending']=True
+        if Path(db_path).is_file():
+            _start_pending_history(state,db_path)
+        _save(state)
+        return 'enabled' if state.get('history') else 'waiting_for_source'
+
+def _start_pending_history(state,db_path):
+    if not state.get('auto_history_pending') or state.get('history') is not None:
+        return
+    with closing(_connect(db_path)) as db:
+        upper,count=db.execute('select coalesce(max(id),0),count(*) from messages').fetchone()
+    state['history']={'status':'running','cursor':0,'upper_id':upper,
+                      'source_rows_at_start':count,'processed_rows':0,'accepted_rows':0,
+                      'excluded_rows':0,'ignored_rows':0,'orphan_rows':0,'missing_rows':0,
+                      'started_at':_now(),'db_path':str(Path(db_path).resolve()),'last_error':None}
+    state['auto_history_pending']=False
 
 def _refs(row):
     refs=[]
@@ -184,8 +249,9 @@ def _accept_row(row,state,db_path):
     state['observations'][key]={'message_id':message_id,'base_id':base_id,'fingerprint':fingerprint,'session_id':sid,'active':True}
     return changed
 
-def history_control(action,db_path=DEFAULT_DB,*,owner_confirmed=False):
+def history_control(action,db_path=None,*,owner_confirmed=False):
     """Explicit historical scan, independent of the live high-water mark."""
+    db_path=Path(db_path) if db_path is not None else selected_db_path()
     if action not in {'start','pause','resume'}:raise ValueError('历史导入操作应为 start、pause 或 resume')
     if owner_confirmed is not True:raise PermissionError('请确认导入或调整 Hermes 历史归档')
     if action in {'start','resume'}:
@@ -241,12 +307,16 @@ def _history_step(state,db_path,*,batch_size=50):
     except Exception as error:
         history.update(status='error',last_error=str(error));_save(state)
 
-def sync_once(db_path=DEFAULT_DB):
+def sync_once(db_path=None):
+    db_path=Path(db_path) if db_path is not None else selected_db_path()
     with _lock:
         state=initialize(db_path);cursor=int(state.get("cursor") or 0)
         from .memory_control import interface_state
         if not interface_state()["interfaces"]["save_raw_conversation"]["enabled"]:
             state.update({"status":"paused","last_sync":_now(),"last_error":None});_save(state);return state
+        if state.get('auto_history_pending') and state.get('history') is None:
+            _start_pending_history(state,db_path)
+            _save(state)
         try:
             _seed_observations(state,db_path)
             with closing(_connect(db_path)) as db:
@@ -304,7 +374,7 @@ def status():
     state['worker_alive']=_worker_thread.is_alive() if _worker_thread is not None else None
     if _worker_error:state.update(status='error',last_error=_worker_error)
     return state|{"current_session":sessions[0] if sessions else None,"memory_mode":"full" if state.get("status") in {"watching","running"} and sessions else "readonly","archive_enabled":state.get("status")!="paused"}
-def run(interval=2.0,stop_event=None,db_path=DEFAULT_DB):
+def run(interval=2.0,stop_event=None,db_path=None):
     global _worker_thread,_worker_error
     _worker_thread=threading.current_thread();_worker_error=None
     stop=stop_event if stop_event is not None else threading.Event()
@@ -327,7 +397,7 @@ def run(interval=2.0,stop_event=None,db_path=DEFAULT_DB):
 def summary_status():
     """Status without observations, source fingerprints or session-body reconstruction."""
     state=_load()
-    result={k:state.get(k) for k in ['cursor','status','last_error','last_sync','last_live_sync','synced_messages','history']}
+    result={k:state.get(k) for k in ['cursor','status','db_path','last_error','last_sync','last_live_sync','synced_messages','history']}
     result['worker_alive']=_worker_thread.is_alive() if _worker_thread is not None else None
     if _worker_error:result.update(status='error',last_error=_worker_error)
     result['pending_projection_count']=len(state.get('pending_materializations',{}))

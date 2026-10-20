@@ -5,14 +5,16 @@ from .search_scopes import search_scope
 from .workspace import active_workspace
 
 MODES={'keyword','vector','hybrid'}
-SCOPES={'formal','evidence','inbox'}
+SCOPES={'formal','evidence','inbox','workspace'}
 FORMAL_PREFIXES=('00_系统/','01_当前状态/','02_项目/','03_知识/')
 
 class DirectoryRetrievalContext:
     def __init__(self,root):
         self.root=Path(root).resolve();self.formal_roots=tuple(self.root/n for n in ('00_系统','01_当前状态','02_项目','03_知识'))
         self.raw_archive=self.root/'90_原始档案';self.inbox=self.root/'99_收件箱';self.initialized=True
+        self.workspace_id=None
     def relative(self,path):return Path(path).resolve().relative_to(self.root).as_posix()
+    def index_root(self,scope):return self.root/'.jiedu'/'index'/scope
 
 class RetrievalService:
     def __init__(self,context=None,*,vector_backend=True,vector_backend_reason=None):
@@ -32,6 +34,8 @@ class RetrievalService:
                 backend=core
                 if scope=='evidence':
                     from . import evidence_index as backend
+                elif scope=='workspace':
+                    from . import workspace_vector as backend
                 model_state=core.local_model_status()
                 if Path(core.VAULT).resolve()!=self.context.root.resolve():reason='向量索引工作区不匹配'
                 elif model_state['state']=='unavailable':reason='本机没有完整的向量模型缓存，已回退段落检索'
@@ -40,11 +44,14 @@ class RetrievalService:
                 elif model_state['state']=='load_failed':reason='本机向量模型加载失败，已回退段落检索'
                 elif core.model_busy():reason='后台索引或其他请求占用共享向量模型，本次使用段落检索；未等待后台索引完成'
                 else:
-                    freshness=backend.index_freshness() if scope=='formal' else backend.freshness(self.context)
-                    if scope=='evidence' and backend.table() is not None and not freshness['fresh']:
+                    freshness=(backend.index_freshness() if scope=='formal' else
+                               backend.status(self.context) if scope=='workspace' else backend.freshness(self.context))
+                    active_table=backend.table(self.context) if scope in {'evidence','workspace'} else backend.table()
+                    if scope=='evidence' and active_table is not None and not freshness['fresh']:
                         backend.start_sync(self.context,operation='console_query_evidence_incremental')
-                    if backend.table() is None:reason=('正式' if scope=='formal' else '证据')+'向量索引尚未建立'
+                    if active_table is None:reason=('正式' if scope=='formal' else '本机资料' if scope=='workspace' else '证据')+'向量索引尚未建立'
                     elif scope=='formal' and not freshness['fresh']:reason='正式向量索引不是当前版本，已回退段落检索；请先完成增量同步'
+                    elif scope=='workspace' and not freshness['ready']:reason='本机资料向量索引不是当前版本，已回退关键词检索；请更新索引'
                     else:
                         try:
                             query_vector=core.embed([query],local_only=True,lock_timeout=.1)[0];embedding_ran=True
@@ -68,7 +75,7 @@ class RetrievalService:
         effective=mode if vector and result.get('vector_matched_passages') else 'keyword'
         if vector and effective=='keyword':reason='向量候选未定位到当前版本正文，已使用段落检索'
         result.update(requested_mode=mode,effective_mode=effective,vector_used=effective!='keyword',embedding_used=embedding_ran,fallback_reason=reason,
-                      retrieval_backend={"scope":scope,"vector_index_available":scope in {'formal','evidence'} and self.vector_backend,
+                      retrieval_backend={"scope":scope,"vector_index_available":scope in {'formal','evidence','workspace'} and self.vector_backend,
                                          "model":model_state,"index_freshness":freshness,
                                          "attachments":"只检索已生成且在所选范围内的可读派生文本"})
         for row in result['results']:row.update(search_method=effective,fallback_reason=reason)

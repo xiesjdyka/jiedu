@@ -1,4 +1,4 @@
-"""Read-only, versioned adapter for Codex JSONL sessions.
+"""Read-only, versioned adapter for Codex local sessions.
 
 Codex-private event shapes stop at this module. ArchiveStore receives only
 NormalizedMessage and NormalizedAttachment objects.
@@ -62,6 +62,21 @@ def _fingerprint(raw: bytes) -> str:
     return hashlib.sha256(raw.rstrip(b"\r\n")).hexdigest()
 
 
+def _default_codex_home() -> Path:
+    override = os.environ.get('KNOWLEDGE_BRIDGE_CODEX_HOME')
+    if override:
+        return Path(override).expanduser().resolve()
+    candidates = [Path(os.environ['CODEX_HOME'])] if os.environ.get('CODEX_HOME') else []
+    candidates.append(Path.home() / '.codex')
+    for path in candidates:
+        root = path.expanduser().resolve()
+        if any(root.glob('thread_history_*.sqlite')) or any(
+                (root / folder).is_dir() and next((root / folder).rglob('rollout-*.jsonl'), None)
+                for folder in ('sessions', 'archived_sessions')):
+            return root
+    return candidates[0].expanduser().resolve()
+
+
 @dataclass(frozen=True)
 class DiscoveredSession:
     session_id: str
@@ -90,8 +105,7 @@ class CodexSourceAdapter:
     def __init__(self, context: WorkspaceContext | None = None, *,
                  codex_home: Path | None = None, machine_data: Path | None = None):
         self.context = context or require_active_workspace()
-        self.codex_home = (codex_home or Path(os.environ.get("KNOWLEDGE_BRIDGE_CODEX_HOME") or
-                                             (Path.home() / ".codex"))).expanduser().resolve()
+        self.codex_home = (codex_home or _default_codex_home()).expanduser().resolve()
         self.machine_data = (machine_data or local_path("codex-adapter")).expanduser().resolve()
         self.state_path = self.context.sync / "codex-source-adapter.json"
         self.audit_path = self.context.audit / "codex-sync.jsonl"
@@ -140,6 +154,21 @@ class CodexSourceAdapter:
         if {k:v for k,v in old.items() if k != 'updated_at'} == {k:v for k,v in state.items() if k != 'updated_at'}:
             return
         state["updated_at"] = _now(); _atomic_json(self.state_path, state)
+
+    def enable_for_first_pairing(self) -> bool:
+        """Start local history and live collection only for a new Codex source.
+
+        Any existing state, including an explicit pause or selected scope, belongs
+        to the owner and must survive a later pairing or repair unchanged.
+        """
+        with self._lock, self._process_lock.acquire(timeout=30):
+            if self.state_path.exists():
+                return False
+            state = self._state()
+            state["archive_policy"] = "all"
+            state["resume_policy"] = "all"
+            self._save_state(state)
+            return True
 
     def _instance_id(self) -> str:
         value = read_object(self.instance_path)
@@ -357,13 +386,37 @@ class CodexSourceAdapter:
 
     def status(self, *, discovered: dict[str, DiscoveredSession] | None = None, _state_override=None) -> dict:
         result=self._status(discovered=discovered,_state_override=_state_override)
+        from .codex_sqlite_history import summary as sqlite_summary
+        result['sqlite'] = sqlite_summary(self)
+        from .local_source_status import _codex_locations
+        result['source_locations'] = _codex_locations(self)
+        history = result.get('history') or {}
+        counts = history.get('counts') or {}
+        result['source_progress'] = {
+            'history': {'unit': 'files', 'known_total': history.get('fragment_count') or None,
+                        'checked': history.get('completed_fragments', 0),
+                        'archived_messages': (history.get('archived_messages') or 0) +
+                                             ((result.get('live') or {}).get('saved_messages') or 0),
+                        'excluded': counts.get('excluded', 0),
+                        'failed_missing': counts.get('failed', 0) + counts.get('source_missing', 0),
+                        'total_is_dynamic': True},
+            'sqlite': result['sqlite'],
+            'live': result.get('live') or {},
+        }
         from .attachment_reference_stats import summarize
         rows=[]
-        keys=[cursor['session_key'] for cursor in result.get('current_cursors',{}).values() if cursor and cursor.get('session_key')]
+        policy_state = _state_override if _state_override is not None else self._state()
+        scope = policy_state['resume_policy'] if policy_state['archive_policy'] == 'paused' else policy_state['archive_policy']
+        allowed = set(policy_state['selected_session_ids'])
+        excluded = set(policy_state['excluded_session_ids'])
+        sessions = {item['session_key']: item for item in self.store._registry().get('sessions', {}).values()
+                    if item.get('source_key') == 'codex' and item.get('source_session_id') not in excluded
+                    and (scope == 'all' or item.get('source_session_id') in allowed)}
+        keys=list(sessions)
         attachment_rows=self.store.attachment_status_many(keys)
-        for source_session_id,cursor in result.get('current_cursors',{}).items():
-            if not cursor or not cursor.get('session_key'):continue
-            for row in attachment_rows[cursor['session_key']]:rows.append(dict(row,session_key=cursor['session_key'],source_session_id=source_session_id))
+        for session_key,item in sessions.items():
+            for row in attachment_rows[session_key]:
+                rows.append(dict(row,session_key=session_key,source_session_id=item['source_session_id']))
         from .attachment_reference_review import read_reviews
         result['attachment_references']=summarize(rows,_read_json(self.locator_path,{}),read_reviews(self.context))
         return result
@@ -559,9 +612,23 @@ class CodexSourceAdapter:
             except ValueError:
                 unsupported += 1; self._review(source.session_id, last_fingerprint, "invalid_json", line_start, {})
                 continue
+            if isinstance(event, dict) and event.get('type') == 'turn_context':
+                turn_payload = event.get('payload')
+                if isinstance(turn_payload, dict) and turn_payload.get('turn_id'):
+                    cursor['source_turn_id'] = str(turn_payload['turn_id'])
             parsed = self._normalize_event(event, source.session_id)
             if parsed["status"] == "message":
                 message: NormalizedMessage = parsed["message"]
+                if message.role == 'assistant' and cursor.get('source_turn_id'):
+                    message = replace(message, provenance={**(message.provenance or {}),
+                                                           'source_turn_id': cursor['source_turn_id']})
+                from .codex_sqlite_history import match_jsonl
+                matched = match_jsonl(self, source.session_id, session['session_key'], message)
+                if matched:
+                    message = replace(message, message_id=matched,
+                                      provenance={**(message.provenance or {}),
+                                                  'jsonl_message_id': message.message_id,
+                                                  'cross_source_match': 'sqlite'})
                 message = replace(message, sync_position={"byte_offset": line_start, "byte_end": line_end})
                 position = {
                     "source_file": source.relative_path, "source_file_identity": source.meta_fingerprint,
@@ -1218,6 +1285,8 @@ def status_summary(context=None):
     fields={'adapter','parser_version','discovered_session_count','discovered_fragment_count','authorized_session_count','excluded_session_count','last_sync_at','last_message_sync_at','last_sync_message_count','total_archived_message_count','total_attachment_count','missing_attachment_count','failed_session_count','needs_review_event_count','needs_review_session_count','gap_detected','body_complete_session_count','format_review'}
     result={k:v for k,v in snapshot.items() if k in fields}
     result.update(adapter='codex',archive_policy=policy,resume_policy=state.get('resume_policy','selected'),enabled=policy!='paused',last_error=state.get('last_error'),snapshot_updated_at=snapshot.get('last_sync_at'),configuration_updated_at=state.get('updated_at'),last_sync_at=state.get('last_sync_at'),live=state.get('live_progress',{}))
+    result['total_archived_message_count'] = sum(int(item.get('message_count') or 0)
+        for item in registry['sessions'].values() if item.get('source_key') == 'codex')
     result['history']={k:v for k,v in history.items() if k!='items'}
     result['history']['items']=[{k:v for k,v in row.items() if k in {'session_id','status','error','source_file'}} for row in history.get('items',[]) if row.get('status') in {'failed','needs_review','source_missing','excluded'}][:30]
     result['history']['details_limited']=True

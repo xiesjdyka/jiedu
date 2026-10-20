@@ -1133,6 +1133,12 @@ def api_client_access_policy(internal_id:str,request:Request,payload:ClientPolic
         return permissions.set_policy(internal_id,payload.scope,payload.operation,payload.decision,payload.selector)
     except ValueError as exc:raise HTTPException(400,str(exc))
 
+@app.post('/api/client-access/clients/{internal_id}/restore-recommended')
+def api_client_access_restore_recommended(internal_id:str,request:Request):
+    _same_origin(request);_owner(request,refresh=True);_,permissions=_client_services(request)
+    try:return {'policies':permissions.restore_recommended(internal_id)}
+    except ValueError as exc:raise HTTPException(400,str(exc))
+
 @app.get("/api/client-access/confirmations")
 def api_client_access_confirmations(request:Request):
     manager=_protection_manager(request)
@@ -1322,7 +1328,7 @@ def document_original(request:Request,path:str):
 
 @app.get("/api/search")
 def api_search(request:Request,q:str,mode:str="hybrid",limit:int=10,source_type:str|None=None,folder:str|None=None,project:str|None=None,detailed:bool=False,scope:str="formal",candidate_budget:int=80,excerpt_budget:int=6000):
-    if scope not in {"formal","evidence","inbox"}:raise HTTPException(400,"无效检索范围；有效值：formal（正式知识）、evidence（原始证据）、inbox（收件箱）")
+    if scope not in {"formal","workspace","evidence","inbox"}:raise HTTPException(400,"无效检索范围；有效值：formal（正式知识）、workspace（本机资料）、evidence（原始证据）、inbox（收件箱）")
     if scope!="formal":_owner_read(request)
     if mode not in {"keyword","vector","hybrid"}: raise HTTPException(400,"无效模式")
     try:
@@ -1345,8 +1351,8 @@ def api_internal_mcp_search(request:Request,payload:InternalSearchRequest):
     registry=request.app.state.client_registry;permissions=request.app.state.client_permissions
     identity=registry.authenticate(claimed,secret,mark_seen=False)
     if not identity.authenticated:raise HTTPException(401,'客户端认证失败')
-    if payload.scope not in {'formal','evidence'} or payload.mode not in {'vector','hybrid'}:
-        raise HTTPException(400,'内部转交仅接受正式知识或证据的向量或混合检索')
+    if payload.scope not in {'formal','workspace','evidence'} or payload.mode not in {'vector','hybrid'}:
+        raise HTTPException(400,'内部转交仅接受正式知识、本机资料或证据的向量或混合检索')
     options={'mode':payload.mode,'folder':payload.folder,'project':payload.project,
              'source_type':payload.source_type,'candidate_budget':payload.candidate_budget,'excerpt_budget':payload.excerpt_budget}
     target,decision=ClientAccessGate(permissions,identity).search(
@@ -1366,14 +1372,18 @@ def api_search_status():
     from .search_scopes import scope_health
     from .evidence_index import table as evidence_vector_table
     context=active_workspace();summary=scope_health(context)
-    for scope in ('formal','evidence','inbox'):
-        summary[scope].update(vector_supported=scope in {'formal','evidence'},
-                              reason=None if scope in {'formal','evidence'} else '该范围使用有界本地段落检索')
+    for scope in ('formal','workspace','evidence','inbox'):
+        summary[scope].update(vector_supported=scope in {'formal','workspace','evidence'},
+                              reason=None if scope in {'formal','workspace','evidence'} else '该范围使用有界本地段落检索')
     evidence_available=evidence_vector_table(context) is not None
     summary['formal']['vector_available']=bool(overview().get('vector_count'))
     summary['evidence'].update(vector_available=evidence_available,
         reason=None if evidence_available else '证据向量索引尚未建立；当前使用关键词检索')
     summary['inbox']['vector_available']=False
+    workspace_index=knowledge_base_status().get('workspace_index') or {}
+    workspace_available=bool(workspace_index.get('vector_ready'))
+    summary['workspace'].update(vector_available=workspace_available,
+        reason=None if workspace_available else workspace_index.get('last_error') or '本机资料向量索引尚未建立；当前使用关键词检索')
     return {"formal":overview(),"scopes":summary}
 @app.get("/api/search/context/{message_id}")
 def api_message_context(message_id:str,request:Request,before:int=2,after:int=2):
@@ -1780,6 +1790,12 @@ def api_build_knowledge_base_index(request:OwnerConfirmRequest):
         return result
     except PermissionError as e:raise HTTPException(403,str(e))
     except ValueError as e:raise HTTPException(400,str(e))
+@app.get('/api/knowledge-base/index-tasks/{task_id}')
+def api_knowledge_base_index_task(task_id:str,request:Request):
+    _owner_read(request)
+    from .workspace_vector import task_status
+    try:return task_status(task_id,active_workspace())
+    except ValueError as e:raise HTTPException(404,str(e))
 @app.post("/api/evidence-index/rebuild")
 def api_build_evidence_index(request:EvidenceIndexBuildRequest):
     if not request.owner_confirmed:raise HTTPException(403,"证据索引重建需要 Owner 确认")
@@ -1824,6 +1840,12 @@ def api_original_archive_state(session_id:str,payload:OriginalArchiveStateReques
     _same_origin(request);_owner(request,refresh=True)
     try:return set_original_archive_status(session_id,payload.status)
     except ValueError as e:raise HTTPException(400,str(e))
+
+@app.get('/api/local-sources/status')
+def api_local_sources_status(request:Request):
+    _owner_read(request)
+    from .local_source_status import status
+    return status()
 
 @app.get("/api/codex-archive/status")
 def api_codex_archive_status():

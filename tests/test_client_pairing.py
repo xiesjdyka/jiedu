@@ -1,3 +1,4 @@
+import json
 import tempfile
 import tomllib
 import unittest
@@ -43,10 +44,14 @@ class PairingTransactionTests(unittest.TestCase):
                 manager.cancel(pending["pairing_id"])
                 self.assertEqual([],registry.list_clients())
                 self.assertEqual(original,adapter.path.read_text("utf-8"))
+                state_path=registry.context.sync/'codex-source-adapter.json'
+                self.assertFalse(state_path.exists())
 
                 pending=manager.begin("codex","Codex","codex","stdio",chosen)
                 result=manager.commit(pending["pairing_id"])
                 self.assertTrue(result["paired"]);self.assertTrue(result["restart_required"])
+                self.assertEqual('enabled',result['auto_archive'])
+                self.assertEqual('all',json.loads(state_path.read_text('utf-8'))['archive_policy'])
                 self.assertEqual(1,len(registry.list_clients()))
                 text=adapter.path.read_text("utf-8")
                 self.assertIn("KNOWLEDGE_BRIDGE_CLIENT_SECRET",text)
@@ -82,6 +87,7 @@ class PairingTransactionTests(unittest.TestCase):
                 self.assertEqual(original,adapter.path.read_bytes())
                 self.assertEqual([],registry.list_clients())
                 self.assertEqual([],permissions.policies(pending["client"]["internal_id"]))
+                self.assertFalse((registry.context.sync/'codex-source-adapter.json').exists())
 
     def test_rotation_preview_is_secret_free_and_commit_is_atomic(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -140,6 +146,10 @@ class PairingTransactionTests(unittest.TestCase):
         self.assertNotIn("showRotatedSecret",script)
         self.assertIn("data-pair-permission=\"evidence\"",html)
         self.assertIn("data-pair-permission=\"formal_write\"",html)
+        self.assertIn('data-pair-permission="inbox_write"',html)
+        self.assertIn('<option value="allow" selected>允许提交候选</option>',html)
+        self.assertIn('restore-recommended',script)
+        self.assertIn('历史补齐＋新消息',script)
         self.assertIn("read_verified",script)
         self.assertIn("/static/app.js?v=",html)
 
@@ -156,6 +166,8 @@ class PairingTransactionTests(unittest.TestCase):
                 self.assertEqual('manual_fields',presets['custom']['configuration'])
                 self.assertTrue(all(row['decision']=='allow' for row in first['initial_policies'] if row['scope']=='formal' and row['operation'] in {'search','read','context'}))
                 self.assertEqual('allow',next(row['decision'] for row in first['initial_policies'] if row['operation']=='raw_archive'))
+                self.assertEqual('allow',next(row['decision'] for row in first['initial_policies'] if row['operation']=='submit_candidate'))
+                self.assertEqual('allow',next(row['decision'] for row in first['initial_policies'] if row['operation']=='save_inbox'))
                 chosen={'formal':'deny','evidence':'allow','inbox':'deny','formal_write':'ask','archive_write':'deny'}
                 automatic=manager.begin('codex_custom_policy','Codex','codex','stdio',chosen)
                 manual=manager.begin('custom_policy','Custom','custom','stdio',chosen,'Test client')
@@ -163,6 +175,30 @@ class PairingTransactionTests(unittest.TestCase):
                 self.assertEqual(policies(automatic),policies(manual))
                 self.assertEqual('deny',policies(automatic)[('formal','read')])
                 self.assertEqual('allow',policies(automatic)[('evidence','read')])
+
+    def test_existing_pause_is_preserved_and_recommended_restore_is_explicit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);registry,permissions,adapter,patches=self.harness(root)
+            state_path=registry.context.sync/'codex-source-adapter.json'
+            state_path.write_text(json.dumps({'archive_policy':'paused','resume_policy':'selected',
+                                              'sessions':{},'selected_session_ids':[]}),encoding='utf-8')
+            original=state_path.read_bytes()
+            with patches[0],patches[1],patches[2],patches[3],patches[4]:
+                manager=PairingTransactionManager(registry,permissions)
+                pending=manager.begin('codex','Codex','codex','stdio')
+                result=manager.commit(pending['pairing_id'])
+                self.assertEqual('existing_settings_preserved',result['auto_archive'])
+                self.assertEqual(original,state_path.read_bytes())
+                identity=registry.authenticate('codex',pending['secret'])
+                self.assertEqual(PolicyDecision.ALLOW,permissions.authorize(identity,'inbox','save_inbox').outcome)
+                self.assertEqual(PolicyDecision.ALLOW,permissions.authorize(identity,'formal','submit_candidate').outcome)
+                permissions.set_policy(identity.internal_id,'inbox','save_inbox','deny')
+                permissions.set_policy(identity.internal_id,'formal','search','deny',{'project_id':'private'})
+                self.assertEqual(PolicyDecision.DENY,permissions.authorize(identity,'inbox','save_inbox').outcome)
+                permissions.restore_recommended(identity.internal_id)
+                self.assertEqual(PolicyDecision.ALLOW,permissions.authorize(identity,'inbox','save_inbox').outcome)
+                self.assertEqual(PolicyDecision.DENY,permissions.authorize(identity,'formal','search',{'project_id':'private'}).outcome)
+                self.assertEqual(PolicyDecision.DENY,permissions.authorize(identity,'protected','read_protected').outcome)
 
 
     def test_doubao_preset_binds_local_collector_without_editing_client_config(self):

@@ -147,7 +147,7 @@ class ClientRegistryTests(unittest.TestCase):
             self.assertFalse(any(thread.is_alive() for thread in threads))
             self.assertEqual(2,len(first.pending()))
 
-    def test_encryption_off_opens_only_authenticated_ordinary_reads(self):
+    def test_encryption_off_defaults_open_but_respects_explicit_deny(self):
         with tempfile.TemporaryDirectory() as temporary:
             base=Path(temporary);context=initialize_workspace(base/"workspace")
             registry=ClientIdentityRegistry(context,base/"machine")
@@ -162,14 +162,17 @@ class ClientRegistryTests(unittest.TestCase):
                 service.set_policy(identity.internal_id,"inbox","read","deny")
                 for scope,operation in (("formal","search"),("evidence","read"),("inbox","read")):
                     decision=service.authorize(identity,scope,operation)
-                    self.assertEqual(PolicyDecision.ALLOW,decision.outcome)
-                    self.assertEqual("ordinary_read_open",decision.reason)
+                    self.assertEqual(PolicyDecision.DENY,decision.outcome)
+                    self.assertEqual("policy_deny",decision.reason)
+                self.assertEqual(PolicyDecision.ALLOW,service.authorize(identity,'formal','read').outcome)
                 unauthenticated=registry.authenticate("open_agent","wrong-secret")
                 self.assertEqual(PolicyDecision.DENY,service.authorize(unauthenticated,"inbox","read").outcome)
                 restarted_registry=ClientIdentityRegistry(context,base/"machine")
                 restarted=ClientPermissionService(restarted_registry)
                 restarted_identity=restarted_registry.authenticate("open_agent",created["secret"])
-                self.assertEqual(PolicyDecision.ALLOW,restarted.authorize(restarted_identity,"inbox","read").outcome)
+                self.assertEqual(PolicyDecision.DENY,restarted.authorize(restarted_identity,"inbox","read").outcome)
+                service.set_policy(identity.internal_id,'inbox','read','allow')
+                self.assertEqual(PolicyDecision.ALLOW,service.authorize(identity,'inbox','read').outcome)
                 self.assertEqual(PolicyDecision.DENY,service.authorize(identity,"formal","submit_candidate").outcome)
                 self.assertEqual(PolicyDecision.DENY,service.authorize(identity,"protected","read_protected").outcome)
                 with self.assertRaises(ValueError):

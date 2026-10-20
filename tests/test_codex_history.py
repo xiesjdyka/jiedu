@@ -20,6 +20,23 @@ class CodexHistoryTests(unittest.TestCase):
         return [json.loads(line) for path in adapter.context.raw_message_store.glob('*.jsonl')
                 for line in path.read_text('utf-8').splitlines()]
 
+    def test_first_pairing_policy_backfills_and_restarts_without_duplicates(self):
+        source=self._source('new-pair',[_message('m01','user','historical message')])
+        self._index([('new-pair','首次连接')])
+        adapter=self._adapter()
+        self.assertTrue(adapter.enable_for_first_pairing())
+        self.assertFalse(adapter.enable_for_first_pairing())
+        adapter.sync()
+        with source.open('ab') as handle:
+            handle.write(_line(_message('m02','assistant','new reply',phase='final')))
+        restarted=self._adapter()
+        for _ in range(10):
+            restarted.sync()
+            if {row['message_id'] for row in self.rows(restarted)}=={'m01','m02'}:break
+        restarted.sync()
+        self.assertEqual({'m01','m02'},{row['message_id'] for row in self.rows(restarted)})
+        self.assertEqual(2,len(self.rows(restarted)))
+
     def test_fixed_batch_tail_fairness_restart_pause_and_no_duplicates(self):
         source = self._source('large', [_message(f'm{i:02}', 'user', f'history {i}') for i in range(1, 11)])
         self._index([('large', '历史')])

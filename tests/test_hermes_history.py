@@ -1,5 +1,5 @@
 """Historical source positions must never overwrite the live high-water mark."""
-import json,sqlite3,tempfile,unittest,time
+import json,shutil,sqlite3,tempfile,unittest,time
 from pathlib import Path
 from unittest.mock import patch
 from knowledge_bridge import hermes_session_adapter as ha,session_manager as sm
@@ -30,6 +30,35 @@ class HermesHistoryTests(unittest.TestCase):
             if ha._load()['history']['status']=='complete':break
         self.assertEqual('complete',ha._load()['history']['status']);self.assertEqual(126,ha._load()['cursor']);self.assertEqual(126,len(self.rows()));self.assertEqual(126,len({r['message_id'] for r in self.rows()}))
         before=self.rows();ha.sync_once(self.db);self.assertEqual(before,self.rows())
+    def test_first_pairing_backfills_then_continues_live_without_duplicates(self):
+        with patch('knowledge_bridge.memory_control.interface_state',return_value={
+                'interfaces':{'save_raw_conversation':{'enabled':True}}}):
+            self.assertEqual('enabled',ha.enable_history_for_first_pairing(self.db))
+            for _ in range(30):
+                ha.sync_once(self.db)
+                if ha._load()['history']['status']=='complete':break
+            self.assertEqual('complete',ha._load()['history']['status'])
+            self.assertEqual(125,len(self.rows()))
+            db=sqlite3.connect(self.db)
+            db.execute('insert into messages values(126,"history","assistant","new live",200,null,"m126","{}",1)')
+            db.commit();db.close()
+            ha.sync_once(self.db);ha.sync_once(self.db)
+            self.assertEqual(126,len(self.rows()))
+            self.assertEqual(126,len({row['message_id'] for row in self.rows()}))
+    def test_missing_source_waits_and_preserves_existing_history_pause(self):
+        later=self.root/'later.db'
+        with patch('knowledge_bridge.memory_control.interface_state',return_value={
+                'interfaces':{'save_raw_conversation':{'enabled':True}}}):
+            self.assertEqual('waiting_for_source',ha.enable_history_for_first_pairing(later))
+            self.assertTrue(ha._load()['auto_history_pending'])
+            shutil.copyfile(self.db,later)
+            ha.sync_once(later)
+            self.assertEqual('running',ha._load()['history']['status'])
+            ha.history_control('pause',later,owner_confirmed=True)
+            before=ha._load()['history']['cursor']
+            ha.sync_once(later)
+            self.assertEqual(before,ha._load()['history']['cursor'])
+            self.assertEqual('existing_settings_preserved',ha.enable_history_for_first_pairing(later))
     def test_failed_history_append_retry_preserves_raw_evidence_and_cursor(self):
         ha.history_control('start',self.db,owner_confirmed=True);actual=ha._accept_row
         def failure(*args):actual(*args);raise OSError('injected after append')

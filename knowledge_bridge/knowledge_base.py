@@ -66,16 +66,19 @@ def _write(data: dict) -> dict:
 
 
 def markdown_files(path: str | Path | None = None) -> list[str]:
+    from .search_scopes import is_hidden
     base = _safe_base(path or load()["vault_path"])
     ignored = {".knowledge-bridge", ".jiedu", ".obsidian", ".git", "node_modules", ".venv", ".venv312"}
     rows: list[str] = []
     for folder, dirs, files in os.walk(base, topdown=True, followlinks=False):
-        dirs[:] = [name for name in dirs if name not in ignored and
-                   not name.startswith("__pycache__") and not (Path(folder) / name).is_symlink()]
+        dirs[:] = [name for name in dirs if name.casefold() not in ignored and not is_hidden(Path(folder) / name) and
+                   not name.startswith("__pycache__") and not (Path(folder) / name).is_symlink() and
+                   not (hasattr(Path(folder) / name, 'is_junction') and (Path(folder) / name).is_junction()) and
+                   (Path(folder) / name).resolve().is_relative_to(base)]
         for name in files:
             if name.lower().endswith(".md"):
                 item = Path(folder) / name
-                if not item.is_symlink():
+                if not item.is_symlink() and not is_hidden(item) and item.resolve().is_relative_to(base):
                     rows.append(item.relative_to(base).as_posix())
     return sorted(rows)
 
@@ -189,12 +192,41 @@ def status() -> dict:
             index = {"file_count": 0, "chunk_count": 0, "vector_count": 0, "index_status": "未建立"}
     else:
         index = {"file_count": 0, "chunk_count": 0, "vector_count": 0, "index_status": "未建立"}
-    runtime_match = base.resolve() == VAULT.resolve()
-    indexed = runtime_match and int(index.get("vector_count") or 0) > 0
+    runtime_match = base.resolve() == VAULT.resolve() and bool(context and active_workspace().workspace_id == context.workspace_id)
+    from .search_scopes import scope_status, files_for_scope, _filesystem_fingerprint
+    workspace_manifest = scope_status(context).get('workspace', {}) if context else {}
+    workspace_files = files_for_scope(context,'workspace') if context and runtime_match else []
+    workspace_fresh = bool(context and runtime_match and
+        workspace_manifest.get('workspace_id')==context.workspace_id and
+        workspace_manifest.get('file_count')==len(workspace_files) and
+        workspace_manifest.get('filesystem_fingerprint')==_filesystem_fingerprint(context,workspace_files))
+    from .workspace_vector import status as workspace_vector_status, latest_task
+    workspace_vector = workspace_vector_status(context) if context and runtime_match else {'ready': False, 'vector_count': 0, 'fresh': False}
+    workspace_task = latest_task(context) if context and runtime_match else None
+    workspace_index = {
+        'file_count': int(workspace_manifest.get('file_count') or 0),
+        'chunk_count': int(workspace_manifest.get('chunk_count') or 0),
+        'vector_count': int(workspace_vector.get('vector_count') or 0) if workspace_vector.get('ready') else 0,
+        'retrieval_mode': 'hybrid' if workspace_vector.get('ready') else 'keyword',
+        'vector_ready': bool(workspace_vector.get('ready')),
+        'vector_fresh': bool(workspace_vector.get('fresh')),
+        'ready': bool(workspace_fresh and workspace_manifest.get('generation') and workspace_manifest.get('chunk_count')),
+        'fresh': workspace_fresh,
+        'rebuilt_at': workspace_manifest.get('rebuilt_at'),
+        'task': workspace_task,
+        'last_error': (workspace_task.get('result') or {}).get('message') if workspace_task and workspace_task.get('status') in {'failed','interrupted','index_busy','source_changed'} else None,
+    }
+    formal_indexed = runtime_match and bool(index.get('vector_index_ready')) and int(index.get('vector_count') or 0) > 0
+    indexed = formal_indexed or workspace_index['ready']
+    stale = runtime_match and not indexed and bool(
+        (workspace_manifest.get('generation') and not workspace_index['fresh']) or
+        (index.get('active_generation') and not formal_indexed))
     if not configured:
         connection_state, state_label = "uninitialized", "尚未选择或初始化工作区"
     elif not runtime_match:
         connection_state, state_label = "restart_required", "已选择知识库 · 等待重启切换"
+    elif stale:
+        connection_state, state_label = "connected_stale", "知识库已连接，索引需要更新"
     elif not indexed:
         connection_state, state_label = "connected_unindexed", "知识库已连接，但索引未建立"
     else:
@@ -219,11 +251,12 @@ def status() -> dict:
         "connection_state": connection_state,
         "state_label": state_label,
         "indexed": indexed,
-        "index_state": "ready" if indexed else "not_built",
-        "index_label": "索引已就绪" if indexed else "索引未建立",
-        "vector_state": "available" if int(index.get("vector_count") or 0) > 0 else "not_built",
-        "vector_label": f"{int(index.get('vector_count') or 0)} 条向量" if int(index.get("vector_count") or 0) > 0 else "未建立语义向量",
+        "index_state": "ready" if indexed else "stale" if stale else "not_built",
+        "index_label": "索引已就绪" if indexed else "索引需要更新" if stale else "索引未建立",
+        "vector_state": "available" if formal_indexed or workspace_index['vector_ready'] else "not_built",
+        "vector_label": f"{(int(index.get('vector_count') or 0) if formal_indexed else 0) + workspace_index['vector_count']} 条向量" if formal_indexed or workspace_index['vector_ready'] else "未建立语义向量",
         "index": index,
+        "workspace_index": workspace_index,
         "markdown_count": int(snapshot.get("markdown_count") or len(files)),
         "content_markdown_count": len(content_files),
         "structure": snapshot.get("structure", []),
@@ -246,11 +279,47 @@ def build_index(owner_confirmed: bool = False) -> dict:
         raise ValueError("请先选择并连接本地知识库")
     if current["restart_required"]:
         raise ValueError("知识库路径已保存，请先重启界渡再建立索引")
-    from .core import rebuild_index
-    result = rebuild_index(operation="owner_api_rebuild")
+    from .core import rebuild_index, scan_files
+    from .search_scopes import files_for_scope, rebuild_scope_stable
+    from .workspace_vector import active_task, start_rebuild
+    context = active_workspace()
+    running = active_task(context)
+    if running:
+        current_status=status()
+        return {'status':'indexing','task_id':running['task_id'],'workspace_id':context.workspace_id,
+                'workspace_index':current_status['workspace_index'],
+                'workspace_vector':running,'knowledge_base':current_status}
+    formal_files = scan_files()
+    ordinary_files = files_for_scope(context, 'workspace')
+    prior_formal = int(current.get('index', {}).get('vector_count') or 0)
+    workspace_index = rebuild_scope_stable('workspace', context)
+    if not workspace_index.get('stable_snapshot'):
+        return {'status': 'source_changed', 'workspace_index': workspace_index, 'knowledge_base': status()}
+    try:
+        result = (rebuild_index(operation="owner_api_rebuild") if formal_files or prior_formal else
+                  {'status': 'skipped_no_formal_sources', 'file_count': 0, 'embedded_chunks': 0})
+    except Exception as exc:
+        result = {'status': 'failed', 'error': type(exc).__name__, 'message': str(exc)}
     if result.get("status")=="index_busy":
-        return {"status":"index_busy","sync":result,"knowledge_base":status()}
-    return {"sync": result, "knowledge_base": status()}
+        return {"status":"index_busy","sync":result,"workspace_index":workspace_index,"knowledge_base":status()}
+    if ordinary_files:
+        try:vector_result=start_rebuild(context)
+        except Exception as exc:vector_result={'status':'failed','error':type(exc).__name__,'message':str(exc)}
+    else:vector_result={'status':'skipped_no_workspace_sources','vector_count':0}
+    updated = status()
+    if vector_result.get('task_id'):
+        return {'status':'indexing','task_id':vector_result['task_id'],'workspace_id':context.workspace_id,
+                'sync':result,'workspace_index':workspace_index,'workspace_vector':vector_result,
+                'knowledge_base':updated}
+    successful_vectors=(vector_result.get('status') in {'rebuilt','skipped_no_workspace_sources'} and
+                        result.get('status') in {'rebuilt','skipped_no_formal_sources'})
+    interrupted=next((item.get('status') for item in (result,vector_result)
+                      if item.get('status') in {'source_changed','index_busy'}),None)
+    final_status = interrupted or ('indexed' if updated['indexed'] and successful_vectors else
+                                   'degraded' if updated['indexed'] else 'empty_corpus')
+    return {'status': final_status,
+            'sync': result, 'workspace_index': workspace_index, 'workspace_vector': vector_result,
+            'knowledge_base': updated}
 
 
 def connect(path: str, core_files: list[str] | None = None) -> dict:

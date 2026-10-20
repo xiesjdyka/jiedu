@@ -147,7 +147,13 @@ def search(query,scope,context,files,*,limit=10,candidate_budget=80,excerpt_budg
     for path in files:
         try:
             relative=path.resolve().relative_to(context.root.resolve()).as_posix()
-            if path.is_symlink() or relative.split('/')[0] not in ({'00_系统','01_当前状态','02_项目','03_知识'} if scope=='formal' else {'90_原始档案'} if scope=='evidence' else {'99_收件箱'}):continue
+            first=relative.split('/')[0]
+            if path.is_symlink():continue
+            if scope=='workspace':
+                from .search_scopes import RESERVED_ROOTS, EXCLUDED_PARTS
+                if first.casefold() in {name.casefold() for name in RESERVED_ROOTS}:continue
+                if any(part.startswith('.') or part.casefold() in EXCLUDED_PARTS for part in relative.split('/')[:-1]):continue
+            elif first not in ({'00_系统','01_当前状态','02_项目','03_知识'} if scope=='formal' else {'90_原始档案'} if scope=='evidence' else {'99_收件箱'}):continue
             if folder and not relative.startswith(folder+'/'):continue
             if project and scope=='formal':
                 prefixes=project_entity['paths'] if project_entity else ['02_项目/'+project]
@@ -163,7 +169,7 @@ def search(query,scope,context,files,*,limit=10,candidate_budget=80,excerpt_budg
             text=codecs.getincrementaldecoder('utf-8')(errors='strict').decode(raw,final=not partial);meta,begin=metadata(text)
             parsed=list(passages(text,begin));source_passages[relative]=parsed
             has_messages=any(item.get('message_id') for item in parsed)
-            kind='derived_document' if meta.get('jiedu_derived')=='true' else 'raw_chat' if scope=='evidence' and has_messages else 'source_document' if scope=='evidence' else 'vault_document'
+            kind='derived_document' if meta.get('jiedu_derived')=='true' else 'raw_chat' if scope=='evidence' and has_messages else 'source_document' if scope in {'evidence','workspace'} else 'vault_document'
             if source_type and source_type not in {kind,'formal_core' if relative.startswith('00_系统/') else kind}:continue
             doc_terms=set();seen=set();doc_rows=[];previous_char=0;previous_byte=0
             digest=hashlib.sha256(raw).hexdigest() if not partial else None
@@ -181,12 +187,12 @@ def search(query,scope,context,files,*,limit=10,candidate_budget=80,excerpt_budg
                 byte_start=previous_byte+len(text[previous_char:p['start']].encode('utf-8'));byte_end=byte_start+len(text[p['start']:p['end']].encode('utf-8'))
                 previous_char=p['start'];previous_byte=byte_start
                 declared_role=meta.get('document_role','');known_roles={'current_snapshot','historical_record','dated_review','source','evidence','stable_definition'}
-                role=declared_role if declared_role in known_roles else 'source' if scope=='evidence' else declared_role
+                role=declared_role if declared_role in known_roles else 'source' if scope in {'evidence','workspace'} else declared_role
                 old=role in {'history','historical_record','dated_review'} or bool(meta.get('superseded_by')) or bool(re.search('历史|旧方案|此前|已被.*取代|暂停点',section))
                 temporal='current_authoritative' if role=='current_snapshot' and not meta.get('valid_until') else 'historical_explicit' if old else 'source_record' if role in {'source','evidence'} else 'unspecified'
                 dates=re.findall(r'20\d{2}-\d{2}-\d{2}',section)
                 vector_hit=vector_hits[vector_rank-1] if vector_rank else {}
-                doc_rows.append({**p,'role':p.get('message_role'),'source_path':relative,'document_title':path.stem,'title':path.stem,'scope':scope,'project':meta.get('project') or (Path(relative).parts[1] if relative.startswith('02_项目/') else None),'source_type':kind,'version':version,'source_version':vector_hit.get('source_version') or digest,'session_id':vector_hit.get('session_id'),'sha256':digest,'chunk_id':f'p1-{version}-{byte_start}','position':{'byte_start':byte_start,'byte_end':byte_end,'line_start':p['line_start'],'line_end':p['line_end']},'document_date':meta.get('updated') or meta.get('date'),'section_dates':dates,'document_role':role or None,'validity':{k:meta.get(k) for k in ('valid_from','valid_until','superseded_by','supersedes','source_version') if meta.get(k)},'temporal_status':temporal,'source':{k:v for k,v in meta.items() if k.startswith('source_')},'verification':'ocr_unverified' if kind=='derived_document' and ('OCR' in text[:begin+1500] or 'ocr' in text[:begin+1500]) else 'unconfirmed_inbox' if scope=='inbox' else 'raw_evidence' if scope=='evidence' else 'source_statement','_present':present,'_folded':folded,'_vector_rank':vector_rank})
+                doc_rows.append({**p,'role':p.get('message_role'),'source_path':relative,'document_title':path.stem,'title':path.stem,'scope':scope,'project':meta.get('project') or (Path(relative).parts[1] if relative.startswith('02_项目/') else None),'source_type':kind,'version':version,'source_version':vector_hit.get('source_version') or digest,'session_id':vector_hit.get('session_id'),'sha256':digest,'chunk_id':f'p1-{version}-{byte_start}','position':{'byte_start':byte_start,'byte_end':byte_end,'line_start':p['line_start'],'line_end':p['line_end']},'document_date':meta.get('updated') or meta.get('date'),'section_dates':dates,'document_role':role or None,'validity':{k:meta.get(k) for k in ('valid_from','valid_until','superseded_by','supersedes','source_version') if meta.get(k)},'temporal_status':temporal,'source':{k:v for k,v in meta.items() if k.startswith('source_')},'verification':'ocr_unverified' if kind=='derived_document' and ('OCR' in text[:begin+1500] or 'ocr' in text[:begin+1500]) else 'unconfirmed_inbox' if scope=='inbox' else 'raw_evidence' if scope in {'evidence','workspace'} else 'source_statement','_present':present,'_folded':folded,'_vector_rank':vector_rank})
             documents.append(doc_terms);rows.extend(doc_rows)
         except (OSError,ValueError,UnicodeError):skipped['unreadable_or_encoding']+=1
     df=Counter(t for r in rows for t in set(r['_present']));n=max(1,len(rows));project_names={r['project'] for r in rows if r.get('project')};named=[p for p in project_names if p in query]

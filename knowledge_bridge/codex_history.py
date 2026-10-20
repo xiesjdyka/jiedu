@@ -64,7 +64,7 @@ def check_boundary(source,item):
 
 def history_summary(state, format_review=None):
     batch=state.get('history_batch')
-    if not batch:return {'status':'not_started','session_count':0,'fragment_count':0,'completed_fragments':0,'total_bytes':0,'processed_bytes':0}
+    if not batch:return {'status':'not_started','session_count':0,'fragment_count':0,'completed_fragments':0,'archived_messages':0,'total_bytes':0,'processed_bytes':0}
     verified=set((format_review or {}).get('verified_session_ids', []))
     items=[dict(i, status='complete') if i.get('status')=='needs_review' and i['session_id'] in verified else i
            for i in batch['items'].values()]
@@ -77,7 +77,7 @@ def history_summary(state, format_review=None):
     issues += missing_attachments + failed_attachments
     if state.get('resume_policy') == 'all' or state.get('archive_policy') == 'all':
         issues += len(state.get('discovery_issues', []))
-    return {'batch_id':batch['batch_id'],'created_at':batch['created_at'],'status':'paused' if state['archive_policy']=='paused' else 'importing' if pending else 'completed_with_issues' if issues else 'completed','session_count':len({i['session_id'] for i in items}),'fragment_count':len(items),'completed_sessions':completed_sessions,'completed_fragments':counts['complete'],'counts':counts,'total_bytes':sum(i.get('target_offset') if i.get('target_offset') is not None else i['captured_size'] for i in items),'processed_bytes':sum(min(i.get('confirmed_offset',0),i.get('target_offset') or i['captured_size']) for i in items),'deferred_partial_bytes':sum(i.get('deferred_partial_bytes',0) for i in items),'scope':'本批固定源分片与字节水位；不包含之后新增内容','items':[{'session_id':i['session_id'],'source_file':i['source_file'],'status':i['status'],'error':i.get('error')} for i in items]}
+    return {'batch_id':batch['batch_id'],'created_at':batch['created_at'],'status':'paused' if state['archive_policy']=='paused' else 'importing' if pending else 'completed_with_issues' if issues else 'completed','session_count':len({i['session_id'] for i in items}),'fragment_count':len(items),'completed_sessions':completed_sessions,'completed_fragments':counts['complete'],'counts':counts,'archived_messages':sum(i.get('archived_messages',0) for i in items),'total_bytes':sum(i.get('target_offset') if i.get('target_offset') is not None else i['captured_size'] for i in items),'processed_bytes':sum(min(i.get('confirmed_offset',0),i.get('target_offset') or i['captured_size']) for i in items),'deferred_partial_bytes':sum(i.get('deferred_partial_bytes',0) for i in items),'scope':'本批固定源分片与字节水位；不包含之后新增内容','items':[{'session_id':i['session_id'],'source_file':i['source_file'],'status':i['status'],'error':i.get('error')} for i in items]}
 
 def aggregate(state,discovered):
     for sid,row in state['sessions'].items():
@@ -236,6 +236,7 @@ def sync(adapter, manual=False, batch_size=None):
                 if item:
                     reached = int(cursor.get('confirmed_offset', 0)) >= item['target_offset']
                     item.update(confirmed_offset=cursor.get('confirmed_offset', 0),
+                                archived_messages=item.get('archived_messages', 0) + result['saved_messages'],
                                 status='needs_review' if reached and cursor.get('unknown_event_count') else 'complete' if reached else 'reading', error=None)
                 else:
                     state['live_progress']['saved_messages'] += result['saved_messages']
@@ -279,7 +280,17 @@ def sync(adapter, manual=False, batch_size=None):
         from .codex_format_repair import tick as reconcile_formats
         format_result = reconcile_formats(adapter, state, discovered, ids)
         saved += format_result.get('saved_messages', 0)
-        changed = any(result.get('changed', True) for result in results) or format_result.get('active', False)
+        from .codex_sqlite_history import sync as sync_sqlite
+        try:
+            sqlite_result = sync_sqlite(adapter, state, discovered)
+            state.pop('sqlite_last_error', None)
+        except Exception as exc:
+            from .redaction import redact_text
+            state['sqlite_last_error'] = redact_text(exc)
+            sqlite_result = {'status': 'failed', 'saved_messages': 0, 'last_error': state['sqlite_last_error']}
+        saved += sqlite_result.get('saved_messages', 0)
+        changed = (any(result.get('changed', True) for result in results) or
+                   format_result.get('active', False) or bool(sqlite_result.get('saved_messages')))
         if changed or manual:
             state.update(last_sync_at=clock(), last_error=None)
             if saved:
@@ -290,7 +301,7 @@ def sync(adapter, manual=False, batch_size=None):
         adapter._save_state(state)
         result = {'status':'synced' if changed or manual else 'unchanged', 'manual':manual,
                   'saved_messages':saved, 'duplicate_messages':duplicates, 'unsupported_events':unsupported,
-                  'sessions':results, 'format_repair':format_result,
+                  'sessions':results, 'format_repair':format_result, 'sqlite':sqlite_result,
                   'synced_at':state.get('last_sync_at'), 'adapter_status':snapshot}
         if changed or manual:
             adapter._audit(result)

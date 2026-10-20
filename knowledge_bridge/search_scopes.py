@@ -5,6 +5,8 @@ import hashlib
 import json
 import os
 import re
+import sqlite3
+import stat
 import threading
 import time
 import uuid
@@ -17,8 +19,9 @@ from .workspace import WorkspaceContext, active_workspace
 from .conversation_visibility import EXCLUDED_ROLES, exclusion_aliases, exclusion_reason, _content_digest
 
 
-SCOPES = {"formal", "evidence", "inbox"}
+SCOPES = {"formal", "evidence", "inbox", "workspace"}
 EXCLUDED_PARTS = {".jiedu", ".obsidian", ".git", ".knowledge-bridge", "node_modules", "__pycache__"}
+RESERVED_ROOTS = {"00_系统", "01_当前状态", "02_项目", "03_知识", "90_原始档案", "99_收件箱"}
 ATTACHMENT_PARTS = {"02_附件", "attachments", "01_图片附件", "00_原始数据", "导入包"}
 UNREGISTERED_ATTACHMENT_PARTS = {"02_附件", "attachments", "01_图片附件"}
 EVIDENCE_EXCLUDED_ROLES = EXCLUDED_ROLES
@@ -27,22 +30,54 @@ _STATUS_LOCK = threading.Lock()
 _STATUS_TTL_SECONDS = 15.0
 
 
+def is_hidden(path: Path) -> bool:
+    if path.name.startswith('.'):
+        return True
+    try:
+        value=path.stat()
+        return bool(getattr(value,'st_file_attributes',0) & getattr(stat,'FILE_ATTRIBUTE_HIDDEN',0))
+    except OSError:
+        return True
+
+
 def files_for_scope(context: WorkspaceContext, scope: str) -> list[Path]:
     if scope not in SCOPES:
-        raise ValueError('无效检索范围；有效值：formal（正式知识）、evidence（原始证据）、inbox（收件箱）')
+        raise ValueError('无效检索范围')
+    if scope == 'workspace':
+        rows=[];base=context.root.resolve();reserved={name.casefold() for name in RESERVED_ROOTS}
+        for folder,dirs,names in os.walk(base,topdown=True,followlinks=False):
+            parent=Path(folder)
+            if parent==base:
+                dirs[:]=[name for name in dirs if name.casefold() not in reserved]
+            dirs[:]=[name for name in dirs if not is_hidden(parent/name) and name.casefold() not in EXCLUDED_PARTS and
+                     not (parent/name).is_symlink() and
+                     not (hasattr(parent/name,'is_junction') and (parent/name).is_junction()) and
+                     (parent/name).resolve().is_relative_to(base)]
+            for name in names:
+                path=parent/name
+                if (is_hidden(path) or path.suffix.casefold()!='.md' or path.is_symlink() or
+                    not path.resolve().is_relative_to(base)):
+                    continue
+                rows.append(path)
+        return sorted(rows)
     if scope == "formal":
         roots = list(context.formal_roots)
     elif scope == "evidence":
         return _canonical_evidence_files(context)
-    else:
+    elif scope == "inbox":
         roots = [context.inbox]
+    else:
+        roots = [context.root]
     rows: list[Path] = []
     for root in roots:
         if not root.exists():
             continue
         for path in root.rglob("*.md"):
             relative_parts = path.relative_to(context.root).parts
-            if any(part in EXCLUDED_PARTS for part in relative_parts):
+            if (not relative_parts or path.is_symlink() or
+                any(part.startswith('.') or part.casefold() in EXCLUDED_PARTS for part in relative_parts[:-1]) or
+                not path.resolve().is_relative_to(context.root.resolve()) or
+                (scope == 'workspace' and relative_parts[0].casefold() in {name.casefold() for name in RESERVED_ROOTS})):
                 continue
             if scope == "evidence" and any(part in ATTACHMENT_PARTS for part in relative_parts):
                 continue
@@ -184,10 +219,22 @@ def rebuild_scope(scope: str, context: WorkspaceContext | None = None) -> dict:
     files = files_for_scope(context, scope)
     records = []
     chunk_count = 0
+    generation = uuid.uuid4().hex if scope == 'workspace' else None
+    database_path = context.index_root('workspace') / 'documents.sqlite3'
+    temporary_db = database_path.with_name(f'.documents-{generation}.sqlite3') if generation else None
+    if temporary_db:
+        temporary_db.parent.mkdir(parents=True, exist_ok=True)
+    database = sqlite3.connect(temporary_db) if temporary_db else None
+    if database:
+        database.execute('CREATE TABLE documents(path TEXT PRIMARY KEY, content TEXT NOT NULL)')
+        database.execute('CREATE TABLE metadata(generation TEXT NOT NULL)')
+        database.execute('INSERT INTO metadata VALUES (?)', (generation,))
     for path in files:
         raw = path.read_bytes()
         text = raw.decode("utf-8-sig", errors="replace")
-        if scope=='evidence':
+        if database:
+            database.execute('INSERT INTO documents VALUES (?, ?)', (context.relative(path), text[:2*1024*1024]))
+        if scope in {'evidence','workspace'}:
             from .passage_search import metadata,passages
             _,begin=metadata(text);chunks=len(list(passages(text,begin)))
         else:chunks = max(1, len([x for x in re.split(r"\n\s*\n", text) if x.strip()])) if text.strip() else 0
@@ -205,6 +252,12 @@ def rebuild_scope(scope: str, context: WorkspaceContext | None = None) -> dict:
         "filesystem_fingerprint": _filesystem_fingerprint(context, files),
         "rebuildable": True,
     }
+    if database:
+        database.commit();database.close()
+        os.replace(temporary_db, database_path)
+        result['generation'] = generation
+        result['retrieval_mode'] = 'keyword'
+        result['vector_count'] = 0
     target = context.index_root(scope) / "manifest.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_name(f".{target.name}.{uuid.uuid4().hex}.tmp")
@@ -212,6 +265,34 @@ def rebuild_scope(scope: str, context: WorkspaceContext | None = None) -> dict:
     os.replace(temporary, target)
     with _STATUS_LOCK:_STATUS_CACHE.pop(context.workspace_id, None)
     return result
+
+
+def workspace_candidates(context: WorkspaceContext, query: str, limit: int = 256) -> list[Path]:
+    """Use the Owner-built text index only to choose source files to reread."""
+    manifest = scope_status(context)['workspace']
+    database_path = context.index_root('workspace') / 'documents.sqlite3'
+    if not manifest.get('generation') or not database_path.is_file():
+        return []
+    from .passage_search import terms
+    words = [word for word in terms(query) if len(word) >= 2][:12]
+    if not words:
+        return []
+    database=None
+    try:
+        database=sqlite3.connect(f'file:{database_path.as_posix()}?mode=ro', uri=True)
+        try:
+            row = database.execute('SELECT generation FROM metadata').fetchone()
+            if not row or row[0] != manifest['generation']:
+                return []
+            predicates = ' + '.join('CASE WHEN instr(lower(content), ?) > 0 THEN 1 ELSE 0 END' for _ in words)
+            sql = f'SELECT path, ({predicates}) AS score FROM documents WHERE score > 0 ORDER BY score DESC, path LIMIT ?'
+            paths = [path for path, _ in database.execute(sql, (*[word.casefold() for word in words], max(1, int(limit))))]
+        finally:
+            database.close()
+    except (OSError, sqlite3.Error):
+        return []
+    allowed = {context.relative(path): path for path in files_for_scope(context, 'workspace')}
+    return [allowed[path] for path in paths if path in allowed]
 
 def publish_evidence_manifest(context: WorkspaceContext, file_state: dict) -> dict:
     """Publish evidence scope health from an already parsed vector generation."""
@@ -236,7 +317,7 @@ def publish_evidence_manifest(context: WorkspaceContext, file_state: dict) -> di
 
 def rebuild_all(context: WorkspaceContext | None = None) -> dict:
     context = context or active_workspace()
-    return {scope: rebuild_scope_stable(scope, context) for scope in ("formal", "evidence", "inbox")}
+    return {scope: rebuild_scope_stable(scope, context) for scope in ("formal", "evidence", "inbox", "workspace")}
 
 
 def rebuild_scope_stable(scope: str, context: WorkspaceContext | None = None, attempts: int = 4) -> dict:
@@ -279,7 +360,7 @@ def scope_health(context: WorkspaceContext | None = None, *, max_age_seconds: fl
         if cached and now-cached['at']<=max(0,float(max_age_seconds)):
             return cached['value']
     manifests=scope_status(context);result={}
-    for scope in ('formal','evidence','inbox'):
+    for scope in ('formal','evidence','inbox','workspace'):
         files=files_for_scope(context,scope);recorded=manifests.get(scope,{})
         fingerprint=_filesystem_fingerprint(context,files)
         fresh=(recorded.get('workspace_id')==context.workspace_id and
@@ -331,9 +412,15 @@ def _formal_compatibility_selection(context, files):
 def search_scope(query: str, scope: str = "formal", limit: int = 10,
                  context: WorkspaceContext | None = None, **options) -> dict:
     context = context or active_workspace()
-    if scope not in SCOPES:raise ValueError('无效检索范围；有效值：formal（正式知识）、evidence（原始证据）、inbox（收件箱）')
+    if scope not in SCOPES:raise ValueError('无效检索范围')
     from .passage_search import search
-    files=files_for_scope(context,scope);redirects=[]
+    if scope=='workspace':
+        allowed={context.relative(path):path for path in files_for_scope(context,'workspace')}
+        semantic=[allowed[row['source_path']] for row in options.get('vector_hits',())
+                  if row.get('source_path') in allowed]
+        files=list(dict.fromkeys(semantic+workspace_candidates(context,query)))
+    else:files=files_for_scope(context,scope)
+    redirects=[]
     if scope=='formal' and not any(options.get(key) for key in ('folder','project','source_type')):
         files,redirects=_formal_compatibility_selection(context,files)
     result=search(query,scope,context,files,limit=max(1,min(int(limit),50)),**options)

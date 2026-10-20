@@ -29,13 +29,13 @@ async function loadCodexArchiveStatus() {
     const issues = (h.items||[]).filter(x => ['failed','needs_review','source_missing','excluded'].includes(x.status));
     const auditBusy=(f.pending_sources||0)>0, unresolved=d.needs_review_event_count||0;
     const bodiesVerified=f.started&&!auditBusy&&!f.failed_sources&&!unresolved&&f.completed_sources===f.sources;
-    const heading=!d.enabled?'自动归档已暂停':f.failed_sources?'正文核对遇到问题':auditBusy?'正在核对并补齐历史聊天':unresolved?'还有内容尚未确认':bodiesVerified?'历史聊天正文已核对':labels[h.status]||'正在读取状态';
+    const heading=!d.enabled?'自动归档已暂停':!d.discovered_session_count?'未发现本机 Codex 会话来源':f.failed_sources?'正文核对遇到问题':auditBusy?'正在核对并补齐历史聊天':unresolved?'还有内容尚未确认':bodiesVerified?'历史聊天正文已核对':labels[h.status]||'正在读取状态';
     const resolved=f.resolved_categories||{}, internalCount=Object.entries(resolved).reduce((sum,[kind,count])=>sum+(kind==='public_message'?0:count),0);
     const auditPercent=f.target_bytes?Math.min(100,Math.floor(100*f.checked_bytes/f.target_bytes)):0;
     box.innerHTML = `
-      <div class="codex-import-heading"><div><small>Codex 聊天归档</small><h3>${esc(heading)}</h3></div><span>${d.last_error?'采集异常，请检查':!d.enabled?'已暂停':!d.snapshot_available?'等待首次检查':!fresh?'最近采集待核验':'自动同步已开启'}</span></div>
+      <div class="codex-import-heading"><div><small>界渡后台 · Codex 自动归档</small><h3>${esc(heading)}</h3></div><span>${d.last_error?'采集异常，请检查':!d.enabled?'已暂停':!d.snapshot_available?'等待首次检查':!fresh?'最近采集待核验':'自动同步已开启'}</span></div>
       ${d.live_backlog?.pending_bytes?`<p class="codex-import-note" role="status">有新内容正在同步（${d.live_backlog.pending_bytes<1048576?Math.max(1,Math.ceil(d.live_backlog.pending_bytes/1024))+' KB':(d.live_backlog.pending_bytes/1048576).toFixed(1)+' MiB'}）。${d.archive_policy==='paused'?'继续归档后会从原进度续接。':'后台会接着保存，不需要重新导入。'}</p>`:''}
-      <p class="codex-import-note">${bodiesVerified?'已逐项核对本批来源中的聊天正文；新消息继续自动保存。附件是否取得原件单独列出。':auditBusy?'正在对照原始记录，补齐旧格式聊天；已经保存的消息不会重复添加。':unresolved?'下列待核对内容尚不能算作已完整归档。源文件和已存记录均保留。':'自动保存本机 Codex 对话，重启后从原进度继续。'}</p>
+      <p class="codex-import-note">${bodiesVerified?'已逐项核对本批来源中的聊天正文；新消息继续自动保存。附件是否取得原件单独列出。':auditBusy?'正在对照原始记录，补齐旧格式聊天；已经保存的消息不会重复添加。':unresolved?'下列待核对内容尚不能算作已完整归档。源文件和已存记录均保留。':!d.discovered_session_count?'目前没有可读取的本机 Codex 会话；发现来源后界渡才会开始补齐和持续采集。':'界渡后台自动保存可读取的本机 Codex 对话，重启后从原进度继续。'}</p>
       ${f.started?`<label class="codex-import-progress">正文核对 · ${auditBusy?auditPercent+'%':bodiesVerified?'已完成':'有待确认内容'}<progress max="100" value="${auditPercent}"></progress></label><p class="codex-import-note">已核对 ${f.verified_session_ids?.length||0} 个会话，${f.completed_sources||0} / ${f.sources||0} 份来源。核对范围截止本批捕获的来源位置。</p>`:h.batch_id?`<label class="codex-import-progress">来源文件读取 · ${scanned}%<progress max="100" value="${scanned}"></progress></label><p class="codex-import-note">文件读取比例不等于聊天完整性；未知内容会单独提示。</p>`:'<p class="codex-import-note">先选择归档范围，界渡会保存首次导入进度。</p>'}
       <div class="knowledge-base-summary codex-import-summary">
         <div><span>已保存正文</span><strong>${d.total_archived_message_count??'待核对'} 条</strong></div>
@@ -50,9 +50,9 @@ async function loadCodexArchiveStatus() {
       ${f.started?`<details data-codex-details="format-explanation"><summary>核对了哪些内容？</summary><p>聊天正文按原会话、消息编号与来源位置核对。已识别的内部记录不放进聊天，也不算作遗漏。</p><p>已核清 ${internalCount} 项内部记录：用量统计 ${resolved.usage||0}，智能体内部通信 ${(resolved.agent_message||0)+(resolved.agent_routing||0)}，工具活动 ${resolved.tool_activity||0}，语音开始或结束 ${resolved.voice_lifecycle||0}。旧待核对记录和核对依据仍保留。</p><p>旧格式聊天已核清 ${resolved.public_message||0} 项；本次实际新增 ${f.repaired_messages||0} 条。剩余 ${unresolved} 项未确认内容不会标为完成。</p></details>`:''}
       ${h.deferred_partial_bytes?'<p class="codex-import-note">冻结批次时有消息尚未写完，将在原消息完整后续采。</p>':''}
       <div class="knowledge-base-actions">
-        <button id="toggleCodexArchive" class="copy-button">${d.enabled?'暂停归档':'继续归档'}</button>
+        <button id="toggleCodexArchive" class="copy-button" ${!d.enabled&&d.resume_policy==='selected'&&!d.selected_session_ids?.length?'disabled':''}>${d.enabled?'暂停归档':'继续历史补齐＋新消息'}</button>
         <button id="syncCodexArchive" class="execute" ${d.enabled?'':'disabled'}>立即检查与重试</button>
-        ${d.archive_policy!=='all'&&d.resume_policy!=='all'?'<button id="allCodexArchive" class="copy-button">归档全部本地对话</button>':''}
+        ${d.archive_policy!=='all'&&d.resume_policy!=='all'?'<button id="allCodexArchive" class="copy-button">启用自动归档：全部可读历史＋新消息</button>':''}
       </div>
       <p class="codex-import-note">暂停同时停止历史导入与新消息采集；已有档案和进度会保留。未取得的文件保留原路径或链接；重试时会核验原件，不能用同名新文件替代。</p>
       ${issues.length?`<details data-codex-details="issues"><summary>需要关注的来源 · ${issues.length}${h.details_limited?'（最多展示30份）':'份'}</summary><div class="interface-list">${issues.map(x=>`<div class="interface-row"><div><b>${esc((d.discovered_sessions||[]).find(s=>s.session_id===x.session_id)?.title||'未命名对话')}</b><small>${esc(stateLabels[x.status]||x.status)}${x.error?' · '+esc(x.error):''}</small><small class="selectable">${esc(x.source_file)}</small></div></div>`).join('')}</div></details>`:''}
@@ -93,7 +93,7 @@ async function loadCodexArchiveStatus() {
 
 function openCodexAllConfirm(trigger,submit){
   let dialog=document.querySelector('#codexAllConfirm');
-  if(!dialog){dialog=document.createElement('dialog');dialog.id='codexAllConfirm';dialog.className='hermes-history-confirm';dialog.setAttribute('aria-labelledby','codexAllConfirmTitle');dialog.innerHTML='<h2 id="codexAllConfirmTitle">归档全部本地 Codex 对话？</h2><p>包含本机活动、已归档及以后新增的对话；已移出的会话继续排除。保存原始正文与明确的附件引用，不自动提炼知识。</p><p id="codexAllConfirmFeedback" role="status"></p><div class="hermes-history-confirm-actions"><button type="button" id="codexAllCancel" class="secondary">取消</button><button type="button" id="codexAllCommit" class="primary">确认归档全部</button></div>';document.body.append(dialog)}
+  if(!dialog){dialog=document.createElement('dialog');dialog.id='codexAllConfirm';dialog.className='hermes-history-confirm';dialog.setAttribute('aria-labelledby','codexAllConfirmTitle');dialog.innerHTML='<h2 id="codexAllConfirmTitle">归档全部本地 Codex 对话？</h2><p>包含界渡已识别且可读取的本机历史来源，以及以后新增的可读消息；已移出的会话继续排除。保存原始正文与明确的附件引用，不自动提炼知识。</p><p id="codexAllConfirmFeedback" role="status"></p><div class="hermes-history-confirm-actions"><button type="button" id="codexAllCancel" class="secondary">取消</button><button type="button" id="codexAllCommit" class="primary">确认归档全部</button></div>';document.body.append(dialog)}
   const cancel=dialog.querySelector('#codexAllCancel'),commit=dialog.querySelector('#codexAllCommit'),feedback=dialog.querySelector('#codexAllConfirmFeedback');let busy=false;
   cancel.disabled=false;commit.disabled=false;feedback.textContent='';commit.textContent='确认归档全部';
   cancel.onclick=()=>dialog.close();dialog.oncancel=event=>{if(busy)event.preventDefault()};dialog.onclose=()=>{if(trigger?.isConnected)trigger.focus({preventScroll:true})};

@@ -72,7 +72,7 @@ def read_source(context,source_path,chunk_id=None,*,cursor=None,page_bytes=8192,
                 linked=resolve_document_target(context,original)
                 if linked.scope==target.scope:result['original_path']=linked.relative_path
             except ValueError:pass
-        result['verification']='unconfirmed_derived' if meta.get('jiedu_derived')=='true' else 'raw_evidence' if target.scope.value=='evidence' else 'source_statement'
+        result['verification']='unconfirmed_derived' if meta.get('jiedu_derived')=='true' else 'raw_evidence' if target.scope.value in {'evidence','workspace'} else 'source_statement'
         generated=generated_header(context,relative,head['data'])
         if generated:
             result['generated_metadata']=generated

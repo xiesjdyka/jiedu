@@ -92,7 +92,7 @@ class WorkspaceContext:
         return self.control / "index"
 
     def index_root(self, scope: str) -> Path:
-        if scope not in {"formal", "evidence", "inbox"}:
+        if scope not in {"formal", "evidence", "inbox", "workspace"}:
             raise ValueError(f"未知检索范围：{scope}")
         return self.indices / scope
 
@@ -153,7 +153,7 @@ def initialize_workspace(path: str | Path) -> WorkspaceContext:
         (root / name).mkdir(exist_ok=True)
     control = root / ".jiedu"
     for relative in (
-        "state/sync", "state/raw-messages", "index/formal", "index/evidence", "index/inbox",
+        "state/sync", "state/raw-messages", "index/formal", "index/evidence", "index/inbox", "index/workspace",
         "queue", "audit", "versions", "cache",
     ):
         (control / relative).mkdir(parents=True, exist_ok=True)

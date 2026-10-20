@@ -69,6 +69,7 @@ class KnowledgeScope(str, Enum):
     FORMAL = "formal"
     EVIDENCE = "evidence"
     INBOX = "inbox"
+    WORKSPACE = "workspace"
     PROTECTED = "protected"
 
 
@@ -185,7 +186,17 @@ def resolve_document_target(context: WorkspaceContext, source_path: str,
     elif first=="99_收件箱".casefold():scope=KnowledgeScope.INBOX
     elif first==".jiedu" or candidate.is_relative_to(context.protected_root.resolve()):
         raise ValueError("受保护对象不能通过普通文档接口读取")
-    else:raise ValueError("文档不属于可读知识范围")
+    else:
+        from .search_scopes import EXCLUDED_PARTS, is_hidden
+        original=root
+        for part in parts:
+            original=original/part
+            if (is_hidden(original) or original.is_symlink() or
+                (hasattr(original, 'is_junction') and original.is_junction())):
+                raise ValueError("不能通过链接读取本机资料")
+        if candidate.suffix.casefold()!='.md' or any(part.startswith('.') or part.casefold() in EXCLUDED_PARTS for part in parts):
+            raise ValueError("文档不属于可读知识范围")
+        scope=KnowledgeScope.WORKSPACE
     selector={"document_path":relative,"chunk_id":str(chunk_id) if chunk_id else ""}
     return WorkspaceAccessTarget(scope,ClientOperation.READ,selector,relative)
 
@@ -201,7 +212,7 @@ class ClientAccessGate:
 
     def search(self, query: str, limit: int, include_raw: bool,
                approval_token: str | None = None, *, scope: str = 'formal', options: dict | None = None) -> tuple[WorkspaceAccessTarget,AccessDecision]:
-        if scope not in {'formal','evidence','inbox'}:raise ValueError('无效检索范围；有效值：formal（正式知识）、evidence（原始证据）、inbox（收件箱）')
+        if scope not in {'formal','evidence','inbox','workspace'}:raise ValueError('无效检索范围')
         scope=KnowledgeScope.EVIDENCE if include_raw else KnowledgeScope(scope)
         selector=normalize_query_selector(query,limit) if scope!=KnowledgeScope.FORMAL else {}
         if options:selector={'request_digest':_digest_request('scoped_search',{'query':normalize_query_selector(query,limit),'scope':scope.value,'options':options})}
@@ -750,6 +761,29 @@ class ClientPermissionService:
     def policies(self, internal_id: str) -> list[dict]:
         return list(self._load()["rules"].get(internal_id,{}).values())
 
+    def restore_recommended(self, internal_id: str) -> list[dict]:
+        """Owner-requested reset of only generic ordinary rules for one client.
+
+        More specific project/session/object rules and protected grants are retained.
+        This is never called during migration or when reading an old client.
+        """
+        from .client_pairing import PairingTransactionManager
+        if not any(row['internal_id']==internal_id and row['status']!='revoked'
+                   for row in self.registry.list_clients()):
+            raise ValueError('客户端不存在或已撤销')
+        recommended=[(KnowledgeScope(scope),ClientOperation(operation),PolicyDecision(decision))
+                     for scope,operation,decision in PairingTransactionManager._policies(None)
+                     if scope!='protected']
+        with self._lock, _interprocess_lock(self.lock_path):
+            data=self._load();rules=data['rules'].setdefault(internal_id,{})
+            for scope,operation,decision in recommended:
+                rules[self._rule_key(scope,operation,None)]={
+                    'scope':scope.value,'operation':operation.value,'decision':decision.value,
+                    'selector':{},'updated_at':_now()}
+            self._save(data)
+        self.registry.audit('recommended_policies_restored',None,internal_id,'success')
+        return [rules[self._rule_key(scope,operation,None)] for scope,operation,_ in recommended]
+
     def remove_client(self, internal_id: str) -> None:
         with self._lock, _interprocess_lock(self.lock_path):
             data=self._load();data["rules"].pop(internal_id,None)
@@ -763,12 +797,15 @@ class ClientPermissionService:
 
     def _policy_from(self, data: dict, internal_id: str, scope: KnowledgeScope,
                      operation: ClientOperation, selector: dict | None) -> PolicyDecision:
+        row=self._policy_row_from(data,internal_id,scope,operation,selector)
+        return PolicyDecision(row['decision']) if row else PolicyDecision.DENY
+
+    def _policy_row_from(self, data: dict, internal_id: str, scope: KnowledgeScope,
+                         operation: ClientOperation, selector: dict | None) -> dict | None:
         rules=data["rules"].get(internal_id,{})
         exact=rules.get(self._rule_key(scope,operation,selector))
         generic=rules.get(self._rule_key(scope,operation,None))
-        if exact:return PolicyDecision(exact["decision"])
-        if generic:return PolicyDecision(generic["decision"])
-        return PolicyDecision.DENY
+        return exact or generic
 
     @staticmethod
     def _binding(identity: ClientIdentity, scope: KnowledgeScope, operation: ClientOperation,
@@ -789,17 +826,14 @@ class ClientPermissionService:
                                 scope=scope_value.value,operation=operation_value.value)
             return AccessDecision(PolicyDecision.DENY,"client_not_authenticated")
         self.registry.mark_protocol_seen(identity)
-        if (self._ordinary_reads_are_open() and
-                scope in {'formal', 'evidence', 'inbox'} and
-                operation in {'search', 'read', 'context'}):
-            self.registry.audit("access",identity.claimed_id,identity.internal_id,"success",
-                                scope=scope_value.value,operation=operation_value.value,
-                                decision="allow",reason="ordinary_read_open")
-            return AccessDecision(PolicyDecision.ALLOW,"ordinary_read_open")
+        ordinary_default=(self._ordinary_reads_are_open() and
+                          scope in {'formal','evidence','inbox'} and
+                          operation in {'search','read','context'})
         binding=self._binding(identity,scope_value,operation_value,binding_selector)
         with self._lock, _interprocess_lock(self.lock_path):
             data=self._load();now=self._clock()
-            decision=self._policy_from(data,identity.internal_id or "",scope_value,operation_value,selector)
+            rule=self._policy_row_from(data,identity.internal_id or "",scope_value,operation_value,selector)
+            decision=PolicyDecision(rule['decision']) if rule else (PolicyDecision.ALLOW if ordinary_default else PolicyDecision.DENY)
             if (scope in self.session_read_scopes(identity.internal_id or '', protection_session) and
                     scope == 'protected' and operation in {'search', 'read_protected'}):
                 decision = PolicyDecision.ALLOW
@@ -854,7 +888,8 @@ class ClientPermissionService:
                             "success" if decision==PolicyDecision.ALLOW else "rejected",
                             None if decision==PolicyDecision.ALLOW else "policy_denied",
                             scope=scope_value.value,operation=operation_value.value)
-        return AccessDecision(decision,"policy_allow" if decision==PolicyDecision.ALLOW else "policy_deny")
+        return AccessDecision(decision,"ordinary_read_open" if decision==PolicyDecision.ALLOW and ordinary_default and rule is None else
+                              "policy_allow" if decision==PolicyDecision.ALLOW else "policy_deny")
 
     def pending(self) -> list[dict]:
         now=self._clock();rows=[]

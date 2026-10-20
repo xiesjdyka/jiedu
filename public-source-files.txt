@@ -78,6 +78,7 @@ knowledge_bridge/codex_format_repair.py
 knowledge_bridge/codex_history.py
 knowledge_bridge/codex_large_records.py
 knowledge_bridge/codex_source_adapter.py
+knowledge_bridge/codex_sqlite_history.py
 knowledge_bridge/context_retrieval.py
 knowledge_bridge/continuous_organization.py
 knowledge_bridge/conversation_visibility.py
@@ -112,6 +113,7 @@ knowledge_bridge/live_acceptance.py
 knowledge_bridge/local_ai.py
 knowledge_bridge/local_butler.py
 knowledge_bridge/local_ocr.py
+knowledge_bridge/local_source_status.py
 knowledge_bridge/manual_extraction.py
 knowledge_bridge/mcp_audit.py
 knowledge_bridge/mcp_server.py
@@ -157,6 +159,7 @@ knowledge_bridge/wiki_snapshots.py
 knowledge_bridge/windows_trust.py
 knowledge_bridge/workspace.py
 knowledge_bridge/workspace_migration.py
+knowledge_bridge/workspace_vector.py
 knowledge_bridge/writer_core.py
 knowledge_wiki.py
 memory_compiler/__init__.py
@@ -253,6 +256,7 @@ tests/test_codex_large_records.py
 tests/test_codex_large_tool_validation.py
 tests/test_codex_review_offsets.py
 tests/test_codex_source_adapter.py
+tests/test_codex_sqlite_history.py
 tests/test_codex_state_recovery.py
 tests/test_cold_start_web.py
 tests/test_compatibility_search.py
@@ -270,6 +274,7 @@ tests/test_evidence_selection_reconcile.py
 tests/test_evidence_storage.py
 tests/test_file_ranges.py
 tests/test_format_summary_cache.py
+tests/test_frontend_onboarding_smoke.py
 tests/test_generated_source_presentation.py
 tests/test_generic_pairing.py
 tests/test_hermes_bridge.py
@@ -327,6 +332,7 @@ tests/test_wiki_history_snapshots.py
 tests/test_wiki_schedule_timezone.py
 tests/test_workspace_foundation.py
 tests/test_workspace_refresh_recovery.py
+tests/test_workspace_scope.py
 启动界渡.cmd
 scripts/audit_tool_payload_history.py
 tests/test_history_tool_audit.py

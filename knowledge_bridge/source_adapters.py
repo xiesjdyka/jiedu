@@ -30,6 +30,9 @@ def _codex_probe() -> dict:
     status = CodexSourceAdapter().status()
     enabled = bool(status.get("enabled"))
     found = int(status.get("discovered_session_count") or 0)
+    sqlite_detected = bool((status.get('sqlite') or {}).get('detected'))
+    sqlite_pending = any((item.get('history') or {}).get('status') in {None, 'not_started', 'reading'}
+                         for item in (status.get('sqlite') or {}).get('sources', []))
     authorized = int(status.get("authorized_session_count") or 0)
     missing = int(status.get("missing_attachment_count") or 0)
     error = status.get("last_error")
@@ -43,16 +46,16 @@ def _codex_probe() -> dict:
     elif not enabled:
         state, summary = "paused", "自动归档已暂停"
         detail = f"已发现 {found} 个会话；恢复后才会继续采集。"
-    elif not found:
+    elif not found and not sqlite_detected:
         state, summary = "source_unavailable", "未发现 Codex 会话来源"
         detail = "采集开关已开启，但没有发现可读取的源会话，因此不能标为正在归档。"
-    elif not authorized:
+    elif not authorized and status.get('archive_policy') == 'selected':
         state, summary = "awaiting_authorization", "已发现 Codex 会话，尚无获准采集范围"
         detail = f"已发现 {found} 个会话，但当前授权会话为 0；不会自动采集。"
     elif not synced:
         state, summary = "awaiting_first_sync", "已发现来源，等待首次同步"
         detail = f"已发现 {found} 个会话，已授权 {authorized} 个；尚无真实成功同步记录。"
-    elif gap or pending:
+    elif gap or pending or sqlite_pending:
         state, summary = "degraded", "自动归档运行中，但仍有待处理范围"
         detail = f"已发现 {found} 个会话，已授权 {authorized} 个；待补档 {pending} 个；断档检测：{'有' if gap else '无'}。"
     else:
@@ -60,7 +63,7 @@ def _codex_probe() -> dict:
         detail = f"已发现 {found} 个会话，已授权 {authorized} 个；缺失附件 {missing} 个；当前没有待补档或断档。"
     return {
         "state": state,
-        "source_detected": found > 0,
+        "source_detected": found > 0 or sqlite_detected,
         "summary": summary, "detail": detail,
         "saved": {"message_count": int(status.get("total_archived_message_count") or 0),
                   "last_checked_at": status.get("last_sync_at"),
@@ -78,8 +81,8 @@ def _codex_probe() -> dict:
 
 
 def _hermes_probe() -> dict:
-    from .hermes_session_adapter import DEFAULT_DB, status
-    path = Path(DEFAULT_DB)
+    from .hermes_session_adapter import selected_db_path, status
+    path = selected_db_path()
     schema_ok = False
     if path.is_file():
         try:

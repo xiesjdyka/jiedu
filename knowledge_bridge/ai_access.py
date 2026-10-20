@@ -85,7 +85,7 @@ def knowledge_search(query: str, limit: int = 10, include_raw: bool = False, sco
     service=(RetrievalService(context,vector_backend=not is_mcp,
                               vector_backend_reason='当前 MCP 进程不常驻向量模型，且 Console 转交尚未成功；本次使用有界段落检索。')
              if same_workspace else RetrievalService.for_root(base))
-    if is_mcp and same_workspace and mode!='keyword' and scope in {'formal','evidence'}:
+    if is_mcp and same_workspace and mode!='keyword' and scope in {'formal','evidence','workspace'}:
         try:
             result=_console_search(context,query,mode=mode,scope=scope,limit=limit,source_type=source_type,folder=folder,
                                    project=project,candidate_budget=candidate_budget,excerpt_budget=excerpt_budget)
