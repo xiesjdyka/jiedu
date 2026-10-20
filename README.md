@@ -4,7 +4,7 @@
 
 界渡是一个装在你自己电脑上的个人知识库。它把你和 AI 的聊天记录、附件,还有你自己的文档、截图、PDF 收在一起,让你以后能找回来、能看到出处,也能交给新的 AI 接着用。
 
-当前版本:**1.1.2**　|　系统:**Windows x64**　|　许可证:**MIT**
+当前版本:**1.1.3**　|　系统:**Windows x64**　|　许可证:**MIT**
 
 ---
 
@@ -50,8 +50,8 @@
 
 **下载**
 
-- [Windows 1.1.2 安装器](https://github.com/xiesjdyka/jiedu/releases/download/1.1.2/Jiedu-1.1.2-windows-x64-setup.exe)
-- [1.1.2 发布页](https://github.com/xiesjdyka/jiedu/releases/tag/1.1.2)
+- [Windows 1.1.3 安装器](https://github.com/xiesjdyka/jiedu/releases/download/1.1.3/Jiedu-1.1.3-windows-x64-setup.exe)
+- [1.1.3 发布页](https://github.com/xiesjdyka/jiedu/releases/tag/1.1.3)
 
 普通用户请下载发布页里的 **setup.exe**。仓库页面上绿色按钮里的 "Download ZIP" 是源代码,不是装好就能用的软件。
 

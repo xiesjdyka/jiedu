@@ -8,8 +8,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .core import ROOT, VAULT
+from . import workspace as workspace_module
 from .package_layout import component, connected_workspace, package_root
-from .workspace import active_workspace, configured_workspace_root, initialize_workspace, is_workspace, load_workspace, local_path
+from .workspace import active_workspace, configured_workspace_root, initialize_workspace, is_workspace, load_workspace, local_path, resolve_workspace_root
 
 CONFIG_PATH = local_path("knowledge-base.json")
 AUDIT_PATH = active_workspace().audit / "knowledge-base.json"
@@ -33,7 +34,12 @@ def load() -> dict:
         saved = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         saved = {}
-    vault = configured_workspace_root()
+    # The runtime override identifies the workspace currently loaded by this
+    # process. A newly saved selection must be read without that override so
+    # the API can report its identity and controlled-restart destination.
+    vault = (resolve_workspace_root(workspace_module.PROGRAM_ROOT, CONFIG_PATH.parent)
+             if isinstance(saved.get("vault_path"), str) and saved["vault_path"].strip()
+             else configured_workspace_root())
     core_files = saved.get("core_files") if isinstance(saved.get("core_files"), list) else []
     return {
         "vault_path": str(vault),
