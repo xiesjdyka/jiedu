@@ -1,19 +1,19 @@
 # 统一发布版本
 
-根目录 `VERSION` 是程序发布版本的来源。当前候选程序、原生外壳和安装器均为 `1.1.3`。
+根目录 `VERSION` 是程序发布版本的来源。当前候选程序、原生外壳和安装器均为 `1.1.4`。
 
-## 1.1.3 的字段对应
+## 1.1.4 的字段对应
 
 | 位置 | 当前候选的值 |
 | --- | --- |
-| VERSION、关于与托盘的程序版本、设置页 | `1.1.3` |
-| pyproject.toml、Python 包版本 | `1.1.3` |
-| 安装器文件名、ProductVersion 文本 | `Jiedu-1.1.3-windows-x64-setup.exe`、`1.1.3` |
-| 安装器数字 FileVersion / ProductVersion | `1.1.3.0` |
-| Cargo、Tauri、关于另列的外壳构建版本 | `1.1.3` |
-| 重新编译原生 EXE 的数字 FileVersion / ProductVersion | `1.1.3.0` |
+| VERSION、关于与托盘的程序版本、设置页 | `1.1.4` |
+| pyproject.toml、Python 包版本 | `1.1.4` |
+| 安装器文件名、ProductVersion 文本 | `Jiedu-1.1.4-windows-x64-setup.exe`、`1.1.4` |
+| 安装器数字 FileVersion / ProductVersion | `1.1.4.0` |
+| Cargo、Tauri、关于另列的外壳构建版本 | `1.1.4` |
+| 重新编译原生 EXE 的数字 FileVersion / ProductVersion | `1.1.4.0` |
 
-本候选同步程序与原生构建版本并重新编译外壳。联网安装器自动下载经固定 SHA256 校验的 Python 3.13.16、向量模型和 OCR 资源；其实际字节、解释器启动与功能验收以安装器及资源回执为准。
+本候选同步程序与原生构建版本，并重新编译原生外壳。联网安装器自动下载经固定 SHA256 校验的 Python 3.13.16、向量模型和 OCR 资源；其实际字节、解释器启动与功能验收以安装器及资源回执为准。
 
 Windows 数字字段使用四段数字，第四段对应候选序号；稳定版的第四段为零。[Inno Setup 数字产品版本](https://jrsoftware.org/ishelp/topic_setup_versioninfoproductversion.htm)与[文本产品版本](https://jrsoftware.org/ishelp/topic_setup_versioninfoproducttextversion.htm)是不同字段。安装器从 payload 的 VERSION 派生文件名和版本资源，不另写硬编码候选号。
 

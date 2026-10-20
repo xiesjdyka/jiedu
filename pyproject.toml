@@ -1,6 +1,6 @@
 [project]
 name = "knowledge-bridge"
-version = "1.1.3"
+version = "1.1.4"
 description = "界渡 Knowledge Bridge：本地优先、权限受控的 AI 知识桥梁"
 authors = [{name = "希儿"}]
 readme = "README.md"

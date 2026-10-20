@@ -23,23 +23,26 @@ _EPHEMERAL_LOCK = threading.RLock()
 def _now(): return datetime.now(timezone.utc).isoformat()
 def _sha(raw: bytes): return hashlib.sha256(raw).hexdigest()
 def _python():
-    for name in ("pythonw.exe", "python.exe"):
-        path = python_executable(ROOT, windowless=name=="pythonw.exe")
-        if path.exists(): return path
+    path = python_executable(ROOT)
+    if path.exists(): return path
     return Path(os.sys.executable)
 def _command(client_id="other", secret: str | None = None):
-    if component("control", ROOT):
+    packaged = component("control", ROOT) is not None
+    if packaged and component("workspace", ROOT) is not None:
         from .portable_entry import locator_configuration
         return locator_configuration(client_id, secret)
     env={"KNOWLEDGE_BRIDGE_CLIENT_ID":client_id,
+         "PYTHONIOENCODING":"utf-8",
          "KNOWLEDGE_BRIDGE_VAULT":str(VAULT.resolve()),
          "KNOWLEDGE_BRIDGE_LOCAL_DATA":str(local_path().resolve())}
     if secret:env["KNOWLEDGE_BRIDGE_CLIENT_SECRET"]=secret
-    return {"command": str(_python()), "args": ["-m", "knowledge_bridge.cli", "mcp", "--transport", "stdio"], "cwd": str(ROOT),"env":env}
+    python = python_executable(ROOT) if packaged else _python()
+    args = (["-I", "-X", "utf8"] if packaged else []) + ["-m", "knowledge_bridge.cli", "mcp", "--transport", "stdio"]
+    return {"command": str(python), "args": args, "cwd": str(ROOT), "env": env}
 
 def generic_stdio_config(client_id,workspace,local_data):
     """Safe display fields only. The secret is delivered separately in memory."""
-    if component("control", ROOT):
+    if component("control", ROOT) is not None and component("workspace", ROOT) is not None:
         entry = _command(client_id, "<配对秘密>")
         return {"transport":"stdio", **entry, "cwd_required":False, "instructions":"先用 .jiedu 内的入口登记活动位置，再复制此配置；同父目录改名可自动定位，跨目录移动后需重新定位。"}
     python=python_executable(ROOT)
@@ -131,7 +134,7 @@ def _valid_entry(entry,client_id=None):
     if command.startswith("http://"): return command.startswith("http://127.0.0.1")
     if command.startswith("https://") or "0.0.0.0" in command: return False
     args=" ".join(map(str,entry.get("args",[])))
-    if component("control", ROOT):
+    if component("control", ROOT) is not None and component("workspace", ROOT) is not None:
         from .portable_entry import locator_configuration
         expected=locator_configuration(client_id or 'other')
         if command==expected['command'] and entry.get('args')==expected['args']:
@@ -159,9 +162,19 @@ def preview(client,action="install",*,client_id: str | None = None,
     a=ADAPTERS.get(client); 
     if not a or client=="other": raise ValueError("该客户端仅预留适配器，暂不支持自动配置")
     d=a.detect(); path=Path(d["config_path"]); old=path.read_bytes().decode("utf-8") if path.exists() else ""
+    if secret is None and isinstance(d.get("entry"),dict):
+        existing_env=d["entry"].get("env")
+        if isinstance(existing_env,dict) and existing_env.get("KNOWLEDGE_BRIDGE_CLIENT_SECRET"):
+            raise ValueError("已有配对凭据；请在客户端访问中使用“修复连接”，保留原身份和权限")
     render_base=old.replace("\r\n","\n")
     new=a.remove(render_base) if action=="remove" else a.render(render_base,client_id,secret); a.validate(new)
-    if "0.0.0.0" in new or "https://" in new: raise ValueError("安全策略拒绝非本机配置")
+    if action!="remove":
+        parsed=tomllib.loads(new) if client=="codex" else (yaml.safe_load(new) or {})
+        bridge=(parsed.get("mcp_servers") or {}).get(NAME) if isinstance(parsed,dict) else None
+        if not isinstance(bridge,dict):raise ValueError("界渡本机连接配置缺失")
+        controlled=json.dumps(bridge,ensure_ascii=False)
+        if "0.0.0.0" in controlled or "http://" in controlled or "https://" in controlled:
+            raise ValueError("安全策略拒绝非本机配置")
     token=uuid.uuid4().hex; DATA.mkdir(parents=True,exist_ok=True)
     pending={"token":token,"client":client,"action":action,"path":str(path),"old":old,"new":new,"created_at":_now(),"ephemeral":ephemeral}
     with _EPHEMERAL_LOCK:_EPHEMERAL_PENDING[token]=pending

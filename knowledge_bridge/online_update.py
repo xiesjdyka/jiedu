@@ -168,39 +168,55 @@ class OnlineUpdate:
             self._phase('handoff_ready', message, token=token)
             return True
 
-    def _stream(self, url, limit, consume):
+    def _stream(self, url, limit, consume, *, offset=0, deadline=None):
         config = self.channel()
         test_only = config.get('test_only') is True
         public_url(url, test_only=test_only)
         allowed = {urlsplit(url).hostname, *config.get('asset_hosts', [])}
         started = time.monotonic()
+        client = self.client or httpx.Client(timeout=httpx.Timeout(30, connect=8), follow_redirects=False)
         try:
-            with (self.client or httpx.Client(timeout=httpx.Timeout(30, connect=8), follow_redirects=False)) as client:
-                for _ in range(5):
-                    with client.stream('GET', url, headers={'Accept': 'application/octet-stream'}) as response:
-                        if response.status_code in {301, 302, 303, 307, 308}:
-                            url = public_url(urljoin(url, response.headers.get('location', '')), test_only=test_only)
-                            if urlsplit(url).hostname not in allowed:
-                                raise ValueError('更新跳转到了未经配置的下载站点')
-                            continue
-                        if response.status_code in {401, 403, 404}:
-                            raise ChannelUnavailable('更新渠道尚未发布或暂不可访问，请稍后重试。')
-                        if response.status_code != 200:
-                            raise ChannelUnavailable('更新服务器暂时不可用，请稍后重试。')
-                        total = 0
-                        for piece in response.iter_bytes(65536):
-                            if self.cancel_event.is_set() and self.worker and self.worker.is_alive():
-                                raise ValueError('更新已取消，原版本保持不变')
-                            if time.monotonic() - started > 1800:
-                                raise ValueError('更新下载超时，请重试')
-                            total += len(piece)
-                            if total > limit:
-                                raise ValueError('更新下载超过允许大小')
-                            consume(piece, total)
-                        return total
-                raise ValueError('更新地址跳转次数过多')
+            if offset < 0 or offset >= limit:
+                raise ValueError('续传位置无效')
+            headers={'Accept': 'application/octet-stream'}
+            if offset:headers['Range']=f'bytes={offset}-'
+            for _ in range(5):
+                with client.stream('GET', url, headers=headers) as response:
+                    if response.status_code in {301, 302, 303, 307, 308}:
+                        url = public_url(urljoin(url, response.headers.get('location', '')), test_only=test_only)
+                        if urlsplit(url).hostname not in allowed:
+                            raise ValueError('更新跳转到了未经配置的下载站点')
+                        continue
+                    if response.status_code in {401, 403, 404}:
+                        raise ChannelUnavailable('更新渠道尚未发布或暂不可访问，请稍后重试。')
+                    expected_end=None
+                    if offset:
+                        if response.status_code != 206:
+                            raise ValueError('下载站点未按请求续传，未使用返回内容')
+                        match=re.fullmatch(r'bytes (\d+)-(\d+)/(\d+)',response.headers.get('Content-Range',''))
+                        if not match or int(match[1])!=offset or int(match[3])!=limit or not offset<=int(match[2])<limit:
+                            raise ValueError('续传范围与已下载文件不一致')
+                        expected_end=int(match[2])
+                    elif response.status_code != 200:
+                        raise ChannelUnavailable('更新服务器暂时不可用，请稍后重试。')
+                    total=offset
+                    for piece in response.iter_bytes(65536):
+                        if self.cancel_event.is_set() and self.worker and self.worker.is_alive():
+                            raise ValueError('更新已取消，原版本保持不变')
+                        if time.monotonic() - started > 1800 or (deadline and time.monotonic()>deadline):
+                            raise ChannelUnavailable('更新下载超时，请重试。')
+                        total+=len(piece)
+                        if total>limit or (expected_end is not None and total>expected_end+1):
+                            raise ValueError('更新下载超过允许大小或续传范围')
+                        consume(piece,total)
+                    if expected_end is not None and total!=expected_end+1:
+                        raise ChannelUnavailable('续传响应不完整，请稍后重试。')
+                    return total
+            raise ValueError('更新地址跳转次数过多')
         except httpx.HTTPError:
             raise ChannelUnavailable('无法连接更新服务，请检查网络后重试。') from None
+        finally:
+            if self.client is None:client.close()
 
     def fetch(self, url, limit):
         body = bytearray()
@@ -315,7 +331,28 @@ class OnlineUpdate:
                             if time.monotonic() - last[0] >= .25:
                                 self._phase('downloading', '正在下载完整安装器…', downloaded_bytes=total, total_bytes=record['size'])
                                 last[0] = time.monotonic()
-                        self._stream(record['url'], record['size'], consume)
+                        deadline=time.monotonic()+600
+                        for attempt in range(4):
+                            if self.cancel_event.is_set() and self.worker and self.worker.is_alive():
+                                raise ValueError('更新已取消，原版本保持不变')
+                            if output.tell()==record['size']:break
+                            try:
+                                total=self._stream(record['url'],record['size'],consume,
+                                                   offset=output.tell(),deadline=deadline)
+                            except ChannelUnavailable:
+                                if self.cancel_event.is_set() and self.worker and self.worker.is_alive():
+                                    raise ValueError('更新已取消，原版本保持不变')
+                                if output.tell()==record['size']:break
+                                if attempt==3 or time.monotonic()>deadline:raise
+                                self._phase('downloading','连接中断，正在续传完整安装器…',
+                                            downloaded_bytes=output.tell(),total_bytes=record['size'])
+                                if self.cancel_event.wait(min(2**attempt,4)) and self.worker and self.worker.is_alive():
+                                    raise ValueError('更新已取消，原版本保持不变')
+                                continue
+                            if total==record['size']:break
+                            if attempt==3:raise ChannelUnavailable('更新下载不完整，请检查网络后重试。')
+                        else:
+                            raise ChannelUnavailable('更新下载不完整，请检查网络后重试。')
                         output.flush()
                         os.fsync(output.fileno())
                 if pending.stat().st_size != record['size'] or digest(pending) != record['sha256']:
@@ -424,7 +461,10 @@ class OnlineUpdate:
         except Timeout:
             self._phase('failed', '另一更新任务正在运行，请等待其完成。')
         except Exception as error:
-            self._phase('failed', str(error)[:800], error=type(error).__name__)
+            if self.cancel_event.is_set() and str(error).startswith('更新已取消'):
+                self._phase('cancelled', '更新已取消，原版本保持不变。')
+            else:
+                self._phase('failed', str(error)[:800], error=type(error).__name__)
         finally:
             if gate_started and not handed_off and self.resume:
                 self.resume()

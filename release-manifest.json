@@ -39,12 +39,12 @@
     {
       "path": "README.md",
       "bytes": 7742,
-      "sha256": "1a9c8b8faf38e1d76775adfd9a3e61d25a1359b744c30017a6aeec21c05e9365"
+      "sha256": "3a27981e753cf26ca39d88505de68ac0bfd64584034efff0bf727c8b5dce55fb"
     },
     {
       "path": "RELEASE_NOTES.md",
-      "bytes": 5803,
-      "sha256": "55545a16a5b266c4d0c028abd1c6597d187b7f6af94eedfc803b7e7b3a4892cf"
+      "bytes": 6425,
+      "sha256": "e5a255eb2690fca850cc5ebd2e507cc86ab7a7a58e110eababfc043901f5e0a3"
     },
     {
       "path": "SECURITY.md",
@@ -59,7 +59,7 @@
     {
       "path": "VERSION",
       "bytes": 6,
-      "sha256": "5dae0c0a5ed3cdaa78704e25bb38d72c31018311e933283d06ed4f93360bfc6c"
+      "sha256": "2bde3ae39f59ee21201f87089cf7d215cf58ea437711e3d8e3e65fbc3078c798"
     },
     {
       "path": "butler-resources.lock.json",
@@ -79,12 +79,12 @@
     {
       "path": "desktop/Cargo.lock",
       "bytes": 123812,
-      "sha256": "413db0361ca182bc9d0203f1f0a9517db5223a735875424c8324bf0830599f19"
+      "sha256": "da0d6ce733a3a32dba6fbfc3488ef11e824b3ffef20cecd02c0b5f9406f430da"
     },
     {
       "path": "desktop/Cargo.toml",
       "bytes": 524,
-      "sha256": "5779c4ea1a9a858d4b301762f1386a9c026ff768337c440a4f6eb8c9b6fcbe63"
+      "sha256": "12260c2733e58fd417bd0b61cb8652fb48c0df0d090a90bac715a4d135b28797"
     },
     {
       "path": "desktop/build.rs",
@@ -129,7 +129,7 @@
     {
       "path": "desktop/tauri.conf.json",
       "bytes": 415,
-      "sha256": "f581c6fdedb6a0176be36ae03ddfdc47b8625af07aed226c79629b903465bacf"
+      "sha256": "a8cd3276901e1accb03201d2ee4972363f7ae29dfd2c8a6ae3a1db002ad045a2"
     },
     {
       "path": "desktop/ui/index.html",
@@ -188,13 +188,13 @@
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 6703,
-      "sha256": "feb8dfac29f319c4e5cf96c805d0dd3552dea8c348f821104f67036c1a318a99"
+      "bytes": 7063,
+      "sha256": "7547b7343d44e6c3a8233bdf7207f57804de3b076d018b8bcb4b9ce19039b551"
     },
     {
       "path": "docs/release-version.md",
-      "bytes": 3136,
-      "sha256": "b66c41cd8f31670f9a6286567bb23b6b3c2c9b80d6ca23222a5e653794f5d15d"
+      "bytes": 3103,
+      "sha256": "f9b8ff8def4735265ff64be264af8c0af56e089c881c84a5094d684a3020a276"
     },
     {
       "path": "docs/source-install.md",
@@ -208,8 +208,8 @@
     },
     {
       "path": "docs/user-guide.md",
-      "bytes": 11353,
-      "sha256": "a6bf168b16265a16d8bfcf31aaf8a96fbfcb45e5d6adf4d15a9025c7868d8f4b"
+      "bytes": 11266,
+      "sha256": "0818e6c222bd0f9d7e5e4e379dd31761fd6f8b39ad3f3c9e886de12a888d2927"
     },
     {
       "path": "docs/validation.json",
@@ -239,7 +239,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 23,
-      "sha256": "30d83c221d7b925889c259d4f4d8a9e992e313d3037fe89bac081025572d032e"
+      "sha256": "3d98544cd80613f8a7ea7f92c1c6735fe818b6660fa211c85fedc042a3a22446"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -368,8 +368,8 @@
     },
     {
       "path": "knowledge_bridge/client_config.py",
-      "bytes": 14980,
-      "sha256": "00d107dc10e23d49e85a6526258e3142081639312bbca61ce57e6a8c1102771f"
+      "bytes": 16001,
+      "sha256": "01c108c4463db7acdc16fd1189e7e5ed17d9cf85b29a9b34b74a0b7a816dc870"
     },
     {
       "path": "knowledge_bridge/client_pairing.py",
@@ -558,8 +558,8 @@
     },
     {
       "path": "knowledge_bridge/local_ai.py",
-      "bytes": 12465,
-      "sha256": "0e3ed9c184547870088077869ed95786cd339c9453f7c2c9d5f9fcfc8bd7a84c"
+      "bytes": 11719,
+      "sha256": "7542bdef2ffb0e1928df717d3115d11091b512a5f59a079960ca740d0537f3e4"
     },
     {
       "path": "knowledge_bridge/local_butler.py",
@@ -608,8 +608,8 @@
     },
     {
       "path": "knowledge_bridge/online_update.py",
-      "bytes": 26539,
-      "sha256": "b691887c390d1e74672566bf93017ddf69b3709361341a9bb99227c68bf5bfb8"
+      "bytes": 29545,
+      "sha256": "7d3b5755d77dcd7f93f153afea7c862d44b6ef05ea492234f3bcc2ab9dfcaff4"
     },
     {
       "path": "knowledge_bridge/organization_review.py",
@@ -753,8 +753,8 @@
     },
     {
       "path": "knowledge_bridge/web.py",
-      "bytes": 168791,
-      "sha256": "306e3487e7362eafc234fd3cc57ecee7f9cadc6de22f541b8f8fea6b314c3622"
+      "bytes": 169117,
+      "sha256": "061e0af775b9b29e372d760ca5afb7b09ddcb669229392f7db549e3e09e00e5a"
     },
     {
       "path": "knowledge_bridge/wiki_daily_runs.py",
@@ -834,7 +834,7 @@
     {
       "path": "pyproject.toml",
       "bytes": 1140,
-      "sha256": "d47218ecd421d349c845208b50fb34f7692b384e89377afe3d2fea8846dbf6e7"
+      "sha256": "b1f44afec32f5787fb24c7ed3d011d6a81edd51e735f9f9acdf534efec3e4d27"
     },
     {
       "path": "requirements.lock.txt",
@@ -883,8 +883,8 @@
     },
     {
       "path": "static/app.js",
-      "bytes": 340610,
-      "sha256": "bf0610fa053a51aead546b052db99ba60fed57345cbc2facf70e0942b2dfb40d"
+      "bytes": 342070,
+      "sha256": "991323f057becc1780710e0d2ff97e6c0cb527192faa7b440af1e2fc34d1f6b8"
     },
     {
       "path": "static/brand/jiedu-256.png",
@@ -1233,13 +1233,13 @@
     },
     {
       "path": "tests/test_client_config.py",
-      "bytes": 1986,
-      "sha256": "ff3dac295c74d318b8875465106335ea1c0afc52e30ced4e80c072f24dd9015a"
+      "bytes": 5608,
+      "sha256": "7d5fff8a3c27cea15a2ba5619aeefd44bc2b9da49e899b273e0c93268d573fee"
     },
     {
       "path": "tests/test_client_pairing.py",
-      "bytes": 10832,
-      "sha256": "628255bb9a7ee75dbdf431817cc21be8e158c753142608adc9e7102f0b9a4fb0"
+      "bytes": 13088,
+      "sha256": "06763aeb11c7e569f7d9e9765dbcf4a93d26c41053a7021c840b1cda4812cecb"
     },
     {
       "path": "tests/test_client_permissions.py",
@@ -1483,8 +1483,8 @@
     },
     {
       "path": "tests/test_online_update.py",
-      "bytes": 5214,
-      "sha256": "85b3ddbae349c5e1adf490f24ee337166ebc28f442f4c57785f177e0b521205a"
+      "bytes": 11702,
+      "sha256": "ce941060ee19feea6740dcdd3c42f60f14635dd7b5664f83eee8d257aafef690"
     },
     {
       "path": "tests/test_organize_loading.py",

@@ -1,4 +1,5 @@
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -98,6 +99,35 @@ class PairingTransactionTests(unittest.TestCase):
                     with self.assertRaises(OSError):manager.commit_rotation(rotation["rotation_id"])
                 self.assertEqual(before,adapter.path.read_bytes())
                 self.assertTrue(registry.authenticate("codex",old).authenticated)
+
+    def test_existing_client_repair_rewrites_entry_without_new_identity_or_policy(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);registry,permissions,adapter,patches=self.harness(root)
+            with patches[0],patches[1],patches[2],patches[3],patches[4]:
+                manager=PairingTransactionManager(registry,permissions)
+                first=manager.begin('codex','Codex','codex','stdio')
+                paired=manager.commit(first['pairing_id'])['client']
+                internal_id=paired['internal_id']
+                before_policies=permissions.policies(internal_id)
+                before_source=SourceConnections(registry.context).status(internal_id)
+                replacement=root/'repaired-python.exe';replacement.touch()
+                def repaired_command(client_id='other',secret=None):
+                    return {'command':str(replacement),'args':['-m','knowledge_bridge.cli','mcp'],
+                            'cwd':str(root),'env':{'KNOWLEDGE_BRIDGE_CLIENT_ID':client_id,
+                                                 'KNOWLEDGE_BRIDGE_CLIENT_SECRET':secret}}
+                with patch.object(cc,'_command',side_effect=repaired_command):
+                    rotation=manager.begin_rotation(internal_id)
+                    new_secret=manager._pending[rotation['rotation_id']]['prepared']['secret']
+                    self.assertNotIn(new_secret,str(rotation))
+                    result=manager.commit_rotation(rotation['rotation_id'])
+                self.assertEqual(internal_id,result['client']['internal_id'])
+                self.assertEqual(1,len(registry.list_clients()))
+                self.assertEqual(before_policies,permissions.policies(internal_id))
+                self.assertEqual(before_source,SourceConnections(registry.context).status(internal_id))
+                entry=tomllib.loads(adapter.path.read_text('utf-8'))['mcp_servers']['knowledge_bridge']
+                self.assertEqual(str(replacement),entry['command'])
+                self.assertFalse(registry.authenticate('codex',first['secret']).authenticated)
+                self.assertTrue(registry.authenticate('codex',new_secret).authenticated)
 
     def test_static_flow_uses_direct_confirmation_without_checkbox(self):
         root=Path(__file__).resolve().parents[1]

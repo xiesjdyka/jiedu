@@ -67,3 +67,118 @@ class UpdateTests(unittest.TestCase):
             if path=='first':self.assertEqual(self.updater.fetch('https://updates.example/'+path,2),b'ok')
             else:
                 with self.assertRaises(ValueError):self.updater.fetch('https://updates.example/'+path,2)
+
+    def _complete_installer(self, content):
+        self.record.update(kind='complete-installer',version='1.1.3',
+                           url='https://updates.example/Jiedu-1.1.3-windows-x64-setup.exe',
+                           installer_name='Jiedu-1.1.3-windows-x64-setup.exe',
+                           size=len(content),sha256=hashlib.sha256(content).hexdigest())
+        with patch.object(self.updater,'fetch',return_value=self.envelope()):
+            self.assertEqual('available',self.updater.check()['state'])
+
+    def test_complete_installer_resumes_after_interrupted_stream(self):
+        import httpx
+        content=b'MZ'+b'synthetic-installer-bytes'*7000
+        prefix=65536
+        self._complete_installer(content)
+        seen=[]
+        class Interrupted(httpx.SyncByteStream):
+            def __iter__(self):
+                yield content[:prefix]
+                raise httpx.ReadError('synthetic connection loss')
+        def handler(request):
+            seen.append(request.headers.get('range'))
+            if len(seen)==1:return httpx.Response(200,stream=Interrupted())
+            return httpx.Response(206,headers={'Content-Range':f'bytes {prefix}-{len(content)-1}/{len(content)}'},
+                                  content=content[prefix:])
+        self.updater.client=httpx.Client(transport=httpx.MockTransport(handler))
+        with patch.object(self.updater,'_inspect',return_value={}), \
+             patch.object(self.updater.cancel_event,'wait',return_value=False):
+            self.assertEqual('downloaded',self.updater.download()['state'])
+        self.assertEqual([None,f'bytes={prefix}-'],seen)
+        self.assertEqual(content,(self.updater.root/'verified-installer.exe').read_bytes())
+
+    def test_complete_installer_accepts_complete_bytes_after_disconnect(self):
+        import httpx
+        content=b'MZ'+b'a'*(2*65536-2)
+        self._complete_installer(content)
+        calls=[]
+        class CompleteThenDisconnected(httpx.SyncByteStream):
+            def __iter__(self):
+                yield content
+                raise httpx.ReadError('connection closed after all bytes')
+        def handler(request):
+            calls.append(request.headers.get('range'))
+            if len(calls)<4:raise httpx.ReadError('earlier transient connection loss')
+            return httpx.Response(200,stream=CompleteThenDisconnected())
+        self.updater.client=httpx.Client(transport=httpx.MockTransport(handler))
+        with patch.object(self.updater,'_inspect',return_value={}), \
+             patch.object(self.updater.cancel_event,'wait',return_value=False):
+            self.assertEqual('downloaded',self.updater.download()['state'])
+        self.assertEqual([None]*4,calls)
+        self.assertEqual(content,(self.updater.root/'verified-installer.exe').read_bytes())
+
+    def test_complete_installer_rejects_ignored_or_invalid_range_and_bad_hash(self):
+        import httpx
+        content=b'MZ'+b'synthetic-installer-bytes'*7000
+        prefix=65536
+        for mode in ('ignored','wrong_start','wrong_length','bad_hash'):
+            with self.subTest(mode=mode):
+                (self.updater.root/'verified-installer.exe').unlink(missing_ok=True)
+                self._complete_installer(content)
+                class Interrupted(httpx.SyncByteStream):
+                    def __iter__(self):
+                        yield content[:prefix]
+                        raise httpx.ReadError('synthetic connection loss')
+                requests=[]
+                def handler(request):
+                    requests.append(request.headers.get('range'))
+                    if mode=='bad_hash':return httpx.Response(200,content=b'XX'+content[2:])
+                    if len(requests)==1:return httpx.Response(200,stream=Interrupted())
+                    if mode=='ignored':return httpx.Response(200,content=content)
+                    if mode=='wrong_start':
+                        return httpx.Response(206,headers={'Content-Range':f'bytes 0-{len(content)-1}/{len(content)}'},
+                                              content=content[prefix:])
+                    return httpx.Response(206,headers={'Content-Range':f'bytes {prefix}-{len(content)-1}/{len(content)}'},
+                                          content=content[prefix:-1])
+                self.updater.client=httpx.Client(transport=httpx.MockTransport(handler))
+                with patch.object(self.updater,'_inspect',return_value={}), \
+                     patch.object(self.updater.cancel_event,'wait',return_value=False):
+                    with self.assertRaises(ValueError):
+                        self.updater.download()
+                self.assertFalse((self.updater.root/'verified-installer.exe').exists())
+                self.assertFalse(list(self.updater.root.glob('*.partial')))
+                self.updater.client.close()
+                self.updater.client=None
+
+    def test_complete_installer_cancel_and_retry_bound(self):
+        import httpx
+        content=b'MZ'+b'synthetic-installer-bytes'
+        self._complete_installer(content)
+        calls=[]
+        def unavailable(request):
+            calls.append(request)
+            raise httpx.ReadError('synthetic persistent loss')
+        self.updater.client=httpx.Client(transport=httpx.MockTransport(unavailable))
+        with patch.object(self.updater.cancel_event,'wait',return_value=False):
+            with self.assertRaises(Exception):self.updater.download()
+        self.assertEqual(4,len(calls))
+        self.assertFalse((self.updater.root/'verified-installer.exe').exists())
+        self.updater.client.close()
+        self.updater.client=None
+        self.updater.cancel_event.set()
+        self.updater.worker=type('Worker',(),{'is_alive':lambda self:True})()
+        with patch.object(self.updater,'_stream') as stream:
+            with self.assertRaisesRegex(ValueError,'取消'):self.updater.download()
+            stream.assert_not_called()
+
+    def test_cancelled_update_is_reported_as_cancelled(self):
+        class Gate:
+            def __enter__(self):return self
+            def __exit__(self,*args):return False
+            def release(self,force=False):pass
+        self.updater.operation_lock=Gate()
+        self.updater.cancel_event.set()
+        with patch.object(self.updater,'check',side_effect=ValueError('更新已取消，原版本保持不变')):
+            self.updater._run()
+        self.assertEqual('cancelled',self.updater._read('workflow.json')['state'])

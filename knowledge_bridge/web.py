@@ -1447,6 +1447,10 @@ class ClientConfigApplyRequest(BaseModel): token:str
 @app.post("/api/local-ai/config/{client}/preview")
 def api_local_ai_config_preview(client:str,payload:ClientConfigPreviewRequest,request:Request):
     _same_origin(request);_owner(request,refresh=True)
+    registry=getattr(request.app.state,"client_registry",None)
+    if registry and any(
+            row["claimed_id"]==client for row in registry.list_clients()):
+        raise HTTPException(409,"此客户端已有正式配对；请在客户端访问中使用“修复连接”，保留原身份、权限和归档来源")
     try:return config_preview(client,payload.action)
     except (ValueError,OSError) as e:raise HTTPException(400,str(e))
 @app.post("/api/local-ai/config/{client}/apply")

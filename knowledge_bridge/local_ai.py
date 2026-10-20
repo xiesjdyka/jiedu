@@ -6,18 +6,17 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from .core import CFG, ROOT, VAULT
 from .workspace import local_path
-from .package_layout import python_executable, component
 from .memory_control import interface_state
 from .bridge_settings import load_settings
 from .session_manager import list_sessions, session_status
-from .client_config import statuses as config_statuses, preview as config_preview, apply as config_apply, rollback as config_rollback
+from .client_config import statuses as config_statuses, preview as config_preview, apply as config_apply, rollback as config_rollback, _command
 from .mcp_audit import client_summary
 from .hermes_session_adapter import status as hermes_session_status
 from .chatgpt_adapter import status as chatgpt_adapter_status, TOOLS as CHATGPT_ADAPTER_TOOLS
 from .workspace import active_workspace
 from .redaction import redact,redact_text
 
-STATE_PATH=local_path("local_ai_clients.json"); PYTHONW=python_executable(ROOT,windowless=True)
+STATE_PATH=local_path("local_ai_clients.json")
 def _now(): return datetime.now(timezone.utc).isoformat()
 def _state():
     try:return json.loads(STATE_PATH.read_text("utf-8"))
@@ -59,7 +58,8 @@ def client_status():
     configured_host=settings["console"]["host"]
     return redact({"master_enabled":gate,"clients":rows,"security":{"knowledge_data":"仅本机","mcp_listen":settings["mcp"]["mode"],"console_listen":f"{configured_host}:{settings['console']['port']}","public_access":"关闭","remote_mcp":"禁用","cloud_sync":"未配置","verified_localhost":configured_host=="127.0.0.1","policy_locked":True}})
 async def _probe(client="other",exercise_gate=True):
-    params=StdioServerParameters(command=str(PYTHONW),args=["-m","knowledge_bridge.cli","mcp"],cwd=str(ROOT),env={**os.environ,"PYTHONIOENCODING":"utf-8","KNOWLEDGE_BRIDGE_CLIENT_ID":client,"KNOWLEDGE_BRIDGE_VAULT":str(VAULT),"KNOWLEDGE_BRIDGE_LOCAL_DATA":str(local_path())})
+    entry=_command(client)
+    params=StdioServerParameters(command=entry['command'],args=entry['args'],cwd=entry.get('cwd'),env={**os.environ,**entry['env']})
     async with stdio_client(params) as streams:
         async with ClientSession(*streams) as session:
             await session.initialize(); tools=await session.list_tools(); blocked=False
@@ -98,7 +98,4 @@ def custom_client_config(client_id:str):
         return {"client_id":"chatgpt","name":"ChatGPT","configured":False,"config_path":None,"access_method":"localhost HTTP适配器","adapter_endpoint":endpoint,"discovery_endpoint":endpoint+"/discover","call_endpoint":endpoint+"/call","local_stdio_supported":False,"chatgpt_direct_local_support":False,"remote_gateway":"not_configured","reason":"本地适配器可运行，但当前ChatGPT产品不能直接访问localhost；只有真实握手后才显示已连接。","tools":["knowledge_search","context_state","request_knowledge_change"],"owner_action_required":True}
     elif saved and saved.get("custom"):name=saved["name"]
     else:raise ValueError("自定义客户端不存在")
-    if component("control", ROOT):
-        from .portable_entry import locator_configuration
-        return {"client_id":client_id,"name":name,"transport":"stdio",**locator_configuration(client_id),"local_only":True,"tools":["knowledge_search","context_state","request_knowledge_change","save_raw_conversation"]}
-    return {"client_id":client_id,"name":name,"transport":"stdio","command":str(PYTHONW),"args":["-m","knowledge_bridge.cli","mcp"],"cwd":str(ROOT),"env":{"KNOWLEDGE_BRIDGE_CLIENT_ID":client_id,"PYTHONIOENCODING":"utf-8","KNOWLEDGE_BRIDGE_VAULT":str(VAULT),"KNOWLEDGE_BRIDGE_LOCAL_DATA":str(local_path())},"local_only":True,"tools":["knowledge_search","context_state","request_knowledge_change","save_raw_conversation"],"permission_note":"读取和原始归档按权限开放；正式知识修改只生成待Owner确认的变更请求。"}
+    return {"client_id":client_id,"name":name,"transport":"stdio",**_command(client_id),"local_only":True,"tools":["knowledge_search","context_state","request_knowledge_change","save_raw_conversation"],"permission_note":"读取和原始归档按权限开放；正式知识修改只生成待Owner确认的变更请求。"}
