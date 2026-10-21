@@ -81,6 +81,32 @@ class PairingTransactionManager:
             {"id":"custom","label":"自定义","display_name":"我的 AI","suggested_claimed_id":unique("custom_ai"),"configuration":"manual_fields","transport":"stdio","template_note":"交付完整 STDIO 命令、独立参数和环境变量；不会猜测客户端格式。"},
         ]
 
+    def quick_connect(self, client_type: str) -> dict:
+        """Owner-authorized branded pairing; reuse every existing local connection."""
+        if client_type not in {'codex', 'hermes'}:
+            raise ValueError('快捷接入只支持 Codex 和 Hermes')
+        from .client_config import ADAPTERS
+        with self._lock:
+            current = next((row for row in self.registry.list_clients()
+                            if row.get('client_type') == client_type and row.get('status') != 'revoked'), None)
+            if current:
+                return {'outcome': 'reused', 'client': current, 'restart_required': False}
+            detected = ADAPTERS[client_type].detect()
+            if detected.get('entry'):
+                return {'outcome': 'existing_configuration', 'restart_required': False}
+            if not detected.get('installed'):
+                raise ValueError('本机尚未检测到该客户端，请先安装并启动后再接入')
+            preset = next(row for row in self.presets() if row['id'] == client_type)
+            pairing = self.begin(preset['suggested_claimed_id'], preset['display_name'],
+                                 client_type, 'stdio')
+            # The existing transaction writes a backup and rolls back both config
+            # and identity on failure. Never return the one-time secret to the UI.
+            result = self.commit(pairing['pairing_id'])
+            return {'outcome': 'paired', 'client': result['client'],
+                    'restart_required': result['restart_required'],
+                    'auto_archive': result.get('auto_archive'),
+                    'collection_warning': result.get('collection_warning')}
+
     @staticmethod
     def _policies(value:dict|None) -> list[tuple[str,str,str]]:
         choices=POLICY_DEFAULTS|dict(value or {})

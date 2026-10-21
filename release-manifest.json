@@ -39,12 +39,12 @@
     {
       "path": "README.md",
       "bytes": 7742,
-      "sha256": "d553b6d7eeb135aa20fb77592a3f19e80bffcb926da27bf1d6e33909fb83ae4c"
+      "sha256": "222d8ec43bc26278a47d2d61d9419269b7d99eb526e6d5b01f4ae1d986be61ec"
     },
     {
       "path": "RELEASE_NOTES.md",
-      "bytes": 8921,
-      "sha256": "950717e6fc3ea9e71e5b94b5425b90b0a5f78f76ab59c4bceed436971a5d1908"
+      "bytes": 9527,
+      "sha256": "1024d84136f01856916c0e62e4b980a80412eebd3e4f6472335f716faa4cef63"
     },
     {
       "path": "SECURITY.md",
@@ -58,8 +58,8 @@
     },
     {
       "path": "VERSION",
-      "bytes": 6,
-      "sha256": "2f66e2158a2645e2455e374272c8deb113173dca586f9159f813519a50436c32"
+      "bytes": 5,
+      "sha256": "a15c279bee3a547db747a27e302199263e396fe44be6166527cd4a3f349338cb"
     },
     {
       "path": "butler-resources.lock.json",
@@ -79,12 +79,12 @@
     {
       "path": "desktop/Cargo.lock",
       "bytes": 123812,
-      "sha256": "123547c3dd07562361ca9354e01f9b6fbc4621aac7f05b63377c47afdc42d8c2"
+      "sha256": "e7c013e1f38254070e04d1a32b665c8c2d827f4889b707c3279f0c7e825610d6"
     },
     {
       "path": "desktop/Cargo.toml",
       "bytes": 524,
-      "sha256": "10c791c53e7dea9893791aa3ab9421342eb109ef61ce4d352079493eefe21bc2"
+      "sha256": "4b2a19d237ebe09384b35d9a74d2e7b610875a366e91fbb669c04a946419d475"
     },
     {
       "path": "desktop/build.rs",
@@ -129,7 +129,7 @@
     {
       "path": "desktop/tauri.conf.json",
       "bytes": 415,
-      "sha256": "407025376e25de2b2fcfd31d400fc2b04101bf9bf582ea634d06e4139392ed0d"
+      "sha256": "6b70ed5706cc6d4d2746b6a46cdade4e040da707428ad05adc839d48f6009b92"
     },
     {
       "path": "desktop/ui/index.html",
@@ -188,13 +188,13 @@
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 8550,
-      "sha256": "ea9cc1d8e4f2320dacb552b0e7a6daf2e30646e0ae5fc22824705a024fca0ae0"
+      "bytes": 9126,
+      "sha256": "d6e0d3e79ad1d3778bf6208a5c643a7eeed59792e8e189686a82b327bf0a38ac"
     },
     {
       "path": "docs/release-version.md",
-      "bytes": 3145,
-      "sha256": "a715bb6dd3a0081f8ee02cf2f61e1ca9f6563095e4087aa8f1bfb07824353516"
+      "bytes": 3196,
+      "sha256": "776b11ada7f545d9617af830ea6fe74a3bd67efae1628bc4c6a720bd0882b3c6"
     },
     {
       "path": "docs/source-install.md",
@@ -208,8 +208,8 @@
     },
     {
       "path": "docs/user-guide.md",
-      "bytes": 11734,
-      "sha256": "00fb11aaa27dd1453d1ca1a8817d64ad22b688e51e98efe5443860e07df1a0c0"
+      "bytes": 11763,
+      "sha256": "9124885154a20ca0b7359eb2370b49f2a5285f6143a15626d033f3fc9c8e973c"
     },
     {
       "path": "docs/validation.json",
@@ -239,7 +239,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 23,
-      "sha256": "c7d14bd8e4f6497877c109f030dfb5b266d169c45308e61c800b90150aa2ff4b"
+      "sha256": "81b1d05569e9104e27dea7093cc1128813ce3405023530bd7a6554993d9b71c9"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -368,13 +368,13 @@
     },
     {
       "path": "knowledge_bridge/client_config.py",
-      "bytes": 16001,
-      "sha256": "01c108c4463db7acdc16fd1189e7e5ed17d9cf85b29a9b34b74a0b7a816dc870"
+      "bytes": 16053,
+      "sha256": "26fde35a348984b3ebdf7baacbe3171e6610d32a3fe06f8f159556d0fbf76c02"
     },
     {
       "path": "knowledge_bridge/client_pairing.py",
-      "bytes": 17582,
-      "sha256": "d35a24130c5f3de41e032c3491c3ef27ae3459a6a900aaefb049dbb8565e507b"
+      "bytes": 19300,
+      "sha256": "11ca468fe8e7cc67e11285541692066879f57c9a211100847fb7d656ef47665c"
     },
     {
       "path": "knowledge_bridge/codex_event_formats.py",
@@ -763,8 +763,8 @@
     },
     {
       "path": "knowledge_bridge/web.py",
-      "bytes": 174787,
-      "sha256": "793bc4002d76f179dd601f7d9b48d422cc1ff6398d65476039facca1040586c8"
+      "bytes": 175143,
+      "sha256": "8477299368688185f890eb666214490c9b4316b5e4d1909dd270d38e19bc46d8"
     },
     {
       "path": "knowledge_bridge/wiki_daily_runs.py",
@@ -849,7 +849,7 @@
     {
       "path": "pyproject.toml",
       "bytes": 1140,
-      "sha256": "73dce6cbd8007e4134198b6b2f377141e53c0fc22c0c9dc3c4eaac14d5cfb694"
+      "sha256": "04134ee506eed099a0c1c020163bb2a0c8ec815bfc7aa71ee7d11f3a6b368d74"
     },
     {
       "path": "requirements.lock.txt",
@@ -898,8 +898,8 @@
     },
     {
       "path": "static/app.js",
-      "bytes": 362266,
-      "sha256": "069264a0e3cc1ce7d01299a4066754b3c183412eeae8b11383d8f607badbdd5a"
+      "bytes": 368026,
+      "sha256": "d23655b575e0ecfa037c7587df62f88f6066d9faf3893ab64cec2c4fdb5cde4a"
     },
     {
       "path": "static/brand/jiedu-256.png",
@@ -938,8 +938,8 @@
     },
     {
       "path": "static/index.html",
-      "bytes": 58699,
-      "sha256": "ed17210e4ff590992fd6bef2a8b19688e2514bdabf50fb67922c5f379a74f79f"
+      "bytes": 59428,
+      "sha256": "101d1fd56200f301f1987615b2b37c7c588e9debfa40703abe299ed709c5406c"
     },
     {
       "path": "static/software-update.js",
@@ -948,8 +948,8 @@
     },
     {
       "path": "static/style.css",
-      "bytes": 243864,
-      "sha256": "0df64f0ce52767fd496733308ec523cd2e1a3fb3a200bc26e77be5fa6616eaa9"
+      "bytes": 246173,
+      "sha256": "2578d465b10662e52fab564f10438ea52f8ecb16552df3492bc0222395b23fa5"
     },
     {
       "path": "static/vendor/echarts-5.6.0.min.js",
@@ -1253,8 +1253,8 @@
     },
     {
       "path": "tests/test_client_pairing.py",
-      "bytes": 16128,
-      "sha256": "12be9ff016ecd1e4067ada1ab59f42d880dea2d5dda56af27814e7edb71fdff8"
+      "bytes": 20785,
+      "sha256": "ece28599e97d9363e67598458aad60a300806889ced8b1cedb7e1baae77955f9"
     },
     {
       "path": "tests/test_client_permissions.py",
@@ -1403,8 +1403,8 @@
     },
     {
       "path": "tests/test_hermes_config_location.py",
-      "bytes": 2264,
-      "sha256": "740e705d0a71b3a5f36a0677d2e02dcd1fa0479f8afb922d203b8bf9b4d5f481"
+      "bytes": 2931,
+      "sha256": "22e5199e2bf5168b94ed93bce352b1cfa4ed296e3edf0f6324667fc1a9ae4a15"
     },
     {
       "path": "tests/test_hermes_history.py",
@@ -1753,8 +1753,8 @@
     },
     {
       "path": "static/update-notice.js",
-      "bytes": 11897,
-      "sha256": "4fbf121cdf0fe0c906c166ce6128e9a5b99d2f072fdb8964707ea8b5a63c8247"
+      "bytes": 12053,
+      "sha256": "56ef5fc786c1a1bab85dabdb0ebf4f5c022547091bd47c257b5500da5949d773"
     },
     {
       "path": "tests/test_update_notice.py",

@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import tomllib
 import unittest
@@ -75,6 +76,75 @@ class PairingTransactionTests(unittest.TestCase):
                 self.assertEqual(PolicyDecision.DENY,permissions.authorize(identity,"evidence","raw_archive").outcome)
                 unauthenticated=registry.authenticate("codex",None)
                 self.assertEqual(PolicyDecision.DENY,permissions.authorize(unauthenticated,"evidence","read",{"session_id":"fictional"}).outcome)
+
+    def test_quick_connect_creates_once_and_preserves_existing_identity_and_rules(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);registry,permissions,adapter,patches=self.harness(root)
+            with patches[0],patches[1],patches[2],patches[3],patches[4]:
+                manager=PairingTransactionManager(registry,permissions)
+                first=manager.quick_connect('codex')
+                self.assertEqual('paired',first['outcome'])
+                self.assertNotIn('secret',str(first).lower())
+                client_id=first['client']['internal_id']
+                permissions.set_policy(client_id,'formal','read','deny')
+                config=adapter.path.read_bytes()
+                second=manager.quick_connect('codex')
+                self.assertEqual('reused',second['outcome'])
+                self.assertEqual(client_id,second['client']['internal_id'])
+                self.assertEqual(config,adapter.path.read_bytes())
+                self.assertEqual('deny',next(row['decision'] for row in permissions.policies(client_id)
+                                             if row['scope']=='formal' and row['operation']=='read'))
+                self.assertEqual(1,len(registry.list_clients()))
+
+    def test_quick_connect_preserves_legacy_configuration_without_new_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);registry,permissions,adapter,patches=self.harness(root)
+            with patches[0],patches[1],patches[2],patches[3],patches[4]:
+                adapter.path.write_text('[mcp_servers.knowledge_bridge]\ncommand = "old.exe"\n', 'utf-8')
+                before=adapter.path.read_bytes()
+                result=PairingTransactionManager(registry,permissions).quick_connect('codex')
+                self.assertEqual('existing_configuration',result['outcome'])
+                self.assertEqual(before,adapter.path.read_bytes())
+                self.assertEqual([],registry.list_clients())
+
+    def test_quick_connect_rejects_missing_client_without_ghost_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);registry,permissions,adapter,patches=self.harness(root)
+            adapter.path.unlink();adapter.path.parent.rmdir()
+            with patches[0],patches[1],patches[2],patches[3],patches[4]:
+                with self.assertRaisesRegex(ValueError,'尚未检测到'):
+                    PairingTransactionManager(registry,permissions).quick_connect('codex')
+                self.assertEqual([],registry.list_clients())
+
+    def test_quick_connect_hermes_custom_home_pairs_once(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);registry,permissions,_,patches=self.harness(root)
+            custom=root/'chosen-hermes';custom.mkdir()
+            with patch.dict(os.environ,{'HERMES_HOME':str(custom),
+                                         'HERMES_DESKTOP_USER_DATA_DIR':'',
+                                         'LOCALAPPDATA':str(root/'unused-local')}), \
+                 patch.object(Path,'home',return_value=root/'unused-home'):
+                adapter=cc.HermesAdapter()
+            self.assertEqual(custom/'config.yaml',adapter.path)
+            self.assertTrue(adapter.detect()['installed'])
+            with patch.dict(cc.ADAPTERS,{'hermes':adapter},clear=True), \
+                 patches[1],patches[2],patches[3],patches[4], \
+                 patch('knowledge_bridge.hermes_session_adapter.enable_history_for_first_pairing',
+                       return_value='waiting_for_source'):
+                manager=PairingTransactionManager(registry,permissions)
+                first=manager.quick_connect('hermes')
+                self.assertEqual('paired',first['outcome'])
+                self.assertNotIn('secret',str(first).lower())
+                self.assertTrue(adapter.path.is_file())
+                client_id=first['client']['internal_id']
+                permissions.set_policy(client_id,'formal','read','deny')
+                config=adapter.path.read_bytes()
+                second=manager.quick_connect('hermes')
+                self.assertEqual('reused',second['outcome'])
+                self.assertEqual(config,adapter.path.read_bytes())
+                self.assertEqual('deny',next(row['decision'] for row in permissions.policies(client_id)
+                                             if row['scope']=='formal' and row['operation']=='read'))
+                self.assertEqual(1,len(registry.list_clients()))
 
     def test_failure_after_config_apply_rolls_back_config_and_identity(self):
         with tempfile.TemporaryDirectory() as temporary:

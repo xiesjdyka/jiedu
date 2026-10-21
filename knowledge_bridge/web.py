@@ -648,7 +648,7 @@ def health():
     from .bridge_settings import load_settings
     settings=load_settings()
     model_state=core.local_model_status()
-    return {"status":"ready","console":"ready","watcher":"external","launch_id":os.environ.get("KNOWLEDGE_BRIDGE_LAUNCH_ID"),"lancedb":"ready" if table_ready else "unavailable","bge_m3":model_state["state"],"vector_model":model_state,"mcp":"ready","environment":"isolated_test" if os.environ.get("KNOWLEDGE_BRIDGE_PROTECTION_TEST_MODE")=="1" else "production","vault":core.VAULT.name if workspace["workspace_ready"] else None,"pid":__import__('os').getpid(),"port":settings["console"]["port"],**workspace}
+    return {"status":"ready","console":"ready","watcher":"external","launch_id":os.environ.get("KNOWLEDGE_BRIDGE_LAUNCH_ID"),"lancedb":"ready" if table_ready else "unavailable","bge_m3":model_state["state"],"vector_model":model_state,"mcp":"ready","environment":"isolated_test" if os.environ.get("KNOWLEDGE_BRIDGE_PROTECTION_TEST_MODE")=="1" else "production","vault":core.VAULT.name if workspace["workspace_ready"] else None,"program_root":str(core.ROOT),"pid":__import__('os').getpid(),"port":settings["console"]["port"],**workspace}
 
 class ProtectionInitializeRequest(BaseModel):
     passphrase: SecretStr = Field(min_length=12,max_length=1024)
@@ -1039,6 +1039,12 @@ def api_client_access_create(request:Request,payload:ClientPairRequest):
     try:return _pairing_service(request).begin(
         payload.claimed_id,payload.display_name,payload.client_type,payload.transport,payload.read_policies,payload.product_family)
     except ValueError as exc:raise HTTPException(400,str(exc))
+
+@app.post('/api/client-access/quick-connect/{client_type}')
+def api_client_quick_connect(client_type:str,request:Request):
+    _same_origin(request);_owner(request,refresh=True)
+    try:return _pairing_service(request).quick_connect(client_type)
+    except (ValueError,OSError) as exc:raise HTTPException(409,str(exc))
 
 @app.post("/api/client-access/pairings/{pairing_id}/commit")
 def api_client_pairing_commit(pairing_id:str,request:Request):

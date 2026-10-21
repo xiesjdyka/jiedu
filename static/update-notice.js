@@ -13,6 +13,7 @@
     const rows = [];
     if (!previous || older(previous,'1.1.5')) rows.push('可读取的本机聊天历史会显示补齐进度；普通文件也能单独建立检索。');
     if (!previous || older(previous,'1.1.6')) rows.push('更新后会核对本机功能与保留的设置，告诉你哪些仍需决定。','知识 Wiki 增加用途、模型选择和每日整理说明。','已接入历史全部补齐并无待核对项后，可复制提炼母档指令。','可为当前工作区生成、修改并保存新会话启动提示词。');
+    if (!previous || older(previous,'1.1.7')) rows.push('Codex 和 Hermes 增加快捷接入卡，归档详细状态默认折叠，仍可随时展开。');
     return rows;
   };
   function sourcePresent(source, client) {

@@ -1,7 +1,7 @@
 import os,tempfile,unittest
 from pathlib import Path
 from unittest.mock import patch
-from knowledge_bridge.client_config import hermes_config_path
+from knowledge_bridge.client_config import HermesAdapter,hermes_config_path
 
 
 @unittest.skipUnless(os.name=='nt','Windows desktop path selection')
@@ -13,6 +13,16 @@ class HermesConfigLocationTests(unittest.TestCase):
     def test_explicit_home_wins_over_other_configuration(self):
         with patch.dict(os.environ,{'HERMES_HOME':r'C:\Chosen Hermes'}):
             self.assertEqual(Path(r'C:\Chosen Hermes\config.yaml'),hermes_config_path())
+
+    def test_custom_desktop_home_counts_as_installed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);desktop=root/'Desktop Data';home=desktop/'hermes-home';home.mkdir(parents=True)
+            with patch.dict(os.environ,{'HERMES_HOME':'','HERMES_DESKTOP_USER_DATA_DIR':str(desktop),
+                                         'LOCALAPPDATA':str(root/'unused-local')}), \
+                 patch('pathlib.Path.home',return_value=root/'unused-home'):
+                adapter=HermesAdapter()
+                self.assertEqual(home/'config.yaml',adapter.path)
+                self.assertTrue(adapter.detect()['installed'])
 
     def test_user_environment_wins_when_service_environment_is_stale(self):
         with patch.dict(os.environ,{'HERMES_HOME':''}),patch('winreg.QueryValueEx',return_value=(r'C:\User Hermes',1)):

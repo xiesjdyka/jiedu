@@ -110,7 +110,7 @@ class HermesAdapter(Adapter):
         if self.path.exists():
             try:data=yaml.safe_load(self.path.read_text("utf-8")) or {}
             except (yaml.YAMLError,OSError):pass
-        return {"installed":any(p.exists() for p in self.install_hints),"config_path":str(self.path),"config_exists":self.path.exists(),"entry":data.get("mcp_servers",{}).get(NAME) if isinstance(data,dict) else None}
+        return {"installed":self.path.is_file() or self.path.parent.is_dir() or any(p.exists() for p in self.install_hints),"config_path":str(self.path),"config_exists":self.path.exists(),"entry":data.get("mcp_servers",{}).get(NAME) if isinstance(data,dict) else None}
     def render(self,old,client_id: str | None = None,secret: str | None = None):
         data=yaml.safe_load(old) if old.strip() else {}; data=data or {}
         if not isinstance(data,dict): raise ValueError("Hermes配置根节点必须是映射")

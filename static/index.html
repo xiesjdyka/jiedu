@@ -289,6 +289,7 @@
     <section id="access" class="page"><div class="access-hub">
       <section class="client-access-console" aria-labelledby="clientAccessHeading">
         <div class="client-access-head"><div><span class="access-kicker">本机 AI 连接</span><h2 id="clientAccessHeading">客户端与权限</h2><p>连接客户端后，按知识范围和操作设置权限。</p></div><button id="pairClient" class="primary" type="button">+ 配对客户端</button></div>
+        <section class="quick-connect" aria-labelledby="quickConnectTitle"><div class="quick-connect-heading"><div><h3 id="quickConnectTitle">让本机 AI 接入界渡</h3><p>选择正在使用的客户端，复制专属提示词交给它。首次接入会在本机保存连接配置并留好备份；已有连接保持原样。</p></div></div><div id="quickConnectCards" class="quick-connect-cards" aria-live="polite"></div><p id="quickConnectFeedback" class="quick-connect-feedback" role="status" aria-live="polite"></p><details id="quickConnectFallback" class="quick-connect-fallback" hidden><summary>复制未完成？手动查看提示词</summary><pre id="quickConnectPrompt" class="selectable"></pre></details></section>
         <ol class="client-access-journey" aria-label="客户端权限设置流程"><li><i>1</i><span>选择客户端</span></li><li><i>2</i><span>完成配对</span></li><li><i>3</i><span>设置权限</span></li><li><i>4</i><span>一次性请求</span></li><li><i>5</i><span>查看记录</span></li></ol>
         <div id="clientAccessControl" class="client-access-workspace" aria-live="polite" aria-busy="true"><div class="client-access-loading"><span></span><p>正在确认客户端身份与权限…</p></div></div>
         <p class="client-access-boundary">公开文件的权限只约束经界渡的访问；它不能阻止同权限程序直接读取普通文件。</p>
