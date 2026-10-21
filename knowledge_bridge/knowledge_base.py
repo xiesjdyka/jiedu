@@ -381,7 +381,7 @@ def save_core_files(items: list[str]) -> dict:
     return status()
 
 
-def startup_instruction() -> dict:
+def startup_instruction(*, respect_saved: bool = True) -> dict:
     data = load()
     names = [Path(item).stem for item in data["core_files"]]
     configured = "、".join(names)
@@ -391,6 +391,10 @@ def startup_instruction() -> dict:
         "先只建立长期背景，不主动加载全部项目或历史；我提到具体项目后再读取项目状态，证据不足时再继续检索。"
         "任何核心背景读取失败必须明确说明，不得猜测补全。"
     )
+    if respect_saved:
+        from .prompt_workflow import startup_status
+        selected = startup_status(active_workspace(), text)
+        text = selected["prompt"]
     return {"instruction": text, "core_files": data["core_files"], "generated_at": _now()}
 
 

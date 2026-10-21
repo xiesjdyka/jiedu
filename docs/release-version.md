@@ -1,17 +1,17 @@
 # 统一发布版本
 
-根目录 `VERSION` 是程序发布版本的来源。当前候选程序、原生外壳和安装器均为 `1.1.5`。
+根目录 `VERSION` 是程序发布版本的来源。当前候选程序、原生外壳和安装器均为 `1.1.6`。
 
-## 1.1.5 的字段对应
+## 1.1.6 的字段对应
 
 | 位置 | 当前候选的值 |
 | --- | --- |
-| VERSION、关于与托盘的程序版本、设置页 | `1.1.5` |
-| pyproject.toml、Python 包版本 | `1.1.5` |
-| 安装器文件名、ProductVersion 文本 | `Jiedu-1.1.5-windows-x64-setup.exe`、`1.1.5` |
-| 安装器数字 FileVersion / ProductVersion | `1.1.5.0` |
-| Cargo、Tauri、关于另列的外壳构建版本 | `1.1.5` |
-| 重新编译原生 EXE 的数字 FileVersion / ProductVersion | `1.1.5.0` |
+| VERSION、关于与托盘的程序版本、设置页 | `1.1.6` |
+| pyproject.toml、Python 包版本 | `1.1.6` |
+| 安装器文件名、ProductVersion 文本 | `Jiedu-1.1.6-windows-x64-setup.exe`、`1.1.6` |
+| 安装器数字 FileVersion / ProductVersion | `1.1.6.0` |
+| Cargo、Tauri、关于另列的外壳构建版本 | `1.1.6` |
+| 重新编译原生 EXE 的数字 FileVersion / ProductVersion | `1.1.6.0` |
 
 本候选同步程序与原生构建版本，并重新编译原生外壳。联网安装器自动下载经固定 SHA256 校验的 Python 3.13.16、向量模型和 OCR 资源；其实际字节、解释器启动与功能验收以安装器及资源回执为准。
 

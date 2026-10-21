@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#151718">
   <title>界渡 · 私人知识域</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/jiedu-32.png">
-  <link rel="stylesheet" href="/static/style.css?v=20261017-neutral-controls">
+  <link rel="stylesheet" href="/static/style.css?v=20261020-update-summary">
   <link rel="stylesheet" href="/static/design-system.css?v=20261017-neutral-controls">
   <link rel="stylesheet" href="/static/butler.css?v=20261017-neutral-controls">
   <script defer src="/static/vendor/echarts-5.6.0.min.js"></script>
@@ -35,6 +35,20 @@
       <div class="first-run-actions"><button id="firstRunCopy" type="button" class="primary">复制配置提示词</button><button id="firstRunSelect" type="button" class="copy-button">手动选择全文</button><button id="firstRunEnter" type="button" class="secondary" disabled>确认进入</button></div>
       <label id="firstRunManualWrap" class="first-run-manual" hidden><input id="firstRunManualConfirm" type="checkbox">我已手动复制全文</label>
       <p id="firstRunCopyState" role="status" aria-live="polite">复制后才能确认进入。复制只表示提示词已交付，配置是否生效仍需智能体实际核验。</p>
+    </div>
+  </section>
+  <section id="updateNotice" class="first-run-guide update-summary-guide" role="dialog" aria-modal="true" aria-labelledby="updateNoticeTitle" hidden>
+    <div class="first-run-card update-summary-card">
+      <span class="access-kicker">界渡 · 本次更新</span>
+      <h1 id="updateNoticeTitle">界渡已更新</h1>
+      <p id="updateNoticeIntro">正在核对本机已安装的版本和当前设置…</p>
+      <div id="updateNoticeCheck" class="update-summary-check" role="status" aria-live="polite">正在检查可用功能…</div>
+      <div class="first-run-actions"><button id="updateNoticeRetry" type="button" class="secondary">重新检查</button><button id="updateNoticeClose" type="button" class="primary">关闭，继续使用</button></div>
+      <ul id="updateNoticeChanges" class="update-summary-list"></ul>
+      <div id="updateNoticeFacts" class="update-summary-facts"></div>
+      <div id="updateNoticePromptWrap" class="update-summary-prompt" hidden><p>有连接需要检查时，可以复制这段话交给你正在使用的智能体。复制后仍要看实际检查结果。</p><label for="updateNoticePrompt">给智能体的检查提示词</label><textarea id="updateNoticePrompt" readonly spellcheck="false"></textarea><button id="updateNoticeCopy" type="button" class="copy-button">复制检查提示词</button></div>
+      <details class="update-summary-details"><summary>查看检查依据</summary><p id="updateNoticeTechnical">只读取本机版本和连接状态；不会改动权限、资料或暂停设置。</p></details>
+      <p id="updateNoticeSaveState" role="status" aria-live="polite"></p>
     </div>
   </section>
   <section id="aboutJiedu" class="brand-info-page" aria-labelledby="aboutJieduTitle" hidden>
@@ -252,6 +266,7 @@
     </section>
     <section id="protection" class="page">
       <div class="protection-hub">
+        <section id="updateNoticeSettings" class="update-notice-settings" hidden><div><h2>本次更新</h2><p>随时重看这次更新和本机检查结果。</p></div><button id="reopenUpdateNotice" type="button" class="copy-button">查看本次更新</button></section>
         <section class="protection-hero" aria-labelledby="protectionHeading">
           <div><span class="protection-kicker">本机运行</span><h2 id="protectionHeading">本机设置</h2><p id="protectionSummary">正在读取当前状态…</p></div>
           <span id="protectionState" class="protection-state" role="status" aria-live="polite">读取中</span>
@@ -300,7 +315,9 @@
   <dialog id="genericDeliveryDialog" class="wide-dialog"><form method="dialog" class="pair-flow-form"><div class="dialog-head"><div><small id="genericDeliveryStep">第 3 步 / 共 3 步 · 填入客户端</small><h2 id="genericDeliveryTitle">复制连接配置并启用</h2></div><button type="button" id="closeGenericDelivery" class="icon-button" aria-label="关闭配置交付">×</button></div><div class="pair-flow-body"><div id="genericDeliveryBody"></div><p id="genericDeliveryError" role="alert"></p></div><div class="dialog-actions"><button type="button" id="copyGenericSecret" class="secondary" hidden>复制连接密钥</button><button type="button" id="genericConfigured" class="primary">已填入，返回查看验证状态</button></div></form></dialog>
   <script defer src="/static/wiki.js?v=20261007-customer-r10b"></script>
   <script defer src="/static/codex-archive.js?v=20261012-attachment-recovery-r2"></script>
-  <script defer src="/static/app.js?v=20261014-idle-polling"></script>
+  <script defer src="/static/update-notice.js?v=20261020-update-summary"></script>
+  <script defer src="/static/app.js?v=20261020-update-summary"></script>
+  <script defer src="/static/prompt-workflow.js?v=20261020-prompt-workflow"></script>
   <script defer src="/static/butler-controls.js?v=20261017-neutral-controls"></script>
   <script defer src="/static/butler.js?v=20261017-neutral-controls"></script>
   <script defer src="/static/workspace-shell.js?v=20261007-customer-r10b"></script>

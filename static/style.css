@@ -604,3 +604,23 @@ html{scroll-padding-top:24px}.page{scroll-margin-top:24px}
 .sidebar .system-mark img{display:block;width:40px;height:40px;object-fit:contain}
 .sequence-gateway .sequence-brand{position:relative;color:transparent}
 .sequence-gateway .sequence-brand img{position:absolute;left:50%;top:50%;width:48px;height:48px;object-fit:contain;transform:translate(-50%,-50%);pointer-events:none}
+
+/* Installation-scoped update summary; visual style follows the first-use guide. */
+.update-summary-guide{background:rgba(5,15,21,.86);backdrop-filter:blur(8px)}
+.update-summary-card{width:min(740px,100%);max-height:calc(100vh - 40px);overflow:auto}
+.update-summary-card h1{font-size:clamp(25px,3vw,34px)}
+.update-summary-check{margin:16px 0;padding:13px 15px;border:1px solid rgba(185,218,213,.2);border-radius:10px;background:rgba(255,255,255,.04);color:#dbeae6;line-height:1.6}
+.update-summary-list{display:grid;gap:7px;margin:12px 0 18px;padding-left:22px;color:#dce9e6;line-height:1.6}
+.update-summary-facts{display:grid;gap:8px}.update-summary-facts p{margin:0;padding:10px 13px;border-left:3px solid #78b7a6;border-radius:6px;background:rgba(255,255,255,.035);color:#d5e5e1;line-height:1.6}.update-summary-facts p.needs-choice,.update-summary-facts p.preserved,.update-summary-facts p.optional{border-left-color:#d4b26d}.update-summary-facts p.unknown{border-left-color:#9aabba}
+.update-summary-prompt{margin-top:16px;padding-top:10px;border-top:1px solid rgba(185,218,213,.18)}.update-summary-prompt p{color:#aec4c1;line-height:1.6}.update-summary-prompt label{display:block;margin:10px 0 7px;font-weight:600}.update-summary-prompt textarea{min-height:108px;height:140px}.update-summary-prompt button{min-height:44px;margin-top:10px}
+.update-summary-details{margin-top:15px;color:#a9c1bd}.update-summary-details summary{cursor:pointer;min-height:44px;display:flex;align-items:center}.update-summary-details p{margin:4px 0;line-height:1.6}.update-summary-card .first-run-actions button{min-height:44px}.update-summary-card #updateNoticeSaveState{margin:10px 0 0;color:#b5c9c5;font-size:13px}
+.update-notice-settings{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 20px;border:1px solid var(--line-soft);border-radius:12px;background:rgba(255,255,255,.025)}.update-notice-settings h2{margin:0 0 4px;font-size:17px}.update-notice-settings p{margin:0;color:var(--muted);line-height:1.5}.update-notice-settings button{min-height:44px}
+@media(max-width:600px){.update-summary-card{max-height:none}.update-notice-settings{align-items:stretch;flex-direction:column}.update-notice-settings button{width:100%}}
+
+.prompt-workflow-card{margin:18px 0;padding:20px;border:1px solid var(--line-soft);border-radius:12px;background:var(--surface);color:var(--text)}
+.prompt-workflow-card h2,.prompt-workflow-card h3{margin:0 0 8px;font-size:18px}.prompt-workflow-card p{margin:7px 0;line-height:1.7;color:var(--text-2)}
+.prompt-workflow-card ol{padding-left:24px;line-height:1.8}.prompt-workflow-card li{padding-left:3px}.prompt-workflow-card label{display:block;margin:14px 0 6px;font-weight:600}
+.prompt-workflow-card textarea{display:block;width:100%;min-height:160px;max-height:360px;resize:vertical}.prompt-workflow-card small{display:block;margin-top:7px;line-height:1.6;color:var(--text-2)}
+.prompt-workflow-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.prompt-workflow-actions button{min-height:44px}.prompt-workflow-card [role=status]{border-left:3px solid var(--accent);padding-left:10px}
+.wiki-guide{max-width:1100px}.wiki-guide-schedule{font-weight:600}
+@media(max-width:600px){.prompt-workflow-actions{display:grid;grid-template-columns:1fr}.prompt-workflow-actions button{width:100%}}

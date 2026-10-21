@@ -212,13 +212,20 @@ begin
   end;
 end;
 
+var PreviousProgramVersion: String;
+
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   FreeBytes, TotalBytes, RequiredBytes: Int64;
-  TargetDrive: String;
+  TargetDrive, OldVersionFile: String;
+  OldVersionContents: AnsiString;
 begin
   Result := ValidateDestination;
   if Result <> '' then Exit;
+  PreviousProgramVersion := '';
+  OldVersionFile := ExpandConstant('{app}\.jiedu\program\VERSION');
+  if FileExists(OldVersionFile) and LoadStringFromFile(OldVersionFile, OldVersionContents) then
+    PreviousProgramVersion := Trim(OldVersionContents);
   TargetDrive := ExtractFileDrive(ExpandConstant('{app}')) + '\';
   RequiredBytes := {#RuntimeArchiveBytes} + {#VectorArchiveBytes} + {#OCRArchiveBytes} +
     {#RuntimeInstallBytes} + {#VectorInstallBytes} + {#OCRInstallBytes} + 536870912;
@@ -263,6 +270,13 @@ begin
     PythonExe := ExpandConstant('{app}\.jiedu\runtime\python\python.exe');
     Arguments := '-I -B -m knowledge_bridge.full_installer_update verify-installation --program "' + ProgramDir + '"';
     InstallValidated := Exec(PythonExe, Arguments, ProgramDir, SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+    if InstallValidated then begin
+      Arguments := '-I -B -m knowledge_bridge.update_notice record-install --program "' + ProgramDir + '"';
+      if PreviousProgramVersion <> '' then
+        Arguments := Arguments + ' --previous "' + PreviousProgramVersion + '"';
+      if not (Exec(PythonExe, Arguments, ProgramDir, SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0)) then
+        Log('Installation succeeded, but the update notice state could not be recorded; the app will show an unconfirmed notice status.');
+    end;
     if not InstallValidated then Log('Required offline resources failed final file-by-file validation; Setup exit code will be nonzero.');
   end;
 end;

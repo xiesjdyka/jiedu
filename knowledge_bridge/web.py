@@ -372,6 +372,28 @@ def _updates(request):
 @app.get('/api/software-update')
 def software_update_status(request:Request):return _butler_call(lambda:_updates(request).status())
 
+def _notice_program(request:Request, *, write:bool=False):
+    if write:_same_origin(request)
+    from .windows_trust import verify_current_user_peer
+    from .workspace import PROGRAM_ROOT
+    verify_current_user_peer(request.scope.get('client'),request.scope.get('server'))
+    return PROGRAM_ROOT
+
+@app.get('/api/update-notice')
+def update_notice_status(request:Request):
+    from .update_notice import status
+    return status(_notice_program(request))
+
+@app.post('/api/update-notice/acknowledge')
+def update_notice_acknowledge(request:Request):
+    from .update_notice import acknowledge
+    return _butler_call(lambda:acknowledge(_notice_program(request,write=True)))
+
+@app.post('/api/update-notice/onboarding-complete')
+def update_notice_onboarding_complete(request:Request):
+    from .update_notice import complete_onboarding
+    return _butler_call(lambda:complete_onboarding(_notice_program(request,write=True)))
+
 @app.post('/api/software-update/{action}')
 def software_update_action(action:str,request:Request):
     _same_origin(request)
@@ -1846,6 +1868,67 @@ def api_local_sources_status(request:Request):
     _owner_read(request)
     from .local_source_status import status
     return status()
+
+@app.get('/api/prompt-workflow/distillation')
+def api_distillation_status(request:Request):
+    _owner_read(request)
+    from .local_source_status import status
+    from .prompt_workflow import distillation_gate
+    return distillation_gate(status())
+
+@app.get('/api/prompt-workflow/distillation/prompt')
+def api_distillation_prompt(request:Request):
+    _owner_read(request)
+    from .local_source_status import status
+    from .prompt_workflow import distillation_gate
+    from .prompt_templates import mother_distillation_prompt
+    gate=distillation_gate(status())  # Recheck at the moment the prompt is copied.
+    if not gate['ready']:raise HTTPException(409,{'reasons':gate['reasons']})
+    context=active_workspace(required=True)
+    return {**gate,'prompt':mother_distillation_prompt(gate['sources'],context.root.name)}
+
+@app.get('/api/prompt-workflow/startup')
+def api_workspace_startup_prompt(request:Request):
+    _owner_read(request)
+    from .prompt_workflow import startup_status
+    return startup_status(active_workspace(required=True),startup_instruction(respect_saved=False)['instruction'])
+
+@app.post('/api/prompt-workflow/startup/generate')
+def api_generate_workspace_startup_prompt(request:Request):
+    _same_origin(request);_owner(request,refresh=True)
+    from .prompt_templates import startup_prompt_from_formal
+    from .prompt_workflow import save_startup,startup_status
+    context=active_workspace(required=True)
+    generated=startup_prompt_from_formal(context.root)
+    if not generated.get('ready'):raise HTTPException(409,generated.get('reason') or '当前工作区的正式母档尚未就绪')
+    save_startup(context,generated['prompt'],mode='generated',source_files=generated.get('source_files',[]),
+                 skipped_files=generated.get('skipped_files',[]))
+    return startup_status(context,startup_instruction(respect_saved=False)['instruction'])
+
+@app.post('/api/prompt-workflow/startup/save')
+def api_save_workspace_startup_prompt(payload:dict,request:Request):
+    _same_origin(request);_owner(request,refresh=True)
+    if set(payload)!={'prompt'}:raise HTTPException(400,'只接受提示词正文')
+    from .prompt_workflow import save_startup,startup_status
+    context=active_workspace(required=True)
+    try:save_startup(context,payload['prompt'],mode='custom')
+    except ValueError as exc:raise HTTPException(400,str(exc))
+    return startup_status(context,startup_instruction(respect_saved=False)['instruction'])
+
+@app.post('/api/prompt-workflow/startup/restore-default')
+def api_restore_workspace_startup_prompt(request:Request):
+    _same_origin(request);_owner(request,refresh=True)
+    from .prompt_workflow import restore_default,startup_status
+    context=active_workspace(required=True);restore_default(context)
+    return startup_status(context,startup_instruction(respect_saved=False)['instruction'])
+
+@app.get('/api/wiki/guide')
+def api_knowledge_wiki_guide(request:Request):
+    _owner_read(request)
+    from .prompt_templates import knowledge_wiki_guide,daily_organization_prompt,daily_schedule_setup_prompt
+    context=active_workspace(required=True)
+    return {'guide':knowledge_wiki_guide(),'daily_prompt':daily_organization_prompt(context.root.name),
+            'schedule_setup_prompt':daily_schedule_setup_prompt(context.root.name)}
 
 @app.get("/api/codex-archive/status")
 def api_codex_archive_status():

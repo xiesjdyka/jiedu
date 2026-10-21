@@ -100,6 +100,10 @@ def status():
         'detected': any(x['detected'] for x in locations),
         'readable': any(x['readable'] for x in locations),
         'configured': bool(codex.get('enabled')), 'locations': locations,
+        'participating': bool(codex.get('enabled') or history.get('status') not in (None, 'not_started') or
+                              any((item.get('history') or {}).get('status') not in (None, 'not_started')
+                                  for item in sqlite['sources'])),
+        'paused': codex.get('archive_policy') == 'paused',
         'history': {'status': history.get('status') or 'not_started', 'by_source': [codex_jsonl, *codex_sqlite],
                     'unit': 'records', 'known_total': None, 'total_is_dynamic': True},
         'live': {'status': 'paused' if not codex.get('enabled') else
@@ -130,6 +134,9 @@ def status():
         'detected': hermes_path.is_file(), 'readable': hermes_readable,
         'configured': bool(hermes_readable and worker_matches and
                            hermes.get('status') in {'watching','running'} and hermes.get('archive_enabled')),
+        'participating': bool(hermes.get('db_path') or hh.get('status') not in (None, 'not_started') or
+                              hh.get('processed_rows') or hh.get('accepted_rows')),
+        'paused': hermes.get('status') == 'paused',
         'locations': hermes_locations,
         'history': {'status': hh.get('status') or 'not_started', 'unit': 'records',
                     'known_total': hh.get('source_rows_at_start'), 'checked': hh.get('processed_rows') or 0,

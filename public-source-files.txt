@@ -347,3 +347,14 @@ tests/test_native_icon_assets.py
 tests/test_update_process_handoff.py
 tests/test_update_quiesce.py
 tests/test_update_workflow.py
+knowledge_bridge/update_notice.py
+static/update-notice.js
+tests/test_update_notice.py
+tests/test_update_notice_smoke.py
+knowledge_bridge/prompt_templates.py
+knowledge_bridge/prompt_workflow.py
+static/prompt-workflow.js
+tests/test_prompt_templates.py
+tests/test_prompt_workflow.py
+tests/test_prompt_workflow_smoke.py
+tests/test_prompt_workflow_styled_smoke.py
