@@ -24,6 +24,23 @@ class RepairTests(unittest.TestCase):
         self.root=Path(self.tmp.name);self.context=initialize_workspace(self.root/'workspace')
         self.store=ArchiveStore(self.context,recover=False)
 
+    def test_identical_conversation_render_keeps_source_version(self):
+        from knowledge_bridge.passage_search import file_version
+        session=self.store.ensure_session(source_key='codex',source_session_id='stable-render',title='fixture')
+        self.store.append_normalized_message(session['session_key'],NormalizedMessage('m1','user','same body'))
+        self.store.materialize_session(session['session_key'])
+        target=self.context.root/session['relative_path']/'01_对话/conversation.md'
+        # Recreate an already installed export with the former write_text API.
+        target.write_text(target.read_text('utf-8'),encoding='utf-8')
+        self.assertIn(b'\r\n',target.read_bytes())
+        before=(target.read_bytes(),file_version(target.stat()))
+        self.store.materialize_session(session['session_key'])
+        self.assertEqual(before,(target.read_bytes(),file_version(target.stat())))
+        self.store.append_normalized_message(session['session_key'],NormalizedMessage('m2','assistant','new body'))
+        self.store.materialize_session(session['session_key'])
+        self.assertNotEqual(before[1],file_version(target.stat()))
+        self.assertIn(b'new body',target.read_bytes())
+
     def test_corrupt_reused_entity_is_refused_without_overwrite(self):
         session=self.store.ensure_session(source_key='codex',source_session_id='s',title='fixture')
         self.store.append_normalized_message(session['session_key'],NormalizedMessage('m','assistant','file'))

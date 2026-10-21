@@ -34,6 +34,26 @@ class UpdateTests(unittest.TestCase):
             self.assertEqual(self.updater.check()['state'],'available')
             self.assertEqual(self.updater.download()['state'],'downloaded')
         self.assertEqual(private.read_text(),'synthetic');self.assertFalse((self.program/'knowledge_bridge/fixture.py').exists())
+    def test_installed_117_accepts_signed_118_patch_but_not_same_version(self):
+        (self.program/'VERSION').write_text('1.1.7\n','ascii')
+        (self.program/'pyproject.toml').write_text('[project]\nversion="1.1.7"\n','utf-8')
+        self.record['version']='1.1.8'
+        members={'VERSION':b'1.1.8\n','pyproject.toml':b'[project]\nversion="1.1.8"\n',
+                 'knowledge_bridge/fixture.py':b'print(1)'}
+        manifest=json.dumps({'format':'jiedu-program-update-v1','version':'1.1.8',
+                             'files':{name:hashlib.sha256(raw).hexdigest() for name,raw in members.items()}}).encode()
+        archive=BytesIO()
+        with zipfile.ZipFile(archive,'w') as z:
+            z.writestr('manifest.json',manifest)
+            z.writestr('signature.txt',base64.b64encode(self.key.sign(manifest)))
+            for name,raw in members.items():z.writestr('program/'+name,raw)
+        self.package=archive.getvalue()
+        self.record.update(size=len(self.package),sha256=hashlib.sha256(self.package).hexdigest())
+        with patch.object(self.updater,'fetch',side_effect=[self.envelope(),self.package]):
+            self.assertEqual('available',self.updater.check()['state'])
+            self.assertEqual('downloaded',self.updater.download()['state'])
+        with patch.object(self.updater,'fetch',return_value=self.envelope(version='1.1.7')):
+            self.assertEqual('current',self.updater.check()['state'])
     def test_corrupt_payload_cannot_be_downloaded(self):
         with patch.object(self.updater,'fetch',side_effect=[self.envelope(),b'corrupted']):
             self.updater.check()

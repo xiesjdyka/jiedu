@@ -725,8 +725,13 @@ class ArchiveStore:
                 body.append("")
         target = folder / "01_对话" / "conversation.md"
         target.parent.mkdir(parents=True, exist_ok=True)
+        # Path.write_text(newline=None) used the platform's text newline
+        # translation before this no-op check; preserve those exact bytes.
+        rendered = ("\n".join(body).rstrip() + "\n").replace("\n", os.linesep).encode("utf-8")
+        if target.is_file() and target.read_bytes() == rendered:
+            return
         temporary = target.with_suffix(".tmp")
-        temporary.write_text("\n".join(body).rstrip() + "\n", encoding="utf-8")
+        temporary.write_bytes(rendered)
         os.replace(temporary, target)
 
     @staticmethod

@@ -7,6 +7,7 @@ from .organizer import Organizer,reject_protected
 from .writer_core import Writer,save,sha
 from .passage_search import file_version
 from .client_access import resolve_document_target
+from .wiki_snapshots import WikiSnapshots
 
 def now():return datetime.now(timezone.utc).isoformat()
 
@@ -20,6 +21,13 @@ class CandidateReorganization:
   except FileNotFoundError:data={}
   if data.get('workspace_id')!=self.context.workspace_id:return {'workspace_id':self.context.workspace_id,'active':{},'batches':{}}
   return data
+ def row_current(self,row):
+  if row.get('snapshot_id'):
+   try:WikiSnapshots(self.context).verify_current(row)
+   except (OSError,ValueError):return False
+   return True
+  path=self.context.root/row['source_path']
+  return path.is_file() and file_version(path.stat())==row['version']
  def attach(self,result,client,authorize,readiness,revision,*,new_batch=False,run_id=None,existing_batch_id=None):
   from .memory_pipeline import list_candidates,candidate_source
   from .knowledge_wiki import KnowledgeWiki
@@ -58,7 +66,7 @@ class CandidateReorganization:
        task.pop('job_id',None)
       for row in job['sources']:authorize(row['source_path'])
       if job['captured_authorization_revision']!=revision:task.pop('job_id',None)
-      elif any(not (self.context.root/r['source_path']).is_file() or file_version((self.context.root/r['source_path']).stat())!=r['version'] for r in job['sources']):
+      elif any(not self.row_current(r) for r in job['sources']):
        if not refresh_versions:raise ValueError('本条来源或目标再变化，需开始下一次整理重新读取；旧项仍待处理')
        task.pop('job_id',None)
      if not task.get('job_id'):
@@ -68,13 +76,16 @@ class CandidateReorganization:
       authorize(target)
       sources=sorted({e.get('source_path') for e in candidate.get('evidence',[]) if e.get('source_path')})
       if not sources:raise ValueError('缺少确切来源，需处理；没有自动生成结果')
+      for source in sources:authorize(source)
+      snapshots=WikiSnapshots(self.context).capture([source for source in sources if resolve_document_target(self.context,source).scope.value=='evidence'])
       rows=[]
       for source in sources+([target] if destination.is_file() and target not in sources else []):
        resolved=resolve_document_target(self.context,source);authorize(source);path=self.context.root/resolved.relative_path
        if not path.is_file() or path.suffix.lower() not in {'.md','.txt','.jsonl'}:raise ValueError('来源缺失或不是可读正文，需处理；原建议保留')
-       stat=path.stat();rows.append({'source_path':resolved.relative_path,'version':file_version(stat),'total_bytes':stat.st_size,'readable':True,'offset':0,'status':'unprocessed','failure':None,'candidate_ids':[],'read_role':'target' if source==target else 'source'})
+       stat=path.stat();frozen=snapshots.get(resolved.relative_path) or {}
+       rows.append({'source_path':resolved.relative_path,'version':frozen.get('version',file_version(stat)),'total_bytes':frozen.get('total_bytes',stat.st_size),'readable':True,'offset':0,'status':'unprocessed','failure':None,'candidate_ids':[],'read_role':'target' if source==target else 'source'}|frozen)
       identity=sha(json.dumps([key,task['old_candidate_id'],candidate,target,rows,revision],sort_keys=True).encode());job_id='org_'+identity[:32]
-      job={'job_id':job_id,'client':client,'scope':'evidence','folder':'90_原始档案','sources':rows,'snapshot_id':identity,'reorganization_job_schema':1,'wiki_parent_job_id':parent,'reorganization_batch_id':key,'old_candidate_id':task['old_candidate_id'],'old_candidate_fingerprint':sha(json.dumps(candidate,sort_keys=True).encode()),'target_path':target,'expected_target_hash':sha(destination.read_bytes()) if destination.is_file() else 'missing','required_sources':sources,'captured_authorization_revision':revision,'notice':'本任务仅更新此条旧建议，不批准正式写入；不同事项不得因同源或同目标合并。'}
+      job={'job_id':job_id,'client':client,'scope':'evidence','folder':'90_原始档案','sources':rows,'snapshot_id':identity,'snapshot_schema':1,'reorganization_job_schema':1,'wiki_parent_job_id':parent,'reorganization_batch_id':key,'old_candidate_id':task['old_candidate_id'],'old_candidate_fingerprint':sha(json.dumps(candidate,sort_keys=True).encode()),'target_path':target,'expected_target_hash':sha(destination.read_bytes()) if destination.is_file() else 'missing','required_sources':sources,'captured_authorization_revision':revision,'notice':'本任务仅更新此条旧建议，不批准正式写入；不同事项不得因同源或同目标合并。'}
       job['old_candidate']={'candidate_id':candidate['candidate_id'],'title':candidate.get('title'),'content':candidate.get('content'),'reason':p.get('reason'),'target_path':target,'basis':'旧建议待更新内容，不是当前事实或执行授权'}
       with self.organizer.lock():
        path=self.organizer.path(job_id)
@@ -92,7 +103,7 @@ class CandidateReorganization:
      job=self.organizer.load(task['job_id'],client);entry.update(job_id=job['job_id'],target_path=job['target_path'],expected_target_hash=job['expected_target_hash'],source_paths=job['required_sources'])
     public.append(entry)
    pending=any(not t.get('resolved') for t in batch['tasks'])
-   instructions=('先处理 reorganization.items 中每条独立旧建议：对其 job_id 用 organization_status 取得来源和目标，organization_read 从 offset 连续读完全部正文；缺失目标由服务端确认 missing。结合该 old_candidate_id 的原事项核对，使用 request_knowledge_change 原有参数并传此 job_id、确切 target_path、当前 expected_target_hash 和本任务来源证据。普通更新任务的 evidence 只含 source_path、version、byte_start、byte_end、quote，不要添加 snapshot_id/snapshot_job_id；任务清单的 snapshot_id 不是逐来源历史快照，具体以 organization_read 返回的 evidence_mode 为准。不同事项不得合并。若目标已包含所需结果，提交与当前目标相同的 proposed_content 供服务端核验 unchanged_verified。提交新候选只进待审核，正式写入需用户确认。organization_finish_source 单独调用不代表旧项更新完成。重复领取接续同批；新增建议留下一轮。')
+   instructions=('先处理 reorganization.items 中每条独立旧建议：对其 job_id 用 organization_status 取得来源和目标，organization_read 从 offset 连续读完全部正文；缺失目标由服务端确认 missing。结合该 old_candidate_id 的原事项核对，使用 request_knowledge_change 原有参数并传此 job_id、确切 target_path、当前 expected_target_hash 和本任务来源证据。逐来源快照证据按 organization_read 返回的 evidence_mode 携带 snapshot_id/snapshot_job_id；普通当前版本证据不带这两个字段。任务清单顶层 snapshot_id 仅为清单身份。不同事项不得合并。若目标已包含所需结果，提交与当前目标相同的 proposed_content 供服务端核验 unchanged_verified。提交新候选只进待审核，正式写入需用户确认。organization_finish_source 单独调用不代表旧项更新完成。重复领取接续同批；新增建议留下一轮。')
    return result|({'status':'claimed'} if pending and result.get('status') in {'up_to_date','batch_complete'} else {})|{'reorganization':{'batch_id':key,'pending':sum(not t.get('resolved') for t in batch['tasks']),'items':public,'fixed_candidate_boundary':True,'new_items_policy':'next_explicit_batch','instructions':instructions},'instructions':str(result.get('instructions') or '')+'\n'+instructions}
  def validate_submission(self,client,job_id,target_path,evidence,authorization):
   if not job_id:return None
@@ -106,8 +117,7 @@ class CandidateReorganization:
   revision=(authorization or {}).get('revision')
   if not revision or revision!=job['captured_authorization_revision']:raise ValueError('当前授权已变化，请重新领取并从头读取；旧项仍待处理')
   for row in job['sources']:
-   path=self.context.root/row['source_path']
-   if not path.is_file() or file_version(path.stat())!=row['version']:raise ValueError('来源或目标已再变化，未关闭旧建议')
+   if not self.row_current(row):raise ValueError('来源或目标已再变化，未关闭旧建议')
    if row['offset']!=row['total_bytes'] or row.get('delivered_authorization_revision')!=revision:raise ValueError('必须按当前授权读完本条全部来源及现有目标，不能复用旧内容')
   if not set(job['required_sources']).issubset({e['source_path'] for e in evidence}):raise ValueError('结果需包含此旧事项的全部确切来源证据')
   return job
@@ -159,7 +169,7 @@ class CandidateReorganization:
     if not task.get('resolved') and task.get('job_id'):
      try:
       job=self.organizer.load(task['job_id'],batch['client'])
-      if any(not (self.context.root/r['source_path']).is_file() or file_version((self.context.root/r['source_path']).stat())!=r['version'] for r in job['sources']):
+      if any(not self.row_current(r) for r in job['sources']):
        state.update(status='needs_attention',failure='来源或目标已再变化，需重新整理；旧建议与读取进度保留')
       elif any(r.get('status')=='failed' for r in job['sources']):state.update(status='needs_attention',failure='来源读取失败，需处理；旧建议与读取进度保留')
      except (ValueError,OSError,KeyError):state.update(status='needs_attention',failure='整理任务或来源暂不可核对，需处理；旧建议保留')

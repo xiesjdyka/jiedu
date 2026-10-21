@@ -190,8 +190,13 @@ class Organizer:
                 if job.get('client')!=client:continue
                 for row in job.get('sources',[]):
                     if row.get('delivered_authorization_revision')!=revision or row.get('status') not in {'reading','read_complete','processed','skipped'}:continue
-                    source=self.context.root/row['source_path']
-                    if not source.is_file() or file_version(source.stat())!=row['version']:continue
+                    if row.get('snapshot_id'):
+                        from .wiki_snapshots import WikiSnapshots
+                        try:WikiSnapshots(self.context).verify_current(row)
+                        except (OSError,ValueError):continue
+                    else:
+                        source=self.context.root/row['source_path']
+                        if not source.is_file() or file_version(source.stat())!=row['version']:continue
                     delivered[row['source_path']]=max(delivered.get(row['source_path'],0),row.get('offset',0))
         for ev in evidence or []:
             if not isinstance(ev.get('byte_end'),int) or delivered.get(ev.get('source_path'),0)<ev['byte_end']:

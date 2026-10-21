@@ -1,10 +1,11 @@
-import copy,json,unittest
+import copy,json,os,unittest
 from unittest.mock import patch
 from fastapi import HTTPException
 from tests.test_candidate_reorganization import CandidateReorganizationTests as Fixture
 from knowledge_bridge import web,memory_pipeline as memory
 from knowledge_bridge.organizer import Organizer
 from knowledge_bridge.candidate_reorganization import CandidateReorganization
+from knowledge_bridge.passage_search import file_version
 from knowledge_bridge.writer_core import sha
 
 class ReorganizationLinkTests(unittest.TestCase):
@@ -19,14 +20,41 @@ class ReorganizationLinkTests(unittest.TestCase):
   status=self.call('status',{'job_id':task['job_id']});evidence=[]
   for row in status['items']:
    page=self.call('read',{'job_id':task['job_id'],'source_path':row['source_path'],'offset':0,'page_bytes':65536})
-   if row.get('read_role')=='source':evidence.append({'source_path':row['source_path'],'version':page['version'],'byte_start':0,'byte_end':page['returned_bytes'],'quote':page['content']})
+   if row.get('read_role')=='source':
+    proof={'source_path':row['source_path'],'version':page['version'],'byte_start':0,'byte_end':page['returned_bytes'],'quote':page['content']}
+    if page.get('snapshot_id'):proof.update(snapshot_id=page['snapshot_id'],snapshot_job_id=page['snapshot_job_id'])
+    evidence.append(proof)
   return self.payload|{'job_id':task['job_id'],'target_path':task['target_path'],'expected_target_hash':task['expected_target_hash'],'proposed_content':'# 测试\n用户现在决定使用 JSON。\n','evidence':evidence,'request_id':'renew-'+task['old_candidate_id']}
  def test_automatic_claim_fresh_reads_new_pending_history_and_retry(self):
   self.stale();first=self.claim();task=self.task(first);again=self.task(self.claim());self.assertEqual(task['job_id'],again['job_id'])
   status=self.call('status',{'job_id':task['job_id']});self.assertEqual(self.old,status['old_candidate']['candidate_id']);self.assertEqual(self.old_record['content'],status['old_candidate']['content'])
+  source=next(r for r in status['items'] if r['read_role']=='source');self.assertEqual('immutable_batch_snapshot',source['evidence_mode']);self.assertTrue(source['snapshot_id'])
   before=memory.CANDIDATE_EVENTS.read_bytes();payload=self.prepare(task);new=self.call('submit',payload)
   self.assertEqual('pending',new['status']);self.assertFalse(new['formal_write_performed']);old=memory.candidate_source(self.old);self.assertEqual('reorganized',old['status']);self.assertEqual(new['candidate_id'],old['reorganization']['successor_candidate_id']);self.assertEqual(self.old_record['content'],old['content']);self.assertTrue(memory.CANDIDATE_EVENTS.read_bytes().startswith(before))
   count=len(memory.list_candidates());self.assertEqual(new['candidate_id'],self.call('submit',payload)['candidate_id']);self.assertEqual(count,len(memory.list_candidates()));self.assertEqual(0,self.claim()['reorganization']['pending']);self.assertEqual(self.initial_target,(self.context.root/self.target).read_bytes())
+ def test_same_bytes_reexport_during_source_read_keeps_snapshot_and_one_successor(self):
+  self.stale();task=self.task();job=task['job_id'];path=self.context.root/self.source
+  first=self.call('read',{'job_id':job,'source_path':self.source,'offset':0,'page_bytes':4})
+  self.assertLess(first['resume_offset'],first['total_bytes'])
+  temporary=path.with_suffix('.new');temporary.write_bytes(path.read_bytes());os.replace(temporary,path)
+  self.assertNotEqual(first['version'],file_version(path.stat()))
+  self.assertNotEqual('stale',next(r for r in self.call('status',{'job_id':job})['items'] if r['source_path']==self.source)['status'])
+  payload=self.prepare(task);first_result=self.call('submit',payload);second_result=self.call('submit',payload)
+  self.assertEqual(first_result['candidate_id'],second_result['candidate_id'])
+  self.assertEqual(2,len(memory.list_candidates()))
+  self.assertEqual('reorganized',memory.candidate_source(self.old)['status'])
+ def test_target_hash_change_keeps_old_candidate_pending(self):
+  self.stale();task=self.task();payload=self.prepare(task);count=len(memory.list_candidates())
+  target=self.context.root/self.target;target.write_text('# 测试\n用户后续修改。\n','utf-8')
+  with self.assertRaises(HTTPException):self.call('submit',payload)
+  self.assertEqual(count,len(memory.list_candidates()))
+  self.assertEqual('pending',memory.candidate_source(self.old)['status'])
+ def test_authorization_revision_change_keeps_old_candidate_pending(self):
+  self.stale();task=self.task();payload=self.prepare(task);count=len(memory.list_candidates())
+  self.permissions.set_policy(self.client,'protected','read_protected','deny')
+  with self.assertRaises(HTTPException):self.call('submit',payload)
+  self.assertEqual(count,len(memory.list_candidates()))
+  self.assertEqual('pending',memory.candidate_source(self.old)['status'])
  def test_unread_target_and_finish_or_skip_do_not_close_old_item(self):
   self.stale();task=self.task();status=self.call('status',{'job_id':task['job_id']});source=next(r for r in status['items'] if r['read_role']=='source');page=self.call('read',{'job_id':task['job_id'],'source_path':source['source_path']})
   evidence={'source_path':self.source,'version':page['version'],'byte_start':0,'byte_end':page['returned_bytes'],'quote':page['content']}
@@ -57,6 +85,20 @@ class ReorganizationLinkTests(unittest.TestCase):
   self.assertEqual(0,self.call('status',{'job_id':fresh['job_id']})['items'][0]['offset'])
   self.assertEqual('pending',memory.candidate_source(extra)['status'])
   retry=self.claim(True);self.assertEqual(fresh['job_id'],self.task(retry)['job_id'])
+ def test_legacy_job_without_source_snapshot_is_preserved_on_explicit_refresh(self):
+  self.stale();task=self.task();renew=CandidateReorganization(self.context);path=renew.organizer.path(task['job_id'])
+  legacy=json.loads(path.read_text('utf-8'));legacy.pop('snapshot_schema',None)
+  for row in legacy['sources']:
+   for name in ('snapshot_id','source_sha256','source_identity','captured_at'):row.pop(name,None)
+  path.write_text(json.dumps(legacy,ensure_ascii=False),'utf-8');before=path.read_bytes()
+  source=self.context.root/self.source;temporary=source.with_suffix('.new');temporary.write_bytes(source.read_bytes());os.replace(temporary,source)
+  self.assertEqual('needs_attention',self.task()['status'])
+  refreshed=self.task(self.claim(True));self.assertNotEqual(task['job_id'],refreshed['job_id'])
+  self.assertEqual(before,path.read_bytes())
+  fresh=renew.organizer.load(refreshed['job_id'],self.client)
+  self.assertEqual(1,fresh['snapshot_schema'])
+  self.assertTrue(next(row for row in fresh['sources'] if row['read_role']=='source')['snapshot_id'])
+  self.assertEqual('pending',memory.candidate_source(self.old)['status'])
  def test_completed_fixed_boundary_cannot_reopen_on_refresh_race(self):
   self.stale();claim=self.claim();task=self.task(claim);self.call('submit',self.prepare(task))
   renewal=CandidateReorganization(self.context);before=renewal.path.read_bytes()
