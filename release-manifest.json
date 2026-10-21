@@ -43,8 +43,8 @@
     },
     {
       "path": "RELEASE_NOTES.md",
-      "bytes": 9527,
-      "sha256": "1024d84136f01856916c0e62e4b980a80412eebd3e4f6472335f716faa4cef63"
+      "bytes": 9828,
+      "sha256": "ac6ff08ba685052691fe48b8cf979d3882a483e64e22e8ea81a3f615dba18a83"
     },
     {
       "path": "SECURITY.md",
@@ -58,8 +58,8 @@
     },
     {
       "path": "VERSION",
-      "bytes": 5,
-      "sha256": "a15c279bee3a547db747a27e302199263e396fe44be6166527cd4a3f349338cb"
+      "bytes": 6,
+      "sha256": "333d89aa068c7ab9eb7fe7ba55387e02b26fafdcfa06b62d2e45e3d0a43c3b9a"
     },
     {
       "path": "butler-resources.lock.json",
@@ -79,12 +79,12 @@
     {
       "path": "desktop/Cargo.lock",
       "bytes": 123812,
-      "sha256": "e7c013e1f38254070e04d1a32b665c8c2d827f4889b707c3279f0c7e825610d6"
+      "sha256": "bfa58c865684886513ab8e3bf8bde73dbf323bc94f4baa19ce70cf6e37211951"
     },
     {
       "path": "desktop/Cargo.toml",
       "bytes": 524,
-      "sha256": "4b2a19d237ebe09384b35d9a74d2e7b610875a366e91fbb669c04a946419d475"
+      "sha256": "bb1d2b3af4149c97e7e1a9631c96d1c981e9ae0b96b3d55e84a08a93e1b9505a"
     },
     {
       "path": "desktop/build.rs",
@@ -129,7 +129,7 @@
     {
       "path": "desktop/tauri.conf.json",
       "bytes": 415,
-      "sha256": "6b70ed5706cc6d4d2746b6a46cdade4e040da707428ad05adc839d48f6009b92"
+      "sha256": "463923a2865f932e32d20383acc39ac206eaca5595ddfc954e63810901450d30"
     },
     {
       "path": "desktop/ui/index.html",
@@ -239,7 +239,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 23,
-      "sha256": "81b1d05569e9104e27dea7093cc1128813ce3405023530bd7a6554993d9b71c9"
+      "sha256": "8eba3f7d815a593a4c2dc5e54507b9de777ccb1ca008314bd6c2b779815c98a2"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -253,8 +253,8 @@
     },
     {
       "path": "knowledge_bridge/archive_store.py",
-      "bytes": 45183,
-      "sha256": "86afb546b67fe92aa6e46952683c7c8c668c42514bacd2f1d9b690aa735b727b"
+      "bytes": 45475,
+      "sha256": "c57bb840346fa99aa224fb3e6bc841e3074d194fd352fd0e455ef771a88d2acb"
     },
     {
       "path": "knowledge_bridge/attachment_cache.py",
@@ -348,8 +348,8 @@
     },
     {
       "path": "knowledge_bridge/candidate_reorganization.py",
-      "bytes": 15541,
-      "sha256": "d7f4fd6318e5f39e82e75a483d6e894b904af65b76f8c60a6b096744ce4c35bc"
+      "bytes": 15874,
+      "sha256": "3caa2702535a27aef82cba281e354434582a7a76ea74f94d561b724167d37c8c"
     },
     {
       "path": "knowledge_bridge/chatgpt_adapter.py",
@@ -628,8 +628,8 @@
     },
     {
       "path": "knowledge_bridge/organizer.py",
-      "bytes": 25161,
-      "sha256": "edb5894138cdd00737448097b8bf6d0ac72bf199047b24fb78e3d32dbf9dfe9e"
+      "bytes": 25445,
+      "sha256": "9e9851643a161f6878144171d363962cdcb3de0553274ce0c60030aa4d2c6b68"
     },
     {
       "path": "knowledge_bridge/original_archive_import.py",
@@ -849,7 +849,7 @@
     {
       "path": "pyproject.toml",
       "bytes": 1140,
-      "sha256": "04134ee506eed099a0c1c020163bb2a0c8ec815bfc7aa71ee7d11f3a6b368d74"
+      "sha256": "cefcc823e3f5e17c7243d4262c2fa532fcc04471f62a9178ea52740b9beeec3d"
     },
     {
       "path": "requirements.lock.txt",
@@ -1118,8 +1118,8 @@
     },
     {
       "path": "tests/test_archive_repairs.py",
-      "bytes": 21631,
-      "sha256": "a4553deccfd36116549000c2c57bfb34885a5f80e26b634d13a45f5cb2371e68"
+      "bytes": 22853,
+      "sha256": "f664e13666d42bbf4fdb9ec5bb4f1287b4c049d84ed733c5be4b05d1fd8c2682"
     },
     {
       "path": "tests/test_archive_title_sync.py",
@@ -1508,8 +1508,8 @@
     },
     {
       "path": "tests/test_online_update.py",
-      "bytes": 11702,
-      "sha256": "ce941060ee19feea6740dcdd3c42f60f14635dd7b5664f83eee8d257aafef690"
+      "bytes": 13148,
+      "sha256": "e0b0cbd5131bc139da1d2ece6bfc3fcaa6e872f9eced5522c0324cb2f5994714"
     },
     {
       "path": "tests/test_organize_loading.py",
@@ -1588,8 +1588,8 @@
     },
     {
       "path": "tests/test_reorganization_link.py",
-      "bytes": 16621,
-      "sha256": "e8df050456c12057f46f6a1e84620affd8c019e83079546d30b28482dd4f0aef"
+      "bytes": 20040,
+      "sha256": "965343220e904747a1dff2dbe73f0ca98a0e4f8df4023d177f9842411926037c"
     },
     {
       "path": "tests/test_retrieval_contention.py",
