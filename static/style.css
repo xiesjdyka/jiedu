@@ -623,6 +623,10 @@ html{scroll-padding-top:24px}.page{scroll-margin-top:24px}
 .prompt-workflow-card textarea{display:block;width:100%;min-height:160px;max-height:360px;resize:vertical}.prompt-workflow-card small{display:block;margin-top:7px;line-height:1.6;color:var(--text-2)}
 .prompt-workflow-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.prompt-workflow-actions button{min-height:44px}.prompt-workflow-card [role=status]{border-left:3px solid var(--accent);padding-left:10px}
 .wiki-guide{max-width:1100px}.wiki-guide-schedule{font-weight:600}
+.wiki-guide-run-summary,.wiki-guide-prompt-option{margin-top:18px;padding-top:15px;border-top:1px solid var(--line-soft)}
+.wiki-guide-run-summary>summary,.wiki-guide-prompt-preview>summary{cursor:pointer;padding:8px 0;color:var(--accent)}
+.wiki-guide-prompt-option>button{min-height:44px;margin-top:12px}
+.wiki-guide-prompt-preview pre{max-height:380px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:14px;border:1px solid var(--line-soft);border-radius:8px;background:rgba(8,21,29,.35);color:var(--text);font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}
 @media(max-width:600px){.prompt-workflow-actions{display:grid;grid-template-columns:1fr}.prompt-workflow-actions button{width:100%}}
 
 /* Simple first connection cards and a compact archive summary. */

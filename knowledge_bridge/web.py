@@ -1933,8 +1933,9 @@ def api_knowledge_wiki_guide(request:Request):
     _owner_read(request)
     from .prompt_templates import knowledge_wiki_guide,daily_organization_prompt,daily_schedule_setup_prompt
     context=active_workspace(required=True)
-    return {'guide':knowledge_wiki_guide(),'daily_prompt':daily_organization_prompt(context.root.name),
-            'schedule_setup_prompt':daily_schedule_setup_prompt(context.root.name)}
+    return {'guide':knowledge_wiki_guide(),'workspace_id':context.workspace_id,'workspace_root':str(context.root),
+            'daily_prompt':daily_organization_prompt(context),
+            'schedule_setup_prompt':daily_schedule_setup_prompt(context)}
 
 @app.get("/api/codex-archive/status")
 def api_codex_archive_status():
@@ -2329,6 +2330,8 @@ def api_external_wiki(action:str,request:Request,payload:dict):
                 # Provider status contains only its own jobs, never other-client IDs.
                 mine={r['job_id'] for r in service.load().get('jobs',[]) if r['client']==identity.internal_id}
                 status['jobs']=[r for r in status['jobs'] if r['job_id'] in mine]
+                status['workspace_id']=service.context.workspace_id
+                status['workspace_root']=str(service.context.root)
                 return status
             raise ValueError('未知 Wiki 操作')
         except PermissionError:raise HTTPException(403,'当前身份不是已绑定的每日整理客户端')

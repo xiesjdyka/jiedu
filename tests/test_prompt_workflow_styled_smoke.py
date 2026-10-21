@@ -5,15 +5,16 @@ from threading import Thread
 import json
 import re
 import sys
+import tempfile
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from knowledge_bridge.prompt_templates import knowledge_wiki_guide, daily_organization_prompt, daily_schedule_setup_prompt
+from knowledge_bridge.workspace import initialize_workspace
 
 REVIEW = ROOT / "review"
-GUIDE = {"guide": knowledge_wiki_guide(), "daily_prompt": daily_organization_prompt("验收工作区"),
-         "schedule_setup_prompt": daily_schedule_setup_prompt("验收工作区")}
+GUIDE = {}
 
 
 class Fixture(BaseHTTPRequestHandler):
@@ -34,7 +35,7 @@ class Fixture(BaseHTTPRequestHandler):
               if(url.startsWith('/api/wiki/status'))return {enabled:true,schedule:{arrangement:'paused',label:'调度已暂停'}};
             }
             async function apiPost(){return {}}
-            async function copyText(){return true}
+            async function copyText(value){window.copiedPrompt=value;return true}
             function showToast(){}
             </script><script defer src='/static/prompt-workflow.js'></script>""".replace("__GUIDE__", json.dumps(GUIDE, ensure_ascii=False).replace("</", "<\\/"))
             html = html.replace("</body>", boot + "</body>")
@@ -61,6 +62,12 @@ class Fixture(BaseHTTPRequestHandler):
 
 def main():
     from playwright.sync_api import sync_playwright
+    global GUIDE
+    workspace_temp = tempfile.TemporaryDirectory()
+    context = initialize_workspace(Path(workspace_temp.name) / "synthetic-wiki")
+    GUIDE = {"guide": knowledge_wiki_guide(), "workspace_id": context.workspace_id,
+             "workspace_root": str(context.root), "daily_prompt": daily_organization_prompt(context),
+             "schedule_setup_prompt": daily_schedule_setup_prompt(context)}
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), Fixture)
     Thread(target=server.serve_forever, daemon=True).start()
@@ -70,10 +77,15 @@ def main():
         page = browser.new_page(viewport={"width": 1320, "height": 900}, device_scale_factor=1)
         page.goto(f"http://127.0.0.1:{server.server_port}/")
         page.evaluate("document.querySelectorAll('.page.active').forEach(el => el.classList.remove('active'));document.querySelector('#wiki').classList.add('active')")
+        page.locator("#wikiGuide .wiki-guide-run-summary summary").click()
         page.locator("#wikiGuide .wiki-guide-schedule").wait_for()
         assert "暂停" in page.locator("#wikiGuide .wiki-guide-schedule").inner_text()
         assert "GPT-6.1 Sol" in page.locator("#wikiGuide").inner_text()
-        assert page.get_by_role("button", name="复制安排每日任务提示词").is_visible()
+        button = page.get_by_role("button", name="复制安排每日任务完整指令")
+        assert button.is_visible()
+        page.locator("#wikiSchedulePromptPreview").locator("xpath=..").locator("summary").click()
+        button.click()
+        assert page.evaluate("window.copiedPrompt === document.querySelector('#wikiSchedulePromptPreview').textContent")
         page.screenshot(path=str(REVIEW / "wiki-guide-real-style-synthetic.png"), full_page=True)
         page.evaluate("document.querySelectorAll('.page.active').forEach(el => el.classList.remove('active'));document.querySelector('#archives').classList.add('active')")
         page.locator("#refreshMotherGate").click()
@@ -82,6 +94,7 @@ def main():
         page.screenshot(path=str(REVIEW / "mother-gate-real-style-synthetic.png"), full_page=True)
         browser.close()
     server.shutdown()
+    workspace_temp.cleanup()
     print("prompt workflow real-style synthetic review: OK")
 
 

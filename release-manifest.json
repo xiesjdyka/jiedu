@@ -38,8 +38,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 7742,
-      "sha256": "222d8ec43bc26278a47d2d61d9419269b7d99eb526e6d5b01f4ae1d986be61ec"
+      "bytes": 8001,
+      "sha256": "4822846afd5d0e795c325f909d62fd4af43e741b8ad8e58232c41867ff3b10dd"
     },
     {
       "path": "RELEASE_NOTES.md",
@@ -763,8 +763,8 @@
     },
     {
       "path": "knowledge_bridge/web.py",
-      "bytes": 175143,
-      "sha256": "8477299368688185f890eb666214490c9b4316b5e4d1909dd270d38e19bc46d8"
+      "bytes": 175345,
+      "sha256": "92d006e906817197dd482c88e148e1da3996a962313024f7350112bbf4347eab"
     },
     {
       "path": "knowledge_bridge/wiki_daily_runs.py",
@@ -948,8 +948,8 @@
     },
     {
       "path": "static/style.css",
-      "bytes": 246173,
-      "sha256": "2578d465b10662e52fab564f10438ea52f8ecb16552df3492bc0222395b23fa5"
+      "bytes": 246763,
+      "sha256": "988982165466832989896ac1c3fb51ac17d9f56ed8081a861ef6b90133a783dc"
     },
     {
       "path": "static/vendor/echarts-5.6.0.min.js",
@@ -1768,8 +1768,8 @@
     },
     {
       "path": "knowledge_bridge/prompt_templates.py",
-      "bytes": 11731,
-      "sha256": "289480d7083a3597787723b742b5e54d4c212599a823f1160221d5c4c93cefe9"
+      "bytes": 16788,
+      "sha256": "5e319ac14e72718e634b57edefe3b73a9fb1cab9cbac570e318ce1107f098638"
     },
     {
       "path": "knowledge_bridge/prompt_workflow.py",
@@ -1778,13 +1778,13 @@
     },
     {
       "path": "static/prompt-workflow.js",
-      "bytes": 11125,
-      "sha256": "ea5c9fa3fb2783449343c8db97671696129bd7ab76b327582332c0184b372d92"
+      "bytes": 13022,
+      "sha256": "d4031a322d1a48e52e14e806286894dba52a0212fe3f9be9d3d3d3d57ab98423"
     },
     {
       "path": "tests/test_prompt_templates.py",
-      "bytes": 5868,
-      "sha256": "5a2eac8863b83f44a96d4e6c59da2d28656291c2149562cab96a2a63cfaee945"
+      "bytes": 7412,
+      "sha256": "d9a235d0b0181c56c08131455a4b21f3517be55128e45cd4d0d1e035bdc45c16"
     },
     {
       "path": "tests/test_prompt_workflow.py",
@@ -1793,13 +1793,13 @@
     },
     {
       "path": "tests/test_prompt_workflow_smoke.py",
-      "bytes": 4682,
-      "sha256": "cdd91b9a5cd40cb393e59196697ba410d41327fb14330b0bf137d6cdcf769c33"
+      "bytes": 5076,
+      "sha256": "1fe8b3d90c5cacb49130a8b52819dd2868386b1d953e837926dbcea2e6447010"
     },
     {
       "path": "tests/test_prompt_workflow_styled_smoke.py",
-      "bytes": 4912,
-      "sha256": "255ad970481da3335ea8c6c06f89f169d7ca91bfe52a80289935c437aa85e06d"
+      "bytes": 5628,
+      "sha256": "107195b5a30afafc21cdf3977d50f921b675a1d65dbf90314564ecd7f0763826"
     }
   ]
 }

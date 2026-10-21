@@ -24,7 +24,7 @@ class Fixture(BaseHTTPRequestHandler):
               if(url.startsWith('/api/prompt-workflow/distillation/prompt')){if(!ready)throw {status:409};return {prompt:'Mother prompt'};}
               if(url.startsWith('/api/prompt-workflow/distillation'))return {ready,sources:ready?['Hermes']:[],reasons:ready?[]:['Hermes 历史尚未完成']};
               if(url.startsWith('/api/prompt-workflow/startup'))return {prompt:saved,mode,source_files:[]};
-              if(url.startsWith('/api/wiki/guide'))return {guide:{title:'知识 Wiki',description:'整理用途',model_choice:'可自选模型',daily_steps:['检查新增','分类证据','提出变更','审核','留结果'],schedule_notice:'以调度状态为准'},daily_prompt:'Daily prompt',schedule_setup_prompt:'Arrange prompt'};
+              if(url.startsWith('/api/wiki/guide')){const binding='workspace_id="synthetic-workspace"'+String.fromCharCode(10)+'workspace_path="D:/synthetic"';return {guide:{title:'知识 Wiki',description:'整理用途',model_choice:'可自选模型',daily_steps:['检查新增','分类证据','提出变更','审核','留结果'],schedule_notice:'以调度状态为准'},workspace_id:'synthetic-workspace',workspace_root:'D:/synthetic',daily_prompt:binding+' Daily prompt',schedule_setup_prompt:binding+' Arrange prompt'};}
               if(url.startsWith('/api/wiki/status'))return {schedule:{arrangement:'not_arranged'}};
             }
             async function apiPost(url,body){if(url.endsWith('/save')){saved=body.prompt;mode='custom'}else if(url.endsWith('/restore-default')){saved='Default prompt';mode='default'}else if(url.endsWith('/generate')){saved='Generated prompt';mode='generated'}return {prompt:saved,mode,source_files:[]};}
@@ -54,7 +54,7 @@ def main():
         page.goto(f"http://127.0.0.1:{server.server_port}/")
         page.locator("#refreshMotherGate").click()
         assert page.locator("#copyMotherPrompt").is_disabled()
-        assert "尚未完成" in page.locator("#motherDistillationStatus").inner_text()
+        page.wait_for_function("document.querySelector('#motherDistillationStatus').textContent.includes('尚未接入') || document.querySelector('#motherDistillationStatus').textContent.includes('仍在补齐')")
         page.evaluate("ready=true")
         page.locator("#refreshMotherGate").click()
         page.wait_for_function("!document.querySelector('#copyMotherPrompt').disabled")
@@ -69,6 +69,7 @@ def main():
         page.wait_for_function("copied === 'Edited workspace prompt'")
         page.locator("#restoreStartupPrompt").click()
         assert page.locator("#startupPromptText").input_value() == "Default prompt"
+        page.locator("#wikiGuide .wiki-guide-run-summary summary").click()
         assert "未安排" in page.locator("#wikiGuide").inner_text()
         assert "检查新增" in page.locator("#wikiGuide").inner_text()
         page.screenshot(path=str(REVIEW / "prompt-workflow-synthetic.png"), full_page=True)

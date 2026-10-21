@@ -66,6 +66,12 @@
     try{
       const [result,status]=await Promise.all([api('/api/wiki/guide',{ttl:0,force:true}),api('/api/wiki/status',{ttl:0,force:true})]);
       const guide=result.guide||{};
+      const validPrompts=data=>{
+        if(!data.workspace_id||!data.workspace_root||!data.daily_prompt||!data.schedule_setup_prompt)return false;
+        const id='workspace_id='+JSON.stringify(data.workspace_id),root='workspace_path='+JSON.stringify(data.workspace_root);
+        return [data.daily_prompt,data.schedule_setup_prompt].every(prompt=>prompt.includes(id)&&prompt.includes(root));
+      };
+      if(!validPrompts(result))throw Error('workspace-bound prompts unavailable');
       const scheduleText=d=>{
         const schedule=d.schedule||{},arrangement=schedule.arrangement;
         if(arrangement==='paused')return '你已暂停每日任务；原安排和进度保留，复制手动指令不会恢复它。';
@@ -80,14 +86,31 @@
       for(const line of [guide.description,guide.model_choice])if(line){const p=document.createElement('p');p.textContent=line;host.append(p)}
       const label=document.createElement('h3');label.textContent='每天固定做什么';host.append(label);
       const list=document.createElement('ol');for(const line of guide.daily_steps||[]){const li=document.createElement('li');li.textContent=line;list.append(li)}host.append(list);
-      const state=document.createElement('p');state.className='wiki-guide-schedule';state.textContent=scheduleText(status);host.append(state);
-      const setup=document.createElement('p');setup.textContent='想每天自动执行，可复制下方安排指令交给正在使用的 AI。当前界渡可核验 Codex 的每日任务；其他客户端可先手动整理。安排前请核对现有任务和暂停状态。';host.append(setup);
-      for(const line of [guide.manual_notice,guide.schedule_notice])if(line){const p=document.createElement('p');p.textContent=line;host.append(p)}
-      const actions=document.createElement('div');actions.className='prompt-workflow-actions';
-      const copy=document.createElement('button');copy.type='button';copy.className='copy-button';copy.textContent='复制每日整理提示词';copy.onclick=async()=>{if(await copyText(result.daily_prompt))showToast('已复制；这不会安排每日自动任务。');else showToast('复制失败，请重试。')};actions.append(copy);
-      const arrange=document.createElement('button');arrange.type='button';arrange.className='copy-button';arrange.textContent='复制安排每日任务提示词';arrange.onclick=async()=>{if(await copyText(result.schedule_setup_prompt))showToast('已复制；交给已连接的 AI 后，请回来核对真实安排状态。');else showToast('复制失败，请重试。')};actions.append(arrange);
-      const refresh=document.createElement('button');refresh.type='button';refresh.className='copy-button';refresh.textContent='刷新安排状态';refresh.onclick=async()=>{try{const d=await api('/api/wiki/status?t='+Date.now(),{ttl:0,force:true});state.textContent=scheduleText(d)}catch{state.textContent='当前安排暂时无法核对，请稍后重试。'}};actions.append(refresh);host.append(actions);
-    }catch{host.querySelector('p').textContent='说明或每日安排暂时无法读取，请稍后刷新页面。'}
+      const runDetails=document.createElement('details');runDetails.className='wiki-guide-run-summary';
+      const runSummary=document.createElement('summary');runSummary.textContent='查看本工作区每日安排与运行摘要';runDetails.append(runSummary);
+      const state=document.createElement('p');state.className='wiki-guide-schedule';state.textContent=scheduleText(status);runDetails.append(state);
+      const refresh=document.createElement('button');refresh.type='button';refresh.className='copy-button';refresh.textContent='刷新运行状态';refresh.onclick=async()=>{try{const d=await api('/api/wiki/status?t='+Date.now(),{ttl:0,force:true});state.textContent=scheduleText(d)}catch{state.textContent='当前安排暂时无法核对，请稍后重试。'}};runDetails.append(refresh);host.append(runDetails);
+      const intro=document.createElement('p');intro.textContent='下面分别是现在手动整理和安排每日任务。安排指令含完整每日执行正文；复制不会自动创建或运行任务。当前界渡可核验 Codex 的每日任务，其他客户端可先手动整理。';host.append(intro);
+      const addPrompt=(title,notice,summary,id,text,buttonText,success)=>{
+        const section=document.createElement('section');section.className='wiki-guide-prompt-option';
+        const heading=document.createElement('h3');heading.textContent=title;section.append(heading);
+        const explanation=document.createElement('p');explanation.textContent=notice;section.append(explanation);
+        const details=document.createElement('details');details.className='wiki-guide-prompt-preview';
+        const caption=document.createElement('summary');caption.textContent=summary;details.append(caption);
+        const preview=document.createElement('pre');preview.id=id;preview.textContent=text;details.append(preview);section.append(details);
+        const button=document.createElement('button');button.type='button';button.className='copy-button';button.textContent=buttonText;
+        button.onclick=async()=>{button.disabled=true;try{
+          const fresh=await api('/api/wiki/guide?t='+Date.now(),{ttl:0,force:true});
+          if(!validPrompts(fresh))throw Error('workspace-bound prompts unavailable');
+          document.getElementById('wikiManualPromptPreview').textContent=fresh.daily_prompt;
+          document.getElementById('wikiSchedulePromptPreview').textContent=fresh.schedule_setup_prompt;
+          if(!await copyText(preview.textContent))throw Error('copy failed');showToast(success);
+        }catch{showToast('当前工作区指令无法核对，未复制；请刷新后重试。')}finally{button.disabled=false}};
+        section.append(button);host.append(section);
+      };
+      addPrompt('现在手动整理',guide.manual_notice,'预览手动整理完整指令','wikiManualPromptPreview',result.daily_prompt,'复制手动整理指令','已复制手动指令；不会安排每日任务。');
+      addPrompt('安排每日任务',guide.schedule_notice,'预览安排指令与每日执行正文','wikiSchedulePromptPreview',result.schedule_setup_prompt,'复制安排每日任务完整指令','已复制；交给已连接的 AI 后，请核对真实安排状态。');
+    }catch{host.querySelector('p').textContent='当前工作区说明或指令暂时无法核对，请稍后刷新页面。'}
   }
 
   function setup(){attachMother();attachWikiGuide();attachStartup();

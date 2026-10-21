@@ -50,10 +50,12 @@
 
 **下载**
 
-- [Windows 1.1.7 安装器](https://github.com/xiesjdyka/jiedu/releases/download/1.1.7/Jiedu-1.1.7-windows-x64-setup.exe)
-- [1.1.7 发布页](https://github.com/xiesjdyka/jiedu/releases/tag/1.1.7)
+- [Windows 1.1.7 维护安装器](https://github.com/xiesjdyka/jiedu/releases/download/1.1.7-maintenance.1/Jiedu-1.1.7-maintenance.1-windows-x64-setup.exe)
+- [1.1.7 维护发布页](https://github.com/xiesjdyka/jiedu/releases/tag/1.1.7-maintenance.1)
 
 普通用户请下载发布页里的 **setup.exe**。仓库页面上绿色按钮里的 "Download ZIP" 是源代码,不是装好就能用的软件。
+
+本维护包仍显示版本 **1.1.7**。已安装 1.1.7 的用户需手动运行上述维护安装器；同版本不会触发自动更新。1.1.6 用户可通过软件内的已签名更新通道升级。
 
 **安装前要知道的**
 
