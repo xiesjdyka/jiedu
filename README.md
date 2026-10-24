@@ -4,9 +4,9 @@
 
 界渡是一个装在你自己电脑上的个人知识库。它把你和 AI 的聊天记录、附件,还有你自己的文档、截图、PDF 收在一起,让你以后能找回来、能看到出处,也能交给新的 AI 接着用。
 
-当前版本:**1.1.9**　|　系统:**Windows x64**　|　许可证:**MIT**
+当前版本:**1.1.10**　|　系统:**Windows x64**　|　许可证:**MIT**
 
-> 1.1.9 的新增接入与整理修复见[更新汇总](docs/changes-20261024.md)。实际发布与可下载文件请以 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.1.9) 为准；仓库中的版本号不代表安装包已经发布或验收。
+> 1.1.10 精简日常操作入口，详见[本次变化](docs/changes-1.1.10.md)和[从 1.1.2 起的更新介绍](docs/whats-new-1.1.10.md)。实际发布与下载以 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.1.10) 为准。
 
 ---
 
@@ -50,10 +50,10 @@
 
 ## 下载和安装
 
-**1.1.9 下载入口（发布资产以 GitHub Release 为准）**
+**1.1.10 下载入口（发布资产以 GitHub Release 为准）**
 
-- [Windows 1.1.9 安装器](https://github.com/xiesjdyka/jiedu/releases/download/1.1.9/Jiedu-1.1.9-windows-x64-setup.exe)
-- [1.1.9 发布页](https://github.com/xiesjdyka/jiedu/releases/tag/1.1.9)
+- [Windows 1.1.10 安装器](https://github.com/xiesjdyka/jiedu/releases/download/1.1.10/Jiedu-1.1.10-windows-x64-setup.exe)
+- [1.1.10 发布页](https://github.com/xiesjdyka/jiedu/releases/tag/1.1.10)
 
 普通用户请下载发布页里的 **setup.exe**。仓库页面上绿色按钮里的 "Download ZIP" 是源代码,不是装好就能用的软件。
 

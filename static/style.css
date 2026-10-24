@@ -636,6 +636,19 @@ html{scroll-padding-top:24px}.page{scroll-margin-top:24px}
 @media(max-width:620px){.quick-connect{padding:0 16px 18px}.quick-connect-cards{grid-template-columns:1fr}}
 .client-access-journey[hidden]{display:none}.client-empty-next{padding:14px 22px 6px}.client-empty-next p{margin:0;color:var(--muted);line-height:1.5}.manual-pairing-entry{margin:8px 22px 18px;padding:0 12px 12px;border:1px solid var(--line-soft);border-radius:10px;background:rgba(8,21,29,.3)}.manual-pairing-entry>summary{padding:12px 0;cursor:pointer;color:#b9d8dc}.manual-pairing-entry p{margin:0 0 10px;color:var(--muted);font-size:12px;line-height:1.5}.manual-pairing-entry button{min-height:40px}
 .local-chat-collectors { margin: 2rem 0; padding: 1.5rem; border: 1px solid var(--line, #57606a); border-radius: 18px; }
+
+/* The daily task pages keep technical inspection in one separate place. */
+#memory #wikiGuide{grid-column:1/-1;margin:0}
+.organize-simple-steps{padding:14px 16px;border:1px solid var(--line-soft);border-radius:10px;background:rgba(167,201,197,.06);font-weight:600;overflow-wrap:anywhere}
+.organize-schedule-option{margin-top:20px;padding:12px 16px;border:1px solid var(--line-soft);border-radius:10px}
+.organize-schedule-option>summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+#troubleshootingHub{display:block}
+#troubleshootingHub>.prompt-workflow-card{margin:0 0 18px}
+#archiveDiagnosticsHost{display:grid;gap:16px}
+#archiveDiagnosticsHost>.archive-diagnostics,#archiveDiagnosticsHost>.settings-diagnostics{margin:0}
+.candidate-source-panel{margin:14px 0 20px;padding:16px 18px;border:1px solid var(--line-soft);border-left:3px solid var(--accent);border-radius:10px;background:rgba(167,201,197,.06);overflow-wrap:anywhere}
+.candidate-source-panel h4{margin:0 0 8px}.candidate-source-panel p{margin:0 0 10px;color:var(--muted)}.candidate-source-panel blockquote{margin:0;white-space:pre-wrap;line-height:1.75}.candidate-source-panel pre{white-space:pre-wrap;overflow:auto}
+@media(max-width:768px){body>.sidebar nav button{grid-template-columns:32px minmax(0,1fr)}body>.sidebar nav button span{display:block}body>.sidebar nav button i{justify-self:center}}
 .local-chat-head { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
 .local-chat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 1rem; margin-top: 1rem; }
 .local-chat-card { padding: 1.25rem; border: 1px solid var(--line, #57606a); border-radius: 14px; }

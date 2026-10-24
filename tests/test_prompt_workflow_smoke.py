@@ -14,10 +14,9 @@ class Fixture(BaseHTTPRequestHandler):
             kind = "text/javascript"
         else:
             body = """<!doctype html><html><meta charset='utf-8'><body>
-            <section id='archives' class='active'><section id='archiveProgress'></section></section>
-            <section id='wiki'><div id='wikiHub'></div></section>
+            <section id='memory' class='active'><section class='memory-status-deck'></section><details id='organizationTools' open></details></section>
             <section id='knowledgeBaseStatus'><div class='startup-instruction'><button id='copyStartupInstruction'>Copy</button></div></section>
-            <button data-page='archives'>Archives</button>
+            <button data-page='memory'>Organize</button>
             <script>
             let ready=false,copied='',saved='Default prompt',mode='default';
             async function api(url){
@@ -54,7 +53,7 @@ def main():
         page.goto(f"http://127.0.0.1:{server.server_port}/")
         page.locator("#refreshMotherGate").click()
         assert page.locator("#copyMotherPrompt").is_disabled()
-        page.wait_for_function("document.querySelector('#motherDistillationStatus').textContent.includes('尚未接入') || document.querySelector('#motherDistillationStatus').textContent.includes('仍在补齐')")
+        page.wait_for_function("document.querySelector('#motherDistillationStatus').textContent.includes('尚未接入') || document.querySelector('#motherDistillationStatus').textContent.includes('尚未就绪')")
         page.evaluate("ready=true")
         page.locator("#refreshMotherGate").click()
         page.wait_for_function("!document.querySelector('#copyMotherPrompt').disabled")

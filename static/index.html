@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#151718">
   <title>界渡 · 私人知识域</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/jiedu-32.png">
-  <link rel="stylesheet" href="/static/style.css?v=20261020-update-summary">
+  <link rel="stylesheet" href="/static/style.css?v=20261024-task-flow-r4">
   <link rel="stylesheet" href="/static/design-system.css?v=20261017-neutral-controls">
   <link rel="stylesheet" href="/static/butler.css?v=20261017-neutral-controls">
   <script defer src="/static/vendor/echarts-5.6.0.min.js"></script>
@@ -85,12 +85,12 @@
       <button class="active" data-page="overview"><i></i><span>首页</span></button>
       <button data-page="butler"><i></i><span>管家</span></button>
       <button data-page="files"><i></i><span>知识</span></button>
-      <button data-page="archives"><i></i><span>对话档案</span></button>
-      <button data-page="memory"><i></i><span>整理中心</span></button>
-      <button data-page="wiki"><i></i><span>知识 Wiki</span></button>
-      <button data-page="access"><i></i><span>AI连接</span></button>
+      <button data-page="archives"><i></i><span>聊天记录</span></button>
+      <button data-page="memory"><i></i><span>整理知识</span></button>
+      <button data-page="access"><i></i><span>连接 AI</span></button>
       <span class="nav-group nav-settings-label">系统</span>
       <button data-page="protection"><i></i><span>设置</span></button>
+      <button data-page="troubleshooting"><i></i><span>故障排查</span></button>
     </nav>
     <footer><span class="pulse-dot"></span><div><b>边界受控</b><small>资料保存在本机</small></div></footer>
   </aside>
@@ -160,9 +160,9 @@
       </div>
     </section>
 
-    <section id="archives" class="page"><div id="archivesHub" class="memory-hub archive-hub"></div><section id="localChatCollectors" class="local-chat-collectors" aria-labelledby="localChatCollectorsTitle"><div class="local-chat-head"><div><h2 id="localChatCollectorsTitle">本机聊天归档接入</h2><p>先查看本机可读会话，再由你选择归档范围。接入知识工具与保存聊天是两件事。</p></div><button id="refreshLocalChatCollectors" type="button" class="copy-button">刷新状态</button></div><div id="localChatCollectorCards" class="local-chat-grid" aria-live="polite"></div></section></section>
+    <section id="archives" class="page"><div id="archivesHub" class="memory-hub archive-hub"></div></section>
 
-    <section id="wiki" class="page" aria-label="知识 Wiki"><div id="wikiHub" class="memory-hub" aria-live="polite"></div></section>
+    <section id="wiki" class="page" aria-label="知识 Wiki"><button id="backToOrganize" type="button" class="copy-button">← 返回整理知识</button><div id="wikiHub" class="memory-hub" aria-live="polite"></div></section>
 
     <section id="files" class="page">
       <div class="knowledge-object-hub">
@@ -218,7 +218,7 @@
       <div class="memory-hub">
         <section class="memory-status-deck"><div class="panel-title"><span>长期记忆层</span><small>真实状态</small></div><div id="memoryLayers" class="memory-layers"></div></section>
         <section class="memory-metrics" id="memoryMetrics"></section>
-        <section class="raw-session-console"><div class="memory-section-head"><div><h2>原始会话档案</h2><p>浏览已保存的双方原文与可取得的附件。各来源的保存状态见上方“对话来源”。</p></div><span class="memory-state">已保存的会话</span></div><div class="project-memory-grid"><div id="rawSessionList" class="memory-project-list"></div><article id="rawSessionDetail" class="memory-project-detail"><div class="empty compact"><span>原始会话</span><p>选择会话查看逐字原文</p></div></article></div></section>
+        <section class="raw-session-console"><div class="memory-section-head"><div><h2>已保存的会话</h2><p>按标题、来源或时间找到聊天，打开后查看原文和已取得的附件。</p></div><span class="memory-state">聊天原文</span></div><div class="project-memory-grid"><div id="rawSessionList" class="memory-project-list"></div><article id="rawSessionDetail" class="memory-project-detail"><div class="empty compact"><span>聊天原文</span><p>选择一场会话查看内容</p></div></article></div></section>
         <section class="raw-session-console"><div class="memory-section-head"><div><h2>Codex 自动归档</h2><p>补齐本地历史，同时持续保存新消息；可随时暂停并从已保存的进度继续。</p></div><button id="refreshCodexArchive" class="copy-button">刷新状态</button></div><div id="codexArchiveStatus" class="interface-list"><div class="memory-test-empty"><span>正在读取 Codex 归档状态</span></div></div></section>
         <section class="raw-session-console"><div class="memory-section-head"><div><h2>Hermes 自动归档</h2><p>本机采集器独立保存公开对话与可取得的附件。旧 MCP 知识读取连接尚未纳入“已配对客户端”管理，两条连接状态分别显示。</p></div><button id="refreshHermesArchive" class="copy-button">刷新状态</button></div><div id="hermesArchiveStatus" class="interface-list"><div class="memory-test-empty"><span>正在读取 Hermes 归档状态</span></div></div></section>
         <section class="memory-bootstrap-console">
@@ -238,16 +238,17 @@
           <div id="memoryUnknown" class="memory-gap-list"></div>
         </section>
         <section class="pending-memory-console organize-suggestions">
-          <div class="memory-section-head"><div><h2>把对话整理成可用的知识</h2><p>把聊天中的进展、决定和经验整理到项目页或知识页，原始聊天继续保存在“对话档案”。</p><p>查看建议的正文、来源和保存位置，核对后保存。</p></div></div>
+          <div class="memory-section-head"><div><h2>待你核对的建议</h2><p>Codex 提交后，在这里查看正文、来源和保存位置；确认后才写入正式知识。原聊天仍在“聊天记录”。</p></div></div>
           <div class="suggestion-overview" aria-live="polite"><span><strong id="pendingMemoryCount">—</strong> 条待核对</span><small id="suggestionCountNote">正在检查建议的可用状态</small></div>
           <div class="pending-workspace" id="suggestionWorkspace"><div id="pendingMemoryList" class="pending-list"></div><section id="candidateReviewPanel" class="candidate-review-panel" hidden><button id="backToSuggestions" type="button" class="copy-button">← 返回建议列表</button><div id="pendingMemoryDetail" class="pending-detail"></div></section></div>
         </section>
-        <details id="organizationTools" class="pending-memory-console organize-tools"><summary>整理工具与设置</summary><p class="organize-automation-note">主动选择资料、交给外部 AI 整理，或配置可选模型。浏览和查看现有建议不需要先设置模型。</p>
+        <details id="organizationTools" class="pending-memory-console organize-tools"><summary>高级整理工具</summary><p class="organize-automation-note">手动选择来源、处理全部历史或配置可选模型。日常整理和核对建议无需先设置这些工具。</p>
           <div id="continuousTasks">正在读取整理状态…</div>
           <details id="manualSourcesPanel" class="organize-disclosure"><summary><b>来源阅读进度与手动选择</b><span id="extractionModeSummary">正在读取可选来源</span></summary><p>这里按实际阅读记录展示来源进度，也可手动选择资料交给 AI。</p><div id="originalArchiveManager" class="original-archive-manager"></div><div id="manualExtraction" class="manual-extraction"></div></details>
           <details id="externalAITools" class="organize-disclosure"><summary><b>高级：交给外部AI整理</b><span>下载提炼包、导入返回结果</span></summary><div id="externalManualWorkbench"></div></details>
           <details id="organizeProviderSettings" class="organize-disclosure"><summary><b>设置整理方式</b><span id="providerSummary">手动整理或连接自己的模型</span></summary><p>直接调用模型（可选）：<span id="organizeAutomationState">正在读取</span> <button id="configureOrganization" class="copy-button" type="button">查看模型设置</button></p><div id="providerStatus"></div></details>
         </details>
+        <details id="organizeWikiRecords" class="pending-memory-console organize-tools"><summary>整理记录与设置</summary><p>查看按项目和主题整理的结果，以及每日整理状态。</p><div id="organizeWikiHost"></div></details>
         <section class="attachment-console" hidden aria-hidden="true"><div class="memory-section-head"><div><h2>界渡内部附件存储</h2><p>暂作内部兼容存储，后续按Session迁移</p></div></div><div id="attachmentMetrics" class="attachment-metrics"></div></section>
       </div>
     </section>
@@ -279,7 +280,9 @@
         <div id="clientAccessControl" class="client-access-workspace" aria-live="polite" aria-busy="true"><div class="client-access-loading"><span></span><p>正在确认客户端身份与权限…</p></div></div>
         <p class="client-access-boundary">公开文件的权限只约束经界渡的访问；它不能阻止同权限程序直接读取普通文件。</p>
       </section>
+      <section id="localChatCollectors" class="local-chat-collectors" aria-labelledby="localChatCollectorsTitle"><div class="local-chat-head"><div><h2 id="localChatCollectorsTitle">聊天来源管理</h2><p>选择要保存的本机会话，并查看各来源的采集状态。</p></div><button id="refreshLocalChatCollectors" type="button" class="copy-button">刷新状态</button></div><div id="localChatCollectorCards" class="local-chat-grid" aria-live="polite"></div></section>
     </div></section>
+    <section id="troubleshooting" class="page"><div id="troubleshootingHub" class="memory-hub"><section class="prompt-workflow-card"><h2>故障排查</h2><p>这里集中显示归档与本机服务的详细状态。聊天记录和整理操作请返回各自页面。</p><button id="refreshTroubleshooting" type="button" class="copy-button">重新检查</button></section><div id="archiveDiagnosticsHost"></div></div></section>
     <section id="weight" class="page"><div class="weight-hub">
       <section class="weight-session-console"><div class="memory-section-head"><div><h2>当前会话</h2><p>只展示客户端实际同步给界渡的会话数据</p></div><button id="refreshWeight" class="copy-button">刷新状态</button></div><div id="weightSession" class="weight-session-grid"></div></section>
       <section class="weight-status-console"><div class="memory-section-head"><div><h2>权重状态</h2><p>重新注入核心前置背景，防止长对话中用户画像、协作规则和长期偏好被稀释。</p></div><span id="weightState" class="memory-state">机制已就绪</span></div><button id="boostWeight" class="execute">立即提升权重</button><p id="weightHint" class="weight-hint">正在读取正式核心背景状态</p><details class="core-preview"><summary>内容预览与当前状态</summary><div id="corePreviewMeta"></div><pre id="corePreviewText"></pre></details></section>
@@ -299,12 +302,12 @@
   <input id="manualResultFile" type="file" accept="application/json,.json" hidden>
   <div id="toast" role="status" aria-live="polite"></div>
   <dialog id="genericDeliveryDialog" class="wide-dialog"><form method="dialog" class="pair-flow-form"><div class="dialog-head"><div><small id="genericDeliveryStep">第 3 步 / 共 3 步 · 填入客户端</small><h2 id="genericDeliveryTitle">复制连接配置并启用</h2></div><button type="button" id="closeGenericDelivery" class="icon-button" aria-label="关闭配置交付">×</button></div><div class="pair-flow-body"><div id="genericDeliveryBody"></div><p id="genericDeliveryError" role="alert"></p></div><div class="dialog-actions"><button type="button" id="copyGenericSecret" class="secondary" hidden>复制连接密钥</button><button type="button" id="genericConfigured" class="primary">已填入，返回查看验证状态</button></div></form></dialog>
-  <script defer src="/static/wiki.js?v=20261007-customer-r10b"></script>
+  <script defer src="/static/wiki.js?v=20261024-task-flow-r2"></script>
   <script defer src="/static/codex-archive.js?v=20261012-attachment-recovery-r2"></script>
   <script defer src="/static/update-notice.js?v=20261020-update-summary"></script>
-  <script defer src="/static/app.js?v=20261024-append-stability-r3"></script>
-  <script defer src="/static/local-chat-collectors.js?v=20261022-candidate-1"></script>
-  <script defer src="/static/prompt-workflow.js?v=20261023-unified-status-r2"></script>
+  <script defer src="/static/app.js?v=20261024-task-flow-r4"></script>
+  <script defer src="/static/local-chat-collectors.js?v=20261024-task-flow-r1"></script>
+  <script defer src="/static/prompt-workflow.js?v=20261024-task-flow-r4"></script>
   <script defer src="/static/butler-controls.js?v=20261017-neutral-controls"></script>
   <script defer src="/static/butler.js?v=20261017-neutral-controls"></script>
   <script defer src="/static/workspace-shell.js?v=20261007-customer-r10b"></script>

@@ -38,13 +38,13 @@
     },
     {
       "path": "README.md",
-      "bytes": 8540,
-      "sha256": "11addd9b2c10602a40c80c9be23802bcc144792dba2ffef1adbdbcdfb5d72c7c"
+      "bytes": 8531,
+      "sha256": "64a97cbfeaa50a5b5b8e4277f5a32893c0cdf37f3b5cba94cbef51ba8d4aa47a"
     },
     {
       "path": "RELEASE_NOTES.md",
-      "bytes": 10392,
-      "sha256": "6c87692d46162f5d55c70077bf9afca29d0d45c3465626f0cab421a6a855df3f"
+      "bytes": 10900,
+      "sha256": "ee60a0bd2c9a29d99f551745ed871d4b7f80f5bbf60ef1568ab973701be9a524"
     },
     {
       "path": "SECURITY.md",
@@ -58,8 +58,8 @@
     },
     {
       "path": "VERSION",
-      "bytes": 6,
-      "sha256": "7ac07fd87814a73947308b1c213e9df852eceab6c18e7c3df9d07b892c176b0d"
+      "bytes": 7,
+      "sha256": "aeccfaffeec636e89d972edfb0faf337cd0ac748c67ef0ad538d10eb97896120"
     },
     {
       "path": "butler-resources.lock.json",
@@ -78,13 +78,13 @@
     },
     {
       "path": "desktop/Cargo.lock",
-      "bytes": 118884,
-      "sha256": "3d24018083b5d6f9bc197af85d63bbe52987ffa43fe5066b58c46d39ec3f602c"
+      "bytes": 118885,
+      "sha256": "1ccd36fd7d9d8af5da363fcd47c2cd43cf08ba8c64e8415e4ff59f96878c90f2"
     },
     {
       "path": "desktop/Cargo.toml",
-      "bytes": 498,
-      "sha256": "4874fb4018f382d147e84948e5b81e9986cfed2b9d60e24fe94dd335f321c990"
+      "bytes": 499,
+      "sha256": "215b2aa1144c7408e42352fee27aeab1c3946e933a282174a7f39cd50e92d261"
     },
     {
       "path": "desktop/build.rs",
@@ -143,8 +143,8 @@
     },
     {
       "path": "desktop/tauri.conf.json",
-      "bytes": 394,
-      "sha256": "14da92ddd083749f01f0a213400f4ba6f5c0705f68a96da9f2220fb6fbad7992"
+      "bytes": 395,
+      "sha256": "62e2bf9dec89db42682d22bb310ab741b1eeb6e300dad758b87da8b2cd285db9"
     },
     {
       "path": "desktop/ui/index.html",
@@ -175,6 +175,11 @@
       "path": "docs/archive-recovery.md",
       "bytes": 5826,
       "sha256": "9f9308269a910f206f2adc44de2994f9416adfb6c8b9b60e933594e913a718d3"
+    },
+    {
+      "path": "docs/changes-1.1.10.md",
+      "bytes": 1163,
+      "sha256": "e595db9882bfed1eb7f4b123aa476ec178744bf5d471d48f50e9b0077569197b"
     },
     {
       "path": "docs/changes-20261024.md",
@@ -208,18 +213,18 @@
     },
     {
       "path": "docs/publishing.md",
-      "bytes": 2462,
-      "sha256": "36b05e87665eea5df3098efffcbfb424fb01f206d6af17609cb7fc8b6372c909"
+      "bytes": 2467,
+      "sha256": "2dc15f020309a7120fcc0985ab652e30d0262b47f6111c9b98fd1a90f441fc0e"
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 9663,
-      "sha256": "a8c82718308c24a2421e08d2dc4aeb970ff0a0b8955620caaaa8167f2ac9d0f7"
+      "bytes": 10013,
+      "sha256": "7d714b66714c3634fc5ae78bdbffaace0ec8005ada7b8a332d8e43caccb6b69b"
     },
     {
       "path": "docs/release-version.md",
-      "bytes": 3247,
-      "sha256": "eb7326b663770c64281c212f5da9086bf6de6dec4e51f9031c5c6b8c8188a586"
+      "bytes": 3258,
+      "sha256": "af1acfd2f6fa4c098f9a28f62bec20007d7bf3f9b19f67803d62bf3c99e4ed98"
     },
     {
       "path": "docs/source-install.md",
@@ -228,8 +233,8 @@
     },
     {
       "path": "docs/update-release.md",
-      "bytes": 12316,
-      "sha256": "f9e9ad3c2181b115ebc00b0fca160fcab544f346eb8f260769057a9ce65e5714"
+      "bytes": 12320,
+      "sha256": "fb9ff00746ba20ddc1394279334c655e5734b060ec73174021f39cc358f6eb7c"
     },
     {
       "path": "docs/user-guide.md",
@@ -240,6 +245,11 @@
       "path": "docs/validation.json",
       "bytes": 4281,
       "sha256": "951aea2c2967e2f22128ab7f805b8e474cc83d38d8e3a7ba811850b08ee514d1"
+    },
+    {
+      "path": "docs/whats-new-1.1.10.md",
+      "bytes": 4159,
+      "sha256": "7f0212e6c41ae5d6a4523179cbd7b98e1664b296ca466543fbada378e0935fa1"
     },
     {
       "path": "examples/authenticated_inbox_search.py",
@@ -263,8 +273,8 @@
     },
     {
       "path": "knowledge_bridge/__init__.py",
-      "bytes": 22,
-      "sha256": "9671c033f6123ade53bed026e1956cdf64f44e9b0243990e3b39e7425babd581"
+      "bytes": 23,
+      "sha256": "fa36277c2b71df16c44b60e8bd4568bc16d0aa33258d73106b7c40567a141508"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -963,13 +973,13 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 12454,
-      "sha256": "2781eff6e7fa57ee98b80286d0921fbb11cfaa3d2583b5dfc283d6d85aa07497"
+      "bytes": 12502,
+      "sha256": "3d7c19be0a43944a9008c909c1b789d27990d487093d15d714d65401e96ff874"
     },
     {
       "path": "pyproject.toml",
-      "bytes": 1108,
-      "sha256": "fd0adce40baa99899a87cff713a5a0b1af8e3c0068355b8a91c07f2298a187e7"
+      "bytes": 1109,
+      "sha256": "0af72adbad127cac4d746d8d476cdd656d759e0879bf49b583248908e6f07d76"
     },
     {
       "path": "requirements.lock.txt",
@@ -1023,8 +1033,8 @@
     },
     {
       "path": "static/app.js",
-      "bytes": 396047,
-      "sha256": "282bd6fc716210e1deb9956861d323af4a803ecc617bc106ba0306a64d0b6a38"
+      "bytes": 398199,
+      "sha256": "8bf170df7caff05d6a4636655e7c65fc95ae727e3957ad342553fb17890eb8a1"
     },
     {
       "path": "static/brand/jiedu-256.png",
@@ -1063,18 +1073,18 @@
     },
     {
       "path": "static/index.html",
-      "bytes": 57240,
-      "sha256": "df28999aae37502208556b138a3865a649bbe55b2d32d6a464a5878f2f1db25b"
+      "bytes": 57864,
+      "sha256": "959cab722ef5bb99698a7621682bb06f78b7e7c2cbdcd540b71edb50e1f37312"
     },
     {
       "path": "static/local-chat-collectors.js",
-      "bytes": 10732,
-      "sha256": "51e29237d3382a9e82eeb2d8e71faa9441833093ff7a57ba4c3a77f1f5a21af7"
+      "bytes": 10730,
+      "sha256": "26cf371f18b29524eecbc894bc75e381239906f8a3c5b9e108f893ae119f1367"
     },
     {
       "path": "static/prompt-workflow.js",
-      "bytes": 13295,
-      "sha256": "f0a81e45151fbdc1a304eadeec1221ba3cdf9abe9804654d14fcf2c1c25e966e"
+      "bytes": 14393,
+      "sha256": "0dd48ca3625722e9fa842d4c6b5919717d90b6a0bd7514efea0e10f1a7d5b3f5"
     },
     {
       "path": "static/software-update.js",
@@ -1083,8 +1093,8 @@
     },
     {
       "path": "static/style.css",
-      "bytes": 249183,
-      "sha256": "a5e2940e68a59490d158971b1814581d9ac63d20fdfb140ed08ce5829cbf3158"
+      "bytes": 250566,
+      "sha256": "e386a42c25b9eec09ed9fc233e5078aeb0b3b9a7060f531d782b31e25bf786d6"
     },
     {
       "path": "static/update-notice.js",
@@ -1198,8 +1208,8 @@
     },
     {
       "path": "static/wiki.js",
-      "bytes": 17359,
-      "sha256": "b8d14849066d26225b3f8f357b1367224ee05ee137432a254269056b45399181"
+      "bytes": 17514,
+      "sha256": "165291e5382c8b6f482ca3d839dc050165ee5f74f2ce9e953369ff6b934f9ebd"
     },
     {
       "path": "static/workspace-shell.js",
@@ -1778,13 +1788,13 @@
     },
     {
       "path": "tests/test_prompt_workflow_smoke.py",
-      "bytes": 5076,
-      "sha256": "1fe8b3d90c5cacb49130a8b52819dd2868386b1d953e837926dbcea2e6447010"
+      "bytes": 5059,
+      "sha256": "e8910ccc1d9afa4f1c0395961f46d200a835d220c48d2db17b0a9a88f9bf2397"
     },
     {
       "path": "tests/test_prompt_workflow_styled_smoke.py",
-      "bytes": 5628,
-      "sha256": "107195b5a30afafc21cdf3977d50f921b675a1d65dbf90314564ecd7f0763826"
+      "bytes": 5693,
+      "sha256": "f40d80448185eef706d34a6b22d27d00a1261372318403d57a6825741c5c3d43"
     },
     {
       "path": "tests/test_protected_storage.py",

@@ -22,7 +22,7 @@ function detailCacheKey(...parts){return JSON.stringify([workspaceRuntime?.works
 function rememberDetail(cache,key,value){cache.delete(key);cache.set(key,value);while(cache.size>8)cache.delete(cache.keys().next().value)}
 const volatileApiPrefixes=['/api/butler','/api/hermes-archive','/api/codex-archive','/api/protection','/api/client-access','/api/local-ai','/api/lifecycle','/api/knowledge-objects','/api/document'];
 
-function archiveCompletenessLabel(item){if(['完整','complete'].includes(item.completeness))return '已保存 · 来源覆盖未核验';if(item.completeness!=='附件有缺失')return item.completeness;const groups=item.attachment_references?.by_kind;if(!groups)return '文件引用待核对';if((groups.uploaded?.unavailable||0)>0)return '部分上传文件尚未取得原件';if((groups.legacy_reference?.unavailable||0)>0)return '文件引用待核对';if((groups.text_reference?.unavailable||0)>0)return '文件引用待核对';if((groups.delivery_link?.unavailable||0)>0)return '部分交付文件尚未取得原件';return '文件引用待核对'}
+function archiveCompletenessLabel(item){if(['完整','complete'].includes(item.completeness))return '已保存，历史是否齐全尚待检查';if(['completed_with_issues','partial'].includes(item.completeness))return '已保存，有内容待核对';if(item.completeness!=='附件有缺失')return item.completeness;const groups=item.attachment_references?.by_kind;if(!groups)return '文件引用待核对';if((groups.uploaded?.unavailable||0)>0)return '部分上传文件尚未取得原件';if((groups.legacy_reference?.unavailable||0)>0)return '文件引用待核对';if((groups.text_reference?.unavailable||0)>0)return '文件引用待核对';if((groups.delivery_link?.unavailable||0)>0)return '部分交付文件尚未取得原件';return '文件引用待核对'}
 function attachmentReferenceLines(item){
   const stats=item.attachment_references;
   if(!stats)return [`文件引用：${item.attachment_count||0} 次${item.missing_attachment_count?'，'+item.missing_attachment_count+' 次未取得原件':''}`];
@@ -106,16 +106,10 @@ async function showFirstRunGuide(health,{installedFresh=false}={}){
 }
 function initTaskShell(){const workspace=document.createElement('section');workspace.id='workspace';workspace.className='page';workspace.innerHTML=`<div class="access-hub workspace-hub"><p class="connection-gate-note">在这里创建、连接或切换本地知识工作区。资料导入在“知识”页完成。</p><section class="initialization-console"><div class="memory-section-head"><div><h2>工作区状态</h2><p>选择知识库并开始保存资料；检索索引和 AI 可以稍后设置。</p></div></div><div id="initializationCenter"></div></section><section class="knowledge-base-console"><div class="memory-section-head"><div><h2>本地知识库</h2><p>创建新的 Markdown 工作区，或连接已有文件夹与 Obsidian Vault。</p></div><div class="section-head-actions"><button id="auditKnowledgeBase" class="copy-button">刷新知识库</button><button id="refreshKnowledgeBase" class="copy-button">刷新状态</button></div></div><div id="knowledgeBaseStatus"></div></section></div>`;$('#overview').before(workspace);const entry=document.createElement('button');entry.dataset.page='workspace';entry.innerHTML='<i></i><span>工作区</span>';$('.sidebar nav').append(entry);const archiveHub=$('#archivesHub');if(archiveHub){const progress=document.createElement('section');progress.id='archiveProgress';progress.className='archive-progress-overview';progress.setAttribute('aria-label','自动归档进度');progress.innerHTML='<h2>自动归档进度</h2><p>正在读取 Codex 与 Hermes 的历史补齐及新消息监听状态…</p>';archiveHub.prepend(progress)}['rawSessionList','codexArchiveStatus','hermesArchiveStatus'].forEach(id=>{const section=document.getElementById(id)?.closest('.raw-session-console');if(section&&archiveHub){if(id==='rawSessionList')archiveHub.append(section);else{const fold=document.createElement('details');fold.className='archive-diagnostics';fold.innerHTML='<summary>'+ (id==='codexArchiveStatus'?'Codex 自动归档状态':'Hermes 自动归档状态')+'</summary>';archiveHub.append(fold);fold.append(section)}}});const knowledgeActions=$('.knowledge-object-actions');if(knowledgeActions&&!$('#openKnowledgeSearch')){const button=document.createElement('button');button.id='openKnowledgeSearch';button.className='secondary';button.type='button';button.textContent='搜索本机资料';button.onclick=()=>openKnowledgeSearch('workspace');knowledgeActions.prepend(button)}}
 initTaskShell();
-const archiveAdvanced=document.createElement('details');archiveAdvanced.id='archiveAdvanced';archiveAdvanced.className='archive-diagnostics';
-archiveAdvanced.innerHTML='<summary>高级归档管理与诊断</summary>';
-document.querySelectorAll('#archivesHub > .archive-diagnostics').forEach(detail=>archiveAdvanced.append(detail));
-document.getElementById('archivesHub')?.append(archiveAdvanced);
-const collectorManagement=document.getElementById('localChatCollectors');
-if(collectorManagement&&document.getElementById('archivesHub')){
-  const fold=document.createElement('details');fold.id='archiveCollectorManagement';fold.className='archive-diagnostics';
-  fold.innerHTML='<summary>采集范围与故障诊断</summary>';
-  archiveAdvanced.append(fold);fold.append(collectorManagement);
-}
+const archiveDiagnosticsHost=document.getElementById('archiveDiagnosticsHost');
+document.querySelectorAll('#archivesHub > .archive-diagnostics').forEach(detail=>archiveDiagnosticsHost?.append(detail));
+const serviceDiagnostics=document.querySelector('#protection .settings-diagnostics');
+if(serviceDiagnostics)archiveDiagnosticsHost?.append(serviceDiagnostics);
 
 function initBrandParallax(){const sequence=$('#brandSequence');if(!sequence||matchMedia('(prefers-reduced-motion: reduce)').matches)return;let frame=0,targetX=0,targetY=0,currentX=0,currentY=0;const paint=()=>{frame=0;currentX+=(targetX-currentX)*.11;currentY+=(targetY-currentY)*.11;const set=(name,value)=>sequence.style.setProperty(name,`${value.toFixed(2)}px`);set('--space-x',currentX*-.45);set('--space-y',currentY*-.45);set('--private-x',currentX*.28);set('--private-y',currentY*.24);set('--agent-x',currentX*.38);set('--agent-y',currentY*.3);set('--gateway-x',currentX*.62);set('--gateway-y',currentY*.52);if(Math.abs(targetX-currentX)>.03||Math.abs(targetY-currentY)>.03)frame=requestAnimationFrame(paint)};const move=e=>{targetX=(e.clientX/innerWidth-.5)*4;targetY=(e.clientY/innerHeight-.5)*3;if(!frame)frame=requestAnimationFrame(paint)};const reset=()=>{targetX=0;targetY=0;if(!frame)frame=requestAnimationFrame(paint)};sequence.addEventListener('pointermove',move,{passive:true});sequence.addEventListener('pointerleave',reset,{passive:true})}
 initBrandParallax();
@@ -126,14 +120,15 @@ const pages={
   overview:['Local Knowledge Bridge','首页','搜索、导入和回看已保存的资料'],
   'ai-chat':['Bridge Status','桥接状态','观察AI客户端与本地知识库之间的真实只读链路'],
   files:['Knowledge','知识','浏览资料、导入原件与查看待整理内容'],
-  archives:['Conversation Archive','对话档案','查看不同 AI 来源的原始会话与附件'],
+  archives:['Conversation Archive','聊天记录','查看已保存的聊天、附件和简明同步状态'],
   search:['Knowledge Search','搜索资料','输入问题，查看出处与原文'],
   map:['Semantic Space','语义空间','观测真实 Embedding / UMAP 构成的知识分布'],
   graph:['Relation Network','关系网络','查看目录与明确链接形成的确定性连接']
-  ,memory:['Organize','整理中心','看看有哪些内容值得留下']
+  ,memory:['Organize','整理知识','交给 Codex 整理，再核对待保存的建议']
   ,wiki:['Knowledge Wiki','知识 Wiki','按主题和项目回看知识，随时核对来源']
-  ,access:['AI Connections','AI连接','管理客户端身份、配对、权限与必要确认']
+  ,access:['AI Connections','连接 AI','接入 AI、管理权限与聊天来源']
   ,protection:['Settings','设置','本机运行与系统设置']
+  ,troubleshooting:['Troubleshooting','故障排查','查看归档与本机服务的详细状态']
   ,weight:['Context Refresh','权重提升','管理当前会话的记忆刷新与提醒。']
 };
 function switchPage(name){
@@ -156,11 +151,12 @@ function switchPage(name){
   if(name==='map')loadMap();if(name==='graph')loadGraph();
   if(name==='ai-chat')loadBridgeStatus();
   if(name==='butler')window.loadButler?.();
-  if(name==='memory')pageLoad=withPageFeedback('memory','正在读取整理中心…',()=>loadMemoryHubBounded());
-  if(name==='wiki')pageLoad=loadKnowledgeWiki();
+  if(name==='memory'){pageLoad=withPageFeedback('memory','正在读取整理建议…',()=>loadMemoryHubBounded());if($('#organizeWikiRecords')?.open){mountWikiHub('memory');loadKnowledgeWiki()}}
+  if(name==='wiki'){mountWikiHub('wiki');pageLoad=loadKnowledgeWiki()}
   if(name==='archives')pageLoad=loadArchivesHub();
   if(name==='files')pageLoad=withPageFeedback('files','正在读取知识资料…',()=>loadFiles());
   if(name==='protection'){loadProtectionStatus();loadAccessHub().catch(error=>console.error(error))}
+  if(name==='troubleshooting')pageLoad=withPageFeedback('troubleshooting','正在检查详细状态…',()=>Promise.all([loadProtectionStatus(),loadAccessHub(),loadCodexArchiveStatus(),loadHermesArchiveStatus()]));
   if(name==='access')pageLoad=withPageFeedback('access','正在读取 AI 连接…',()=>loadProtectionStatus({quiet:true}).then(()=>loadClientAccessControl()));
   if(name==='weight')pageLoad=withPageFeedback('weight','正在读取会话刷新状态…',()=>loadWeightHub().then(patchWeightProductCopy));
   const page=$(`#${name}`),originalDetails=new Set(page.querySelectorAll('details'));let userInteracted=false,initialScroll=null;
@@ -178,6 +174,10 @@ function switchPage(name){
 
 }
 $$('.sidebar nav button[data-page]').forEach(b=>b.addEventListener('click',()=>switchPage(b.dataset.page)));
+function mountWikiHub(target){const hub=$('#wikiHub'),container=target==='memory'?$('#organizeWikiHost'):$('#wiki');if(hub&&container&&hub.parentElement!==container)container.append(hub)}
+$('#organizeWikiRecords')?.addEventListener('toggle',event=>{if(event.target.open&&activePage==='memory'){mountWikiHub('memory');loadKnowledgeWiki()}else if(!event.target.open){clearTimeout(wikiRefreshTimer);mountWikiHub('wiki')}});
+$('#backToOrganize')?.addEventListener('click',()=>{switchPage('memory');$('#organizeWikiRecords').open=true});
+$('#refreshTroubleshooting')?.addEventListener('click',()=>Promise.all([loadProtectionStatus(),loadAccessHub(),loadCodexArchiveStatus(),loadHermesArchiveStatus()]).catch(error=>showToast(protectionMessage(error,'详细状态暂时无法读取'))));
 async function openStartingPath(kind){
   closeBrandInfo({useHistory:false});history.replaceState({},'',location.pathname);finishBrandSequence();
   if(kind==='chats'){switchPage('access');return}
@@ -722,11 +722,14 @@ async function loadArchiveProgress(){
     const rows=order.map(id=>status.sources?.find(source=>source.id===id)).filter(source=>source&&!hiddenClientTypes.has(source.id));
     const saved=source=>source.history?.by_source?.length?source.history.by_source.reduce((sum,row)=>sum+(Number(row.archived)||0),0):Math.max(Number(source.history?.archived)||0,Number(source.live?.saved_messages)||0);
     const participating=source=>Boolean(source.participating??source.configured);
-    const visible=rows.filter(source=>participating(source)||saved(source)>0),optional=rows.filter(source=>!participating(source)&&saved(source)===0);
-    const label=source=>!participating(source)?saved(source)>0?'档案已保留 · 等待接入':'等待接入':source.paused?'已暂停':source.last_error?'需检查':source.detected===false?'来源暂不可用':source.readable===false?'来源需核对':source.live?.status==='watching'?'持续保存':'已接入，等待检查';
-    const card=source=>`<article class="archive-progress-card"><div class="archive-progress-head"><h3>${esc(names[source.id]||source.id)}</h3><span>${esc(label(source))}</span></div><p>已保存 ${saved(source).toLocaleString('zh-CN')} 条消息${source.live?.last_message_at?' · 最近保存 '+esc(formatTime(source.live.last_message_at)):''}</p>${source.last_error?`<p role="status">${esc(compactText(source.last_error,100))}</p>`:''}<div class="client-actions"><button type="button" class="copy-button" data-archive-view="${esc(source.id)}">查看会话</button><button type="button" class="copy-button" data-archive-manage="${esc(source.id)}">管理</button></div><details><summary>诊断信息</summary>${source.history?.by_source?.length?source.history.by_source.map(row=>archiveProgressLine(row,row.source||'历史来源')).join(''):archiveProgressLine(source.history||{},'历史来源')}<p>来源可读：${source.readable?'是':'待核对'} · 采集状态：${esc(source.live?.status||'未知')}</p></details></article>`;
-    host.innerHTML=`<div class="archive-progress-title"><div><h2>对话来源</h2><p>查看各来源已保存的对话；采集范围和详细进度可在“管理”中查看。</p></div><button id="refreshArchiveProgress" type="button" class="copy-button">刷新</button></div><div class="archive-progress-grid">${visible.map(card).join('')||'<p>尚无已接入或已保存对话的来源。</p>'}</div>${optional.length?`<details class="archive-diagnostics archive-more-sources"><summary>添加来源 · ${optional.length}</summary><div class="archive-progress-grid">${optional.map(card).join('')}</div></details>`:''}<small>状态更新：${esc(formatTime(status.generated_at))}</small>`;
+    const visible=rows.filter(source=>participating(source)||saved(source)>0);
+    const needsAttention=source=>Boolean(source.last_error||source.detected===false||source.readable===false||['error','completed_with_issues','completed_with_review'].includes(source.history?.status)||source.live?.status==='error');
+    const label=source=>!participating(source)?saved(source)>0?'已保存 · 等待接入':'等待接入':source.paused?'已暂停':source.detected===false?'来源暂不可用':needsAttention(source)?'需要检查':source.live?.status==='watching'?'持续保存':'等待检查';
+    const nextStep=source=>!participating(source)?'已有记录可查看。如需保存新聊天，请到“连接 AI”检查来源。':source.paused?'已暂停保存新聊天；已有记录仍可查看。':source.detected===false?'本机暂未找到该来源。已有记录仍可查看，请到“连接 AI”检查。':needsAttention(source)?'部分记录需要核对；新聊天是否持续保存尚未确认，请查看故障排查。':source.live?.status==='watching'?'新聊天正在持续保存。':source.history?.status==='running'?'历史记录正在补齐；新聊天保存状态仍待检查。':'连接已记录，仍需实际检查才能确认新聊天持续保存。';
+    const card=source=>`<article class="archive-progress-card"><div class="archive-progress-head"><h3>${esc(names[source.id]||source.id)}</h3><span>${esc(label(source))}</span></div><p>已保存 ${saved(source).toLocaleString('zh-CN')} 条消息${source.live?.last_message_at?' · 最近保存 '+esc(formatTime(source.live.last_message_at)):''}</p><p>${nextStep(source)}</p><div class="client-actions"><button type="button" class="copy-button" data-archive-view="${esc(source.id)}">查看会话</button>${['codex','hermes'].includes(source.id)?needsAttention(source)?`<button type="button" class="copy-button" data-archive-manage="${esc(source.id)}">排查问题</button>`:'':`<button type="button" class="copy-button" data-archive-manage="${esc(source.id)}">管理来源</button>`}</div></article>`;
+    host.innerHTML=`<div class="archive-progress-title"><div><h2>已保存的聊天</h2><p>按来源查看会话。连接和采集范围在“连接 AI”管理。</p></div><button id="refreshArchiveProgress" type="button" class="copy-button">刷新</button></div><div class="archive-progress-grid">${visible.map(card).join('')||'<p>尚无已保存的聊天。请先到“连接 AI”选择来源。</p>'}</div><p><button type="button" id="openArchiveSources" class="copy-button">管理聊天来源</button></p><small>状态更新：${esc(formatTime(status.generated_at))}</small>`;
     host.querySelector('#refreshArchiveProgress').onclick=loadArchiveProgress;
+    host.querySelector('#openArchiveSources').onclick=()=>switchPage('access');
     host.querySelectorAll('[data-archive-view]').forEach(button=>button.onclick=()=>{
       const id=button.dataset.archiveView;
       if(['cursor','dsh','workbuddy','opencode','zcode','kimi'].includes(id))openVisibleConversations(id).catch(error=>showToast(protectionMessage(error,'原文读取失败')));
@@ -734,13 +737,14 @@ async function loadArchiveProgress(){
     });
     host.querySelectorAll('[data-archive-manage]').forEach(button=>button.onclick=()=>{
       const id=button.dataset.archiveManage;
-      const detail=['codex','hermes'].includes(id)?document.getElementById(id+'ArchiveStatus')?.closest('.archive-diagnostics'):$('#archiveCollectorManagement');
-      if(detail){archiveAdvanced.open=true;detail.open=true;detail.scrollIntoView({behavior:'smooth',block:'start'});document.getElementById('local-chat-'+id)?.scrollIntoView({behavior:'smooth',block:'nearest'})}
+      if(['codex','hermes'].includes(id)){
+        switchPage('troubleshooting');const detail=document.getElementById(id+'ArchiveStatus')?.closest('.archive-diagnostics');if(detail){detail.open=true;detail.scrollIntoView({behavior:'smooth',block:'start'})}
+      }else{switchPage('access');setTimeout(()=>document.getElementById('local-chat-'+id)?.scrollIntoView({behavior:'smooth',block:'center'}),0)}
     });
-  }catch(error){if(!isRequestCancelled(error)){host.innerHTML='<h2>对话来源</h2><p role="status">来源状态暂时无法读取。</p><button id="refreshArchiveProgress" type="button" class="copy-button">重试</button>';host.querySelector('#refreshArchiveProgress')?.addEventListener('click',loadArchiveProgress)}}
+  }catch(error){if(!isRequestCancelled(error)){host.innerHTML='<h2>已保存的聊天</h2><p role="status">来源状态暂时无法读取。</p><button id="refreshArchiveProgress" type="button" class="copy-button">重试</button>';host.querySelector('#refreshArchiveProgress')?.addEventListener('click',loadArchiveProgress)}}
   finally{if(activePage==='archives')archiveProgressTimer=setTimeout(loadArchiveProgress,5000)}
 }
-async function loadArchivesHub(){const list=$('#rawSessionList');if(list&&!list.children.length)list.innerHTML=loadingState('正在读取对话档案…');try{const visibility=await api('/api/client-access/visibility?t='+Date.now(),{ttl:0,force:true});hiddenClientTypes=new Set(visibility.hidden_client_types||[]);await Promise.all([loadRawSessions(),loadCodexArchiveStatus(),loadHermesArchiveStatus(),loadArchiveProgress()])}catch(e){if(isRequestCancelled(e))return;if(e.name==='AbortError')return;if(list){list.innerHTML=errorState(isIdentityError(e)?'本机读取身份失效':'对话档案暂时无法读取',e);list.querySelector('[data-async-retry]')?.addEventListener('click',loadArchivesHub)}showToast(protectionMessage(e,'对话档案读取失败'))}}
+async function loadArchivesHub(){const list=$('#rawSessionList');if(list&&!list.children.length)list.innerHTML=loadingState('正在读取聊天记录…');try{const visibility=await api('/api/client-access/visibility?t='+Date.now(),{ttl:0,force:true});hiddenClientTypes=new Set(visibility.hidden_client_types||[]);await Promise.all([loadRawSessions(),loadArchiveProgress()])}catch(e){if(isRequestCancelled(e))return;if(e.name==='AbortError')return;if(list){list.innerHTML=errorState(isIdentityError(e)?'本机读取身份失效':'聊天记录暂时无法读取',e);list.querySelector('[data-async-retry]')?.addEventListener('click',loadArchivesHub)}showToast(protectionMessage(e,'聊天记录读取失败'))}}
 let clientConfigPreview=null,clientConfigSequence=0,clientAccessLoadSequence=0;
 let localAIState=null;
 let weightCurrentSession=null;
@@ -827,7 +831,7 @@ const archiveListState={offset:0,limit:25,client:'all',status:'all',query:''};le
 async function loadRawSessions(){
   const selected=rawSessionView;
   const sequence=++archiveListSequence,host=$('#rawSessionList'),previous=host?.innerHTML||'';
-  if(host){host.setAttribute('aria-busy','true');if(!previous)host.innerHTML=loadingState('正在读取对话档案…')}
+  if(host){host.setAttribute('aria-busy','true');if(!previous)host.innerHTML=loadingState('正在读取聊天记录…')}
   const params=new URLSearchParams({offset:String(archiveListState.offset),limit:String(archiveListState.limit),client:archiveListState.client,status:archiveListState.status,query:archiveListState.query,t:String(Date.now())});
   try{
     const data=await api('/api/session-archives?'+params.toString(),{ttl:0,force:true});if(sequence!==archiveListSequence||activePage!=='archives')return;
@@ -1544,10 +1548,12 @@ async function undoCandidateWrite(){
   }catch(e){if(isRequestCancelled(e))return;showToast('撤销失败：'+e.message)}finally{candidateUndoPending=false;if($('#candidateUndoWrite')===button&&button)button.disabled=false}
 }
 async function showCandidateSource(){
-  const evidence=memoryCandidate.evidence?.[0]||{},box=$('#candidateDiff');box.hidden=false;
-  if(evidence.source_path&&evidence.version){await openRetrievedSource(evidence.source_path,`p1-${evidence.version}-${evidence.byte_start||0}`);return}
-  if(evidence.message_id&&/^\d{6}$/.test(evidence.message_id)){try{const raw=await api('/api/memory/raw-messages/'+evidence.message_id);box.textContent=`原始消息 ${raw.message_id} · ${raw.role}\n${raw.source}\n\n${raw.content}`;return}catch{}}
-  box.textContent=JSON.stringify({evidence:memoryCandidate.evidence,provenance:memoryCandidate.provenance},null,2);
+  const evidence=memoryCandidate.evidence?.[0]||{},button=$('#candidateSource');let panel=$('#candidateSourcePanel');
+  if(!panel&&button){panel=document.createElement('section');panel.id='candidateSourcePanel';panel.className='candidate-source-panel';button.closest('.candidate-actions')?.after(panel)}
+  if(panel){panel.hidden=false;panel.innerHTML='<h4>来源原话</h4><p role="status">正在读取原始消息…</p>';panel.scrollIntoView({behavior:'smooth',block:'nearest'})}
+  if(evidence.source_path&&evidence.version){if(panel)panel.hidden=true;await openRetrievedSource(evidence.source_path,`p1-${evidence.version}-${evidence.byte_start||0}`);return}
+  if(evidence.message_id&&/^\d{6}$/.test(evidence.message_id)){try{const raw=await api('/api/memory/raw-messages/'+evidence.message_id);if(panel){panel.innerHTML=`<h4>来源原话</h4><p>${esc(raw.source||'原始聊天')} · ${esc(raw.role==='user'?'用户':raw.role||'消息')} · ${esc(raw.message_id)}</p><blockquote>${esc(raw.content||'')}</blockquote>`;panel.scrollIntoView({behavior:'smooth',block:'nearest'})}return}catch{}}
+  if(panel)panel.innerHTML=`<h4>来源记录</h4><p>暂时无法定位到具体原话；可核对下方记录。</p><pre>${esc(JSON.stringify({evidence:memoryCandidate.evidence,provenance:memoryCandidate.provenance},null,2))}</pre>`;
 }
 async function previewCandidateDiff(){
   const edit=$('#candidateEdit'),box=$('#candidateDiff');box.hidden=false;
@@ -1601,7 +1607,7 @@ async function runMemoryTest(){
 }
 
 window.addEventListener('resize',()=>{resizeVectorCanvas();graphChart?.resize()});
-applyPrefs();(async()=>{try{workspaceRuntime=await api('/api/health',{ttl:0,force:true,scope:'health'});let installNotice;try{installNotice=await api('/api/update-notice',{ttl:0,force:true,scope:'health'})}catch{installNotice={state:'unconfirmed',message:'安装状态暂时无法读取，请稍后重试。'}}if(installNotice.state==='ready'&&installNotice.show_first_run)await showFirstRunGuide(workspaceRuntime,{installedFresh:true});else if(installNotice.state==='not_installed')await showFirstRunGuide(workspaceRuntime);await window.jieduUpdateNotice?.initialize(workspaceRuntime,installNotice);await loadProtectionStatus({quiet:true});const requestedPage=new URLSearchParams(location.search).get('page'),availablePage=requestedPage&&document.getElementById(requestedPage)&&document.querySelector(`.sidebar nav button[data-page="${CSS.escape(requestedPage)}"]`)?requestedPage:null;switchPage(workspaceRuntime.workspace_ready?(availablePage||sessionStorage.getItem('jiedu.activePage')||'overview'):'workspace');document.body.classList.remove('first-run-pending')}catch(error){if(isRequestCancelled(error))return;$('#status').textContent='连接失败';showToast('服务暂时不可用，请检查界渡是否运行');document.body.classList.remove('first-run-pending')}})();
+applyPrefs();(async()=>{try{workspaceRuntime=await api('/api/health',{ttl:0,force:true,scope:'health'});let installNotice;try{installNotice=await api('/api/update-notice',{ttl:0,force:true,scope:'health'})}catch{installNotice={state:'unconfirmed',message:'安装状态暂时无法读取，请稍后重试。'}}if(installNotice.state==='ready'&&installNotice.show_first_run)await showFirstRunGuide(workspaceRuntime,{installedFresh:true});else if(installNotice.state==='not_installed')await showFirstRunGuide(workspaceRuntime);await window.jieduUpdateNotice?.initialize(workspaceRuntime,installNotice);await loadProtectionStatus({quiet:true});const requestedPage=new URLSearchParams(location.search).get('page'),availablePage=requestedPage&&document.getElementById(requestedPage)&&(requestedPage==='wiki'||document.querySelector(`.sidebar nav button[data-page="${CSS.escape(requestedPage)}"]`))?requestedPage:null;switchPage(workspaceRuntime.workspace_ready?(availablePage||sessionStorage.getItem('jiedu.activePage')||'overview'):'workspace');document.body.classList.remove('first-run-pending')}catch(error){if(isRequestCancelled(error))return;$('#status').textContent='连接失败';showToast('服务暂时不可用，请检查界渡是否运行');document.body.classList.remove('first-run-pending')}})();
 let healthTimer=null,healthBusy=false;
 async function refreshHealth(){if(document.hidden||healthBusy)return;healthBusy=true;try{const d=await api('/api/health?t='+Date.now(),{ttl:0,force:true,scope:'health'}),banner=$('#testEnvironmentBanner');if(banner)banner.hidden=d.environment!=='isolated_test';document.body.classList.toggle('isolated-test',d.environment==='isolated_test');$('#status').textContent=d.status==='ready'?'界渡已运行':'需要检查'}catch{$('#status').textContent='连接中断'}finally{healthBusy=false}}
 function scheduleHealth(){clearInterval(healthTimer);if(!document.hidden)healthTimer=setInterval(refreshHealth,30000)}

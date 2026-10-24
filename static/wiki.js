@@ -62,11 +62,12 @@ function renderKnowledgeWiki(d){
   $('#wikiResume')?.addEventListener('click',async event=>{event.currentTarget.disabled=true;try{await apiPost('/api/wiki/resume',{});await loadKnowledgeWiki()}catch(e){$('#wikiActionFeedback').textContent='恢复未完成，请刷新后重试。';event.currentTarget.disabled=false}});
   if(focused)document.getElementById(focused)?.focus({preventScroll:true});
 }
+function wikiPageVisible(){return activePage==='wiki'||activePage==='memory'&&$('#organizeWikiRecords')?.open&&$('#wikiHub')?.closest('#organizeWikiRecords')}
 async function loadKnowledgeWiki(){
   clearTimeout(wikiRefreshTimer);const sequence=++wikiRequestSequence,navigation=pageNavigationSequence,host=$('#wikiHub');
   if(!host.dataset.loaded)host.innerHTML='<p role="status">正在加载…</p>';
-  try{const raw=await api('/api/wiki/status',{ttl:0,force:true,scope:'wiki'});if(sequence!==wikiRequestSequence||navigation!==pageNavigationSequence||activePage!=='wiki')return;const d=await wikiCompatibilityStatus(raw);if(sequence!==wikiRequestSequence||navigation!==pageNavigationSequence||activePage!=='wiki')return;wikiData=d;renderKnowledgeWiki(d);wikiRefreshTimer=setTimeout(function poll(){if(activePage!=='wiki')return;if(document.querySelector('dialog[open]')){wikiRefreshTimer=setTimeout(poll,15000);return}loadKnowledgeWiki()},15000)}
-  catch(e){if(sequence!==wikiRequestSequence||navigation!==pageNavigationSequence||activePage!=='wiki'||e.name==='AbortError')return;wikiRenderSignature='';host.innerHTML=`<section class="wiki-welcome" role="alert"><h2>${e.status===404?'知识 Wiki 等待后台更新':'暂时连不上 Wiki'}</h2><p>${e.status===404?'后台加载新版本后，刷新此页即可使用。':'请确认界渡正在运行，然后重试。已有知识会保留。'}</p><button id="wikiRetry" class="secondary" type="button">重试</button></section>`;$('#wikiRetry').onclick=loadKnowledgeWiki}
+  try{const raw=await api('/api/wiki/status',{ttl:0,force:true,scope:'wiki'});if(sequence!==wikiRequestSequence||navigation!==pageNavigationSequence||!wikiPageVisible())return;const d=await wikiCompatibilityStatus(raw);if(sequence!==wikiRequestSequence||navigation!==pageNavigationSequence||!wikiPageVisible())return;wikiData=d;renderKnowledgeWiki(d);wikiRefreshTimer=setTimeout(function poll(){if(!wikiPageVisible())return;if(document.querySelector('dialog[open]')){wikiRefreshTimer=setTimeout(poll,15000);return}loadKnowledgeWiki()},15000)}
+  catch(e){if(sequence!==wikiRequestSequence||navigation!==pageNavigationSequence||!wikiPageVisible()||e.name==='AbortError')return;wikiRenderSignature='';host.innerHTML=`<section class="wiki-welcome" role="alert"><h2>${e.status===404?'知识 Wiki 等待后台更新':'暂时连不上 Wiki'}</h2><p>${e.status===404?'后台加载新版本后，刷新此页即可使用。':'请确认界渡正在运行，然后重试。已有知识会保留。'}</p><button id="wikiRetry" class="secondary" type="button">重试</button></section>`;$('#wikiRetry').onclick=loadKnowledgeWiki}
 }
 
 async function openWikiEvidence(entry,sourceId,path,reverify=false){

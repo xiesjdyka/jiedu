@@ -152,7 +152,7 @@
     }));
   }
   document.getElementById('refreshLocalChatCollectors')?.addEventListener('click', refresh);
-  const page = document.getElementById('archives');
+  const page = document.getElementById('access');
   if (page) new MutationObserver(() => {
     if (page.classList.contains('active')) refresh();
   }).observe(page, {attributes:true,attributeFilter:['class']});

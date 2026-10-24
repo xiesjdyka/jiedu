@@ -5,7 +5,7 @@
   let lastGate=0,gateBusy=false;
 
   async function refreshGate(force=false){
-    const host=$('#motherDistillation');if(!host||!$('#archives')?.classList.contains('active'))return;
+    const host=$('#motherDistillation');if(!host||!$('#memory')?.classList.contains('active'))return;
     if(gateBusy||!force&&Date.now()-lastGate<12000)return;
     gateBusy=true;lastGate=Date.now();
     const message=$('#motherDistillationStatus'),button=$('#copyMotherPrompt');
@@ -14,24 +14,22 @@
       button.disabled=!state.ready;
       const details=$('#motherDistillationDetails');details.hidden=state.ready;
       details.querySelector('p').textContent=(state.reasons||[]).join('；');
-      note(message,state.ready?`已核对 ${state.sources.join('、')} 的历史补档和待核对项，可以复制提炼指令。`:
-        state.sources?.length?'已接入的聊天历史仍在补齐，或有记录需要核对。完成后才能复制提炼指令。':'尚未接入可核验的聊天历史；请先完成归档。');
-    }catch{button.disabled=true;note(message,'历史补档状态暂时无法核对，请稍后刷新。')}
+      note(message,state.ready?'全部已接入的历史记录已核对，可以复制这项整理指令。':
+        state.sources?.length?'全部历史整理尚未就绪。已有记录仍可使用上方的日常整理入口；请等待补齐或查看具体原因。':'尚未接入可核验的聊天历史。已有知识建议仍可单独核对。');
+    }catch{button.disabled=true;note(message,'暂时无法核对全部历史状态，请稍后刷新。')}
     finally{gateBusy=false}
   }
 
   function attachMother(){
-    const progress=$('#archiveProgress');if(!progress||$('#motherDistillation'))return;
+    const tools=$('#organizationTools');if(!tools||$('#motherDistillation'))return;
     const card=document.createElement('section');card.id='motherDistillation';card.className='prompt-workflow-card';
-    card.innerHTML='<div><h2>提炼母档</h2><p>全部已接入的历史来源完成补档后，复制指令交给你正在使用的 AI，按证据提出分类建议；正式知识仍须你审核。</p></div><p id="motherDistillationStatus" role="status">正在核对历史补档…</p><details id="motherDistillationDetails" hidden><summary>查看具体原因</summary><p></p></details><div class="prompt-workflow-actions"><button id="refreshMotherGate" type="button" class="copy-button">刷新条件</button><button id="copyMotherPrompt" type="button" class="primary" disabled>复制提炼母档提示词</button></div>';
-    let tools=$('#archiveOrganizeTools');
-    if(!tools){tools=document.createElement('details');tools.id='archiveOrganizeTools';tools.className='archive-diagnostics';tools.innerHTML='<summary>整理工具</summary>';($('#archiveAdvanced')||$('#archivesHub')).append(tools)}
+    card.innerHTML='<div><h2>整理全部已保存的历史</h2><p>这项高级整理要等所有已接入来源完成历史补齐。复制指令后交给已获准读取资料的 AI；它提出建议，你确认后才保存为正式知识。</p></div><p id="motherDistillationStatus" role="status">正在核对历史补档…</p><details id="motherDistillationDetails" hidden><summary>查看具体原因</summary><p></p></details><div class="prompt-workflow-actions"><button id="refreshMotherGate" type="button" class="copy-button">重新检查</button><button id="copyMotherPrompt" type="button" class="primary" disabled>复制全部历史整理指令</button></div>';
     tools.append(card);
     $('#refreshMotherGate').onclick=()=>refreshGate(true);
     $('#copyMotherPrompt').onclick=async event=>{
       const button=event.currentTarget;button.disabled=true;
       try{const result=await api('/api/prompt-workflow/distillation/prompt?t='+Date.now(),{ttl:0,force:true});
-        if(!await copyText(result.prompt))throw Error('复制失败');showToast('已复制；请交给已获准读取资料的 AI，候选仍需审核。');}
+        if(!await copyText(result.prompt))throw Error('复制失败');showToast('已复制。请发给获准读取资料的 AI，等待它实际读完并提交建议；正式知识仍由你确认。');}
       catch(error){showToast(error.status===409?'历史补档状态已有变化，请刷新后重试。':'暂时无法复制，请重新核对补档状态。')}
       finally{refreshGate(true)}
     };
@@ -62,11 +60,16 @@
   }
 
   async function attachWikiGuide(){
-    const page=$('#wiki');if(!page||$('#wikiGuide'))return;
+    const page=$('#memory');if(!page||$('#wikiGuide'))return;
     const host=document.createElement('section');host.id='wikiGuide';host.className='prompt-workflow-card wiki-guide';
-    host.innerHTML='<h2>知识 Wiki 使用说明</h2><p role="status">正在读取说明和每日安排…</p>';page.append(host);
+    host.innerHTML='<h2>交给 Codex 整理</h2><p role="status">正在读取当前工作区的整理指令…</p>';page.querySelector('.memory-status-deck')?.before(host);
+    const suggestions=page.querySelector('.organize-suggestions'),tools=page.querySelector('#organizationTools'),records=page.querySelector('#organizeWikiRecords');
+    if(suggestions){host.after(suggestions);if(tools)suggestions.after(tools);if(records)(tools||suggestions).after(records)}
+    let recordGuide=null;
     try{
-      const [result,status]=await Promise.all([api('/api/wiki/guide',{ttl:0,force:true}),api('/api/wiki/status',{ttl:0,force:true})]);
+      const [guideResult,statusResult]=await Promise.allSettled([api('/api/wiki/guide',{ttl:0,force:true}),api('/api/wiki/status',{ttl:0,force:true})]);
+      if(guideResult.status!=='fulfilled')throw guideResult.reason;
+      const result=guideResult.value,status=statusResult.status==='fulfilled'?statusResult.value:{schedule:{arrangement:'unavailable'}};
       const guide=result.guide||{};
       const validPrompts=data=>{
         if(!data.workspace_id||!data.workspace_root||!data.daily_prompt||!data.schedule_setup_prompt)return false;
@@ -84,23 +87,26 @@
         return '每日自动任务尚未安排；复制指令只是手动整理。';
       };
       host.replaceChildren();
-      const h=document.createElement('h2');h.textContent=guide.title||'知识 Wiki';host.append(h);
-      for(const line of [guide.description,guide.model_choice])if(line){const p=document.createElement('p');p.textContent=line;host.append(p)}
-      const label=document.createElement('h3');label.textContent='每天固定做什么';host.append(label);
-      const list=document.createElement('ol');for(const line of guide.daily_steps||[]){const li=document.createElement('li');li.textContent=line;list.append(li)}host.append(list);
+      const h=document.createElement('h2');h.textContent='交给 Codex 整理';host.append(h);
+      const summary=document.createElement('p');summary.textContent='把已有聊天交给 Codex 整理，建议会留在下方等你核对。';host.append(summary);
+      const steps=document.createElement('p');steps.className='organize-simple-steps';steps.textContent='复制指令  →  发给 Codex 并等它读取  →  回来核对建议后保存';host.append(steps);
+      if(records){recordGuide=document.createElement('details');recordGuide.className='organize-schedule-option';recordGuide.innerHTML='<summary>每日安排与整理说明</summary>';records.querySelector('#organizeWikiHost')?.before(recordGuide)}
+      const guideContainer=recordGuide||host;
+      for(const line of [guide.description,guide.model_choice])if(line){const p=document.createElement('p');p.textContent=line;guideContainer.append(p)}
+      const label=document.createElement('h3');label.textContent='整理时会做什么';guideContainer.append(label);
+      const list=document.createElement('ol');for(const line of guide.daily_steps||[]){const li=document.createElement('li');li.textContent=line;list.append(li)}guideContainer.append(list);
       const runDetails=document.createElement('details');runDetails.className='wiki-guide-run-summary';
       const runSummary=document.createElement('summary');runSummary.textContent='查看本工作区每日安排与运行摘要';runDetails.append(runSummary);
       const state=document.createElement('p');state.className='wiki-guide-schedule';state.textContent=scheduleText(status);runDetails.append(state);
-      const refresh=document.createElement('button');refresh.type='button';refresh.className='copy-button';refresh.textContent='刷新运行状态';refresh.onclick=async()=>{try{const d=await api('/api/wiki/status?t='+Date.now(),{ttl:0,force:true});state.textContent=scheduleText(d)}catch{state.textContent='当前安排暂时无法核对，请稍后重试。'}};runDetails.append(refresh);host.append(runDetails);
-      const intro=document.createElement('p');intro.textContent='下面分别是现在手动整理和安排每日任务。安排指令含完整每日执行正文；复制不会自动创建或运行任务。当前界渡可核验 Codex 的每日任务，其他客户端可先手动整理。';host.append(intro);
+      const refresh=document.createElement('button');refresh.type='button';refresh.className='copy-button';refresh.textContent='刷新运行状态';refresh.onclick=async()=>{try{const d=await api('/api/wiki/status?t='+Date.now(),{ttl:0,force:true});state.textContent=scheduleText(d)}catch{state.textContent='当前安排暂时无法核对，请稍后重试。'}};runDetails.append(refresh);guideContainer.append(runDetails);
       const addPrompt=(title,notice,summary,id,text,buttonText,success)=>{
         const section=document.createElement('section');section.className='wiki-guide-prompt-option';
         const heading=document.createElement('h3');heading.textContent=title;section.append(heading);
         const explanation=document.createElement('p');explanation.textContent=notice;section.append(explanation);
         const details=document.createElement('details');details.className='wiki-guide-prompt-preview';
         const caption=document.createElement('summary');caption.textContent=summary;details.append(caption);
-        const preview=document.createElement('pre');preview.id=id;preview.textContent=text;details.append(preview);section.append(details);
-        const button=document.createElement('button');button.type='button';button.className='copy-button';button.textContent=buttonText;
+        const preview=document.createElement('pre');preview.id=id;preview.textContent=text;details.append(preview);
+        const button=document.createElement('button');button.type='button';button.className=title==='现在整理'?'primary':'copy-button';button.textContent=buttonText;
         button.onclick=async()=>{button.disabled=true;try{
           const fresh=await api('/api/wiki/guide?t='+Date.now(),{ttl:0,force:true});
           if(!validPrompts(fresh))throw Error('workspace-bound prompts unavailable');
@@ -108,16 +114,17 @@
           document.getElementById('wikiSchedulePromptPreview').textContent=fresh.schedule_setup_prompt;
           if(!await copyText(preview.textContent))throw Error('copy failed');showToast(success);
         }catch{showToast('当前工作区指令无法核对，未复制；请刷新后重试。')}finally{button.disabled=false}};
-        section.append(button);host.append(section);
+        section.append(button,details);host.append(section);
       };
-      addPrompt('现在手动整理',guide.manual_notice,'预览手动整理完整指令','wikiManualPromptPreview',result.daily_prompt,'复制手动整理指令','已复制手动指令；不会安排每日任务。');
-      addPrompt('安排每日任务',guide.schedule_notice,'预览安排指令与每日执行正文','wikiSchedulePromptPreview',result.schedule_setup_prompt,'复制安排每日任务完整指令','已复制；交给已连接的 AI 后，请核对真实安排状态。');
-    }catch{host.querySelector('p').textContent='当前工作区说明或指令暂时无法核对，请稍后刷新页面。'}
+      addPrompt('现在整理','只处理当前可读取的记录；缺失部分会单独说明。','预览完整指令','wikiManualPromptPreview',result.daily_prompt,'复制给 Codex 的整理指令','已复制。请发给 Codex，等待它实际读取并提交待审建议。');
+      addPrompt('安排每日任务',guide.schedule_notice,'预览安排指令与每日执行正文','wikiSchedulePromptPreview',result.schedule_setup_prompt,'复制每日任务指令','已复制；交给已连接的 AI 后，请核对真实安排状态。');
+      guideContainer.append(host.lastElementChild);
+    }catch{recordGuide?.remove();host.innerHTML='<h2>交给 Codex 整理</h2><p role="status">当前工作区的整理指令暂时无法核对。</p><button id="retryWikiGuide" type="button" class="copy-button">重新读取</button>';$('#retryWikiGuide').onclick=()=>{host.remove();attachWikiGuide()}}
   }
 
   function setup(){attachMother();attachWikiGuide();attachStartup();
     const base=$('#knowledgeBaseStatus');if(base)new MutationObserver(()=>attachStartup()).observe(base,{childList:true,subtree:true});
-    document.querySelector('[data-page="archives"]')?.addEventListener('click',()=>setTimeout(()=>refreshGate(true),0));
+    document.querySelector('[data-page="memory"]')?.addEventListener('click',()=>setTimeout(()=>refreshGate(true),0));
     setInterval(()=>refreshGate(),5000);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
