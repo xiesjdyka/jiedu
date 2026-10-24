@@ -9,6 +9,7 @@ jobs:
     env:
       PYTHONNOUSERSITE: '1'
       PYTHONUTF8: '1'
+      PYTHONUTF8: '1'
       HF_HUB_OFFLINE: '1'
       TRANSFORMERS_OFFLINE: '1'
     steps:
@@ -26,6 +27,8 @@ jobs:
           $env:TMP=$env:TEMP
           New-Item -ItemType Directory -Path $env:TEMP -Force | Out-Null
           ./.venv312/Scripts/python.exe -X utf8 -m unittest tests.test_source_export tests.test_desktop_update tests.test_client_access tests.test_client_pairing tests.test_cold_start_web
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./.venv312/Scripts/python.exe -X utf8 -m unittest tests.test_branded_connect tests.test_one_prompt_connect tests.test_one_prompt_loopback tests.test_local_chat_collectors tests.test_cursor_local_collector tests.test_four_local_collectors tests.test_connection_deletion tests.test_client_config tests.test_encoder_service tests.test_hermes_tool_bridge tests.test_knowledge_wiki tests.test_candidate_reorganization tests.test_reorganization_link tests.test_wiki_history_snapshots tests.test_candidate_writer_authorization
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./.venv312/Scripts/python.exe scripts/export_source.py --output "$env:RUNNER_TEMP/jiedu-source.zip"
   desktop-compile:

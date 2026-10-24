@@ -199,8 +199,28 @@ class ButlerRequestContextTests(unittest.TestCase):
             def close(inner):pass
         with patch('knowledge_bridge.hermes_client.HermesTransport',Hermes):service._execute_hermes(job,service.providers.snapshot())
         self.assertEqual(len(captured),4);self.assertIn('合成称呼',captured[0]['content'])
-        self.assertIn('没有界渡工具权限',captured[0]['content']);self.assertFalse(service.retriever.calls)
+        self.assertIn('工作区资料只可经已授权工具读取',captured[0]['content']);self.assertFalse(service.retriever.calls)
         self.assertIn('synthetic-hermes-model',captured[0]['content'])
+
+    def test_hermes_does_not_replay_prior_tool_answer_after_permission_change(self):
+        service=self.service(provider(selected='hermes'),tools=True);first=self.job(service,question='合成旧问题')
+        with service.db() as db:
+            request=json.loads(db.execute('SELECT requested FROM jobs WHERE id=?',(first['id'],)).fetchone()[0])
+            request['tools_enabled']=True
+            db.execute("UPDATE jobs SET state='completed',requested=? WHERE id=?",(json.dumps(request),first['id']))
+            db.execute('INSERT INTO messages(session,role,content,sources,created,job) VALUES(?,?,?,?,?,?)',
+                       (first['session'],'assistant','OLD_TOOL_PRIVATE_SENTINEL','[]','1',first['id']))
+        service.permissions.revoke_butler_session(first['session'])
+        jid=service.submit(first['session'],'合成新问题',tools_enabled=False)['id']
+        with service.db() as db:db.execute("UPDATE jobs SET state='running' WHERE id=?",(jid,));job=dict(db.execute('SELECT * FROM jobs WHERE id=?',(jid,)).fetchone())
+        captured=[]
+        class Hermes:
+            def __init__(inner,*a,**kw):inner.check=kw['before_send']
+            def complete(inner,messages):inner.check();captured.extend(messages);return '新回答'
+            def close(inner):pass
+        with patch('knowledge_bridge.hermes_client.HermesTransport',Hermes):service._execute_hermes(job,service.providers.snapshot())
+        self.assertEqual(2,len(captured))
+        self.assertNotIn('OLD_TOOL_PRIVATE_SENTINEL',json.dumps(captured))
     def test_actual_image_request_no_scope_escalation_or_base64_in_database(self):
         service=self.service();sid=service.create_session()['id'];image=service.attachments.save(sid,'fixture.png',png())
         jid=service.submit(sid,'',thinking=True,attachments=[image['id']])['id']

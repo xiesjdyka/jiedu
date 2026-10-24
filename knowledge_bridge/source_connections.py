@@ -49,13 +49,16 @@ class SourceConnections:
         registry = json.loads(self.context.archive_registry.read_text('utf-8')) if self.context.archive_registry.exists() else {'sessions': {}}
         rows = [r for r in registry['sessions'].values() if r.get('source_instance') == internal_id]
         local_doubao = descriptor.get('source_key') == 'doubao_work'
+        local_collector = descriptor.get('source_key') in {'cursor','workbuddy','opencode','zcode','kimi'}
         return {**descriptor, 'bound': True,
                 'archive_path': '90_原始档案/' + descriptor['product_family'],
                 'session_count': len(rows), 'message_count': sum(r.get('message_count', 0) for r in rows),
                 'last_archived_at': max((r.get('updated_at', '') for r in rows), default=None),
                 'collection_status': ('已发现本机结构化缓存；正文尚未通过真实样本验证' if local_doubao and rows else
                                       '已发现豆包本机来源；等待首条落盘记录' if local_doubao else
-                                      '已收到客户端推送' if rows else '尚未归档；等待客户端推送或导入'),
+                                      '已收到客户端推送' if rows else
+                                      '当前连接尚未主动提交；本机归档由后台独立采集，结果见聊天采集' if local_collector else
+                                      '尚未收到当前连接主动提交；等待客户端推送或导入'),
                 'history_coverage': ('结构化缓存局部覆盖；源端已清理历史不猜测补全' if local_doubao else
                                      '仅已收到的消息；源端历史总量未知')}
 

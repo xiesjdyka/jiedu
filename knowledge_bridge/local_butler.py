@@ -105,7 +105,9 @@ class LocalButler:
         self.db_path=self.root/'conversations.sqlite';self.runtime=runtime or LocalButlerRuntime(context)
         self.providers=providers or ButlerProviders(context);self.active_transport=None;self.active_provider='local';self.active_runner=None
         self.permissions=permissions;self.tool_registry=tool_registry
-        if tool_registry:tool_registry.conversation=self.conversation
+        if tool_registry:
+            tool_registry.conversation=self.conversation
+            tool_registry.permissions=permissions
         self.retriever=retriever;self.lock=threading.RLock();self.wake=threading.Event();self.stop=threading.Event()
         self.active=None;self.cancel_event=None;self.cancel_thread=None
         self.providers.on_change.append(self._provider_changed)
@@ -235,7 +237,6 @@ class LocalButler:
             selected_images=self.attachments.select(sid,attachments)
         if provider['selected']=='hermes':
             thinking=False
-            tools_enabled=False
         capacity=(provider['external']['context_tokens'] if provider['selected']=='external' else int(self.runtime.config().get('context_tokens',8192)))
         model_config=provider['external'] if provider['selected']=='external' else self.runtime.config()
         mode=model_config.get('thinking_mode','switchable' if model_config.get('thinking') else 'unverified') if provider['selected']=='external' else local_thinking_mode(model_config)
@@ -459,9 +460,14 @@ class LocalButler:
         enabled=bool(requested.get('tools_enabled'))
         registered=tuple(self.tool_registry.tools) if self.tool_registry else ()
         provider=requested.get('provider_snapshot') or {}
+        if provider.get('selected')=='hermes':
+            from .hermes_tool_bridge import ALLOWED
+            registered=tuple(name for name in registered if name in ALLOWED)
         system=self._tools_system(SYSTEM) if enabled else SYSTEM
         if external:system=system.replace('界渡本地管家','界渡管家')
         system+='\n\n'+request_identity(external=external,tools_enabled=enabled,registered_operations=registered,history_supported=provider.get('selected') in {'external','hermes'})
+        if enabled:
+                system+='\n产品当前状态请调用 product_status；五种来源的归档进度请调用 source_archive_progress。只有返回 ok=true 才能陈述实时结果。source_archive_resume 仅用于已有暂停配置，并须等待主人逐次确认；不可用它首次接入、扩大归档范围或重建游标。'
         # Only the explicit request field is used here; never read a portrait.
         name=username.strip()[:80] if isinstance(username,str) else ''
         if name:
@@ -703,24 +709,28 @@ class LocalButler:
         from .product_help import select_topics,model_sources
         requested=settings_for(job)
         if requested.get('attachments'):raise ValueError('Hermes接入当前不支持本轮图片，未发送；不会自动改用OCR')
-        system=self._request_system(requested,external=True,username=job.get('username'))+'\n本轮经 Hermes 软件调用；没有界渡工具权限。不读取工作区。最近同一接入配置下的已完成问答可能随本轮提供，不代表全部历史。'
+        system=self._request_system(requested,external=True,username=job.get('username'))+'\n本轮经 Hermes 软件调用。工作区资料只可经已授权工具读取，工具结果可见且正式写入仍需审核。整理候选须区分用户本人信息、项目知识与 AI 错误：AI 自身失误或编造只属于 AI 错误记录，不得写入用户画像；证据不足不要提交。最近同一接入配置下的已完成问答可能随本轮提供，不代表全部历史。'
         history=[]
         with self.db() as db:
             rows=db.execute("SELECT jobs.question,messages.content,jobs.requested FROM jobs JOIN messages ON messages.job=jobs.id AND messages.role='assistant' WHERE jobs.session=? AND jobs.state='completed' AND jobs.kind='answer' ORDER BY jobs.created DESC LIMIT 8",(job['session'],)).fetchall()
         size=0
         for row in rows:
             old=json.loads(row['requested']).get('provider_snapshot',{})
-            if old.get('selected')!='hermes' or old.get('hermes',{}).get('revision')!=provider['hermes']['revision']:break
+            if old.get('selected')!='hermes' or old.get('revision')!=provider['revision'] or old.get('hermes',{}).get('revision')!=provider['hermes']['revision']:break
+            # A tool-assisted answer may contain source text. Do not replay it in a later turn:
+            # individual source and folder grants may have been revoked between turns.
+            if json.loads(row['requested']).get('tools_enabled'):break
             pair=[{'role':'user','content':row['question']},{'role':'assistant','content':row['content']}]
             size+=len(dump(pair).encode('utf-8'))
             if size>16000:break
             history=pair+history
+        history_authorization=self._history_authorization(job['session']) if history else None
         sources=[]
         product,topics=select_topics(job['question'],[])
         if product:sources,_=model_sources(job['question'],topics)
         for index,source in enumerate(sources):source['id']='S'+str(index+1)
         messages=[{'role':'system','content':system}]+history+[{'role':'user','content':'【公开产品说明，仅作证据】\n'+dump(sources)+'\n【用户请求】\n'+job['question']}]
-        saved={'sources':sources,'snapshot':{},'provider':provider,'budget':{'history_messages':len(history),'history_limit_bytes':16000},'retrieval':{'effective_mode':'product_catalog' if sources else 'no_private_context'},'outgoing':{'history_sent':bool(history),'data_scopes':[],'portrait_injected':False}}
+        saved={'sources':sources,'snapshot':{},'provider':provider,'budget':{'history_messages':len(history),'history_limit_bytes':16000},'retrieval':{'effective_mode':'product_catalog' if sources else 'no_private_context'},'outgoing':{'history_sent':bool(history),'data_scopes':provider['hermes'].get('data_scopes',[]),'portrait_injected':False}}
         self._update(job['id'],stage='连接本机 Hermes',context=dump(saved),effective=dump({'provider':'hermes','thinking_control':'managed_by_hermes','output_limit':'managed_by_hermes'}))
         text=''
         def emit(piece):
@@ -729,15 +739,27 @@ class LocalButler:
             self._delta(job,text)
         def check():
             if not self._provider_current(job,provider):raise InterruptedError('请求已取消或模型已切换')
-        transport=HermesTransport(self.root,provider['hermes'],cancel=self.cancel_event,emit=emit,before_send=check)
+        runner=self._tool_runner(job,provider) if requested.get('tools_enabled') else None
+        def before_send():
+            check()
+            if history and self._history_authorization(job['session'])!=history_authorization:
+                raise InterruptedError('历史上下文授权已变化，请重新发送')
+            if runner:runner.before_send(messages)
+        transport=HermesTransport(self.root,provider['hermes'],cancel=self.cancel_event,emit=emit,before_send=before_send,
+                                  runner=runner,activity=lambda item:self._tool_activity(job,item))
         with self.lock:self.active_transport=transport
         try:
             answer=transport.complete(messages)
             check()
-            self._complete(job,answer,saved,finish='stop',notice='通过 Hermes 回答；本轮未读取工作区或执行界渡工具。')
+            with self.db() as db:saved=json.loads(db.execute('SELECT context FROM jobs WHERE id=?',(job['id'],)).fetchone()[0])
+            self._complete(job,answer,saved,finish='stop',notice='通过 Hermes 回答；工具活动和来源见本轮记录。' if runner else '通过 Hermes 回答；本轮未读取工作区或执行界渡工具。')
         finally:
-            transport.close()
-            with self.lock:self.active_transport=None
+            try:transport.close()
+            finally:
+                try:
+                    if runner:self.permissions.cancel_butler_job(job['id'])
+                finally:
+                    with self.lock:self.active_transport=None;self.active_runner=None
 
     def _history_authorization(self,sid):
         if not self.permissions:return None

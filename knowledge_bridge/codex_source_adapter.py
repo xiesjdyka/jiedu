@@ -103,7 +103,8 @@ class CodexSourceAdapter:
     read_chunk_bytes = 64 * 1024
 
     def __init__(self, context: WorkspaceContext | None = None, *,
-                 codex_home: Path | None = None, machine_data: Path | None = None):
+                 codex_home: Path | None = None, machine_data: Path | None = None,
+                 status_only: bool = False):
         self.context = context or require_active_workspace()
         self.codex_home = (codex_home or _default_codex_home()).expanduser().resolve()
         self.machine_data = (machine_data or local_path("codex-adapter")).expanduser().resolve()
@@ -112,7 +113,7 @@ class CodexSourceAdapter:
         self.review_path = self.context.queues / "codex-needs-review.jsonl"
         self.locator_path = self.machine_data / "attachment-locators.json"
         self.instance_path = self.machine_data / "instance.json"
-        self.store = ArchiveStore(self.context)
+        self.store = ArchiveStore(self.context,recover=not status_only)
         self._lock = SYNC_LOCK
         self._process_lock = FileLock(str(self.context.sync / 'codex-source-adapter.lock'))
         self._work_cursor = None
@@ -314,8 +315,9 @@ class CodexSourceAdapter:
     def configure(self, *, policy: str | None = None, enabled: bool | None = None,
                   authorize: list[str] | None = None, revoke: list[str] | None = None,
                   exclude: list[str] | None = None, include: list[str] | None = None,
-                  owner_confirmed: bool = False) -> dict:
+                  owner_confirmed: bool = False, validate_before_write=None) -> dict:
         with self._lock, self._process_lock.acquire(timeout=30):
+            if validate_before_write is not None:validate_before_write()
             return self._configure(policy=policy, enabled=enabled, authorize=authorize, revoke=revoke,
                                    exclude=exclude, include=include, owner_confirmed=owner_confirmed)
 
@@ -1288,8 +1290,10 @@ def status_summary(context=None):
     result['total_archived_message_count'] = sum(int(item.get('message_count') or 0)
         for item in registry['sessions'].values() if item.get('source_key') == 'codex')
     result['history']={k:v for k,v in history.items() if k!='items'}
-    result['history']['items']=[{k:v for k,v in row.items() if k in {'session_id','status','error','source_file'}} for row in history.get('items',[]) if row.get('status') in {'failed','needs_review','source_missing','excluded'}][:30]
-    result['history']['details_limited']=True
+    issue_items=[row for row in history.get('items',[]) if row.get('status') in {'failed','needs_review','source_missing','excluded'}]
+    result['history']['issue_total']=len(issue_items)
+    result['history']['items']=[{k:v for k,v in row.items() if k in {'session_id','status','error','source_file'}} for row in issue_items[:30]]
+    result['history']['details_limited']=len(issue_items)>30
     result['discovered_sessions']=[{k:v for k,v in row.items() if k in {'session_id','title','title_source','authorized','excluded','fragment_count'}} for row in snapshot.get('discovered_sessions',[])]
     result['current_cursors']={sid:{k:v for k,v in row.items() if k in {'body_status','archived_message_count','attachment_failed_count','last_error'}}|{'missing_attachment_count':len(row.get('missing_attachments',[]))} for sid,row in state.get('sessions',{}).items()}
     for sid in format_review.get('verified_session_ids',[]):
@@ -1313,3 +1317,17 @@ def status_summary(context=None):
     result['snapshot_available']=bool(snapshot)
     result['notice']='显示后台最近一次核对的状态；页面请求不重新扫描原文或附件。文件引用详情按需读取。'
     return result
+
+
+def status_issues(context=None, offset=0, limit=30):
+    """Page persisted import issues without scanning source conversations."""
+    context=context or require_active_workspace()
+    offset=max(0,int(offset));limit=max(1,min(100,int(limit)))
+    state=read_object(context.sync/'codex-source-adapter.json')
+    from .codex_history import history_summary
+    review=(state.get('status_snapshot') or {}).get('format_review') or {}
+    history=history_summary(state,review)
+    rows=[{k:v for k,v in row.items() if k in {'session_id','status','error','source_file'}}
+          for row in history.get('items',[]) if row.get('status') in {'failed','needs_review','source_missing','excluded'}]
+    return {'items':rows[offset:offset+limit],'total':len(rows),'offset':offset,
+            'has_more':offset+limit<len(rows),'next_offset':offset+limit if offset+limit<len(rows) else None}

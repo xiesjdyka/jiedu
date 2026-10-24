@@ -103,3 +103,27 @@ class WikiSnapshots:
         if before!=file_version(path.stat()) or digest(raw)!=row['source_sha256'] or source_identity(self.context,row['source_path'])!=row['source_identity']:
             raise ValueError('快照之后来源已更新；候选保留，请在下一轮核对新来源后重新提交，不能作为当前事实写入')
         return raw
+
+    def verify_frozen_prefix(self,row):
+        """Verify only the immutable bytes a Wiki job actually delivered.
+
+        A growing archive may have a newer whole-file hash. Its tail belongs
+        to a later batch; it must not invalidate an unchanged frozen window.
+        This check is deliberately limited to Wiki snapshot callers.
+        """
+        self.raw(row)
+        target=resolve_document_target(self.context,row['source_path'])
+        if target.scope.value!='evidence':raise ValueError('Wiki快照来源范围已变化')
+        path=self.context.root/target.relative_path
+        before=file_version(path.stat())
+        size=path.stat().st_size
+        frozen_size=row['total_bytes']
+        if type(frozen_size) is not int or not 0<=frozen_size<=MAX_SOURCE or size<frozen_size:
+            raise ValueError('快照之后来源已更新；已冻结字节被截断')
+        identity=source_identity(self.context,row['source_path'])
+        with path.open('rb') as stream:prefix=stream.read(frozen_size)
+        if (before!=file_version(path.stat()) or identity!=source_identity(self.context,row['source_path'])
+                or identity!=row['source_identity'] or len(prefix)!=frozen_size
+                or digest(prefix)!=row['source_sha256']):
+            raise ValueError('快照之后来源已更新；已冻结字节或来源身份不同')
+        return {'frozen_bytes':frozen_size,'current_bytes':size,'appended_bytes':size-frozen_size}

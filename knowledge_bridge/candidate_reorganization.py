@@ -23,7 +23,7 @@ class CandidateReorganization:
   return data
  def row_current(self,row):
   if row.get('snapshot_id'):
-   try:WikiSnapshots(self.context).verify_current(row)
+   try:WikiSnapshots(self.context).verify_frozen_prefix(row)
    except (OSError,ValueError):return False
    return True
   path=self.context.root/row['source_path']
@@ -117,6 +117,7 @@ class CandidateReorganization:
   revision=(authorization or {}).get('revision')
   if not revision or revision!=job['captured_authorization_revision']:raise ValueError('当前授权已变化，请重新领取并从头读取；旧项仍待处理')
   for row in job['sources']:
+   if row.get('snapshot_id'):WikiSnapshots(self.context).raw(row)
    if not self.row_current(row):raise ValueError('来源或目标已再变化，未关闭旧建议')
    if row['offset']!=row['total_bytes'] or row.get('delivered_authorization_revision')!=revision:raise ValueError('必须按当前授权读完本条全部来源及现有目标，不能复用旧内容')
   if not set(job['required_sources']).issubset({e['source_path'] for e in evidence}):raise ValueError('结果需包含此旧事项的全部确切来源证据')

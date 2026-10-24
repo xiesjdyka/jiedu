@@ -277,6 +277,11 @@ def continuous_project(operation:str,project:str,details:dict):
 
     read: details={source_path,session_id,section,limit?,work_offset?}; repeat while
     status=reconciling, then inspect messages and exact expected_target_hash.
+    read_shared: details={section,limit?,work_cursor?}; read one bounded,
+    source-rotated batch from already reconciled sources in this project. A failed
+    or unauthorized item stays pending; continue from next_work_cursor for other
+    sources. Identical long content is folded only within this batch; all message
+    identities remain separate. No background model run is started.
     submit: details={spec:{project,issue_key,target_path,section,content,reason,
     sources:[{session_id,message_id,version,kind}],substantive:true,
     expected_target_hash,conflicts?,uncertainties?}}. The provider decides the
@@ -286,7 +291,7 @@ def continuous_project(operation:str,project:str,details:dict):
     one project. Submit creates or extends a pending candidate and never writes.
     Input byte counts describe eligibility, not actual model consumption.
     """
-    if operation not in {'read','submit','ack'}:raise ValueError('未知项目整理操作')
+    if operation not in {'read','read_shared','submit','ack'}:raise ValueError('未知项目整理操作')
     return _organizer_broker('project',{'operation':operation,'project':project,'details':details},'continuous')
 
 @server.tool()

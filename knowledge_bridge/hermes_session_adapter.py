@@ -249,7 +249,7 @@ def _accept_row(row,state,db_path):
     state['observations'][key]={'message_id':message_id,'base_id':base_id,'fingerprint':fingerprint,'session_id':sid,'active':True}
     return changed
 
-def history_control(action,db_path=None,*,owner_confirmed=False):
+def history_control(action,db_path=None,*,owner_confirmed=False,validate_before_write=None):
     """Explicit historical scan, independent of the live high-water mark."""
     db_path=Path(db_path) if db_path is not None else selected_db_path()
     if action not in {'start','pause','resume'}:raise ValueError('历史导入操作应为 start、pause 或 resume')
@@ -258,6 +258,7 @@ def history_control(action,db_path=None,*,owner_confirmed=False):
         from .memory_control import interface_state
         if not interface_state()['interfaces']['save_raw_conversation']['enabled']:raise PermissionError('原始归档已关闭，请先开启归档再导入历史')
     with _lock:
+        if validate_before_write is not None:validate_before_write()
         state=initialize(db_path);history=state.get('history')
         if action=='start':
             if history and history.get('status') not in {'complete'}:raise ValueError('已有历史任务，请继续或暂停该任务')

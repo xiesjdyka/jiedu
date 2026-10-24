@@ -7,6 +7,7 @@ from unittest.mock import patch,MagicMock
 import numpy as np
 from knowledge_bridge import core,evidence_index
 from knowledge_bridge.retrieval import RetrievalService
+from knowledge_bridge import retrieval
 from knowledge_bridge.workspace import initialize_workspace
 
 
@@ -58,6 +59,27 @@ class RetrievalContentionTests(unittest.TestCase):
             self.assertLess(time.monotonic()-started,1)
             self.assertEqual('keyword',result['effective_mode']);self.assertIn('100毫秒',result['fallback_reason'])
             self.assertTrue(result['results']);vectors.assert_not_called()
+
+    def test_cold_query_uses_vector_on_same_request_when_ready(self):
+        self.stop_worker()
+        with patch.object(core,'VAULT',self.context.root),patch.object(core,'local_model_status',side_effect=[{'state':'available_unloaded'},{'state':'loaded'},{'state':'loaded'}]),patch.object(core,'start_model_warmup') as wake,patch.object(core,'model_busy',return_value=False),patch.object(core,'index_freshness',return_value={'fresh':True}),patch.object(core,'table',return_value=object()),patch.object(core,'embed',return_value=np.ones((1,3))) as encode,patch.object(core,'_vector_rows',return_value=[]):
+            result=RetrievalService(self.context).search('Hermes',mode='hybrid')
+            self.assertTrue(result['embedding_used']);wake.assert_called_once();encode.assert_called_once()
+
+    def test_cold_timeout_is_bounded_and_honest(self):
+        with patch.object(core,'VAULT',self.context.root),patch.object(core,'local_model_status',return_value={'state':'loading'}),patch.object(core,'start_model_warmup') as wake,patch.object(core,'embed') as encode,patch.object(retrieval,'MODEL_READY_WAIT_SECONDS',.05):
+            started=time.monotonic();result=RetrievalService(self.context).search('Hermes',mode='hybrid')
+            self.assertLess(time.monotonic()-started,1)
+            self.assertFalse(result['embedding_used']);self.assertEqual(result['effective_mode'],'keyword')
+            self.assertIn('仍在加载',result['fallback_reason']);self.assertTrue(result['results'])
+            wake.assert_called_once();encode.assert_not_called()
+
+    def test_missing_model_and_keyword_do_not_wake_or_download(self):
+        with patch.object(core,'VAULT',self.context.root),patch.object(core,'local_model_status',return_value={'state':'unavailable'}),patch.object(core,'start_model_warmup') as wake:
+            result=RetrievalService(self.context).search('Hermes',mode='hybrid')
+            self.assertIn('没有完整',result['fallback_reason'])
+            RetrievalService(self.context).search('Hermes',mode='keyword')
+            wake.assert_not_called()
 
 
 if __name__=='__main__':unittest.main()

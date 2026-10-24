@@ -338,4 +338,97 @@ class ContinuousTests(unittest.TestCase):
   self.assertEqual([],again['messages']);self.assertEqual(0,again['model_deliverable_bytes']-len(again['current_section'].encode()))
   self.assertEqual('# 界渡\n\n## 当前进度\n旧状态。\n',target.read_text('utf-8'))
 
+ def test_shared_project_batch_deduplicates_only_full_long_text_and_preserves_refs(self):
+  self.setup_project_target()
+  content='跨来源完整相同的原始用户决定。'*12
+  refs=[]
+  for source in ('甲','乙'):
+   path=self.context.root/f'90_原始档案/连续整理/{source}/03_元数据/messages.jsonl'
+   path.parent.mkdir(parents=True)
+   def line(mid,text):return (json.dumps({'session_key':source,'message_id':mid,'role':'user',
+    'original_text':text,'content_sha256':hashlib.sha256(text.encode()).hexdigest()},ensure_ascii=False)+'\n').encode()
+   path.write_bytes(line('long',content)+line('short','继续'))
+   relative=self.context.relative(path)
+   self.service.consume_project_archive('界渡','fixture',relative,source)
+   refs.append(relative)
+  checked=[]
+  batch=self.service.shared_project_batch('界渡','fixture','当前进度',checked.append,limit=4)
+  self.assertEqual('ready',batch['status'])
+  self.assertEqual(4,len(batch['messages']))
+  self.assertEqual(set(refs),set(checked))
+  longs=[row for row in batch['messages'] if row['message_id']=='long']
+  shorts=[row for row in batch['messages'] if row['message_id']=='short']
+  self.assertEqual(1,sum(row['content']==content for row in longs))
+  self.assertEqual(1,sum(row['duplicate_of'] is not None for row in longs))
+  self.assertTrue(all(row['content']=='继续' and row['duplicate_of'] is None for row in shorts))
+  self.service.acknowledge_project_messages('界渡','fixture',[
+   {key:row[key] for key in ('session_id','message_id','version')} for row in batch['messages']],
+   {'scopes':['evidence'],'revision':'fixture'},lambda candidate:None)
+  self.assertEqual([],self.service.shared_project_batch('界渡','fixture','当前进度',checked.append)['messages'])
+
+ def test_shared_project_batch_can_advance_past_failed_items_without_acknowledging_them(self):
+  self.setup_project_target()
+  for i in range(6):
+   source=f'source{i}';path=self.context.root/f'90_原始档案/连续整理/{source}/03_元数据/messages.jsonl'
+   path.parent.mkdir(parents=True)
+   content=f'独立来源 {i} 的用户内容'
+   path.write_text(json.dumps({'session_key':source,'message_id':'u','role':'user',
+    'original_text':content,'content_sha256':hashlib.sha256(content.encode()).hexdigest()},ensure_ascii=False)+'\n','utf-8')
+   self.service.consume_project_archive('界渡','fixture',self.context.relative(path),source)
+  first=self.service.shared_project_batch('界渡','fixture','当前进度',lambda source:None)
+  self.assertEqual(4,len(first['messages']))
+  second=self.service.shared_project_batch('界渡','fixture','当前进度',lambda source:None,
+                                           work_cursor=first['next_work_cursor'])
+  self.assertEqual(2,len(second['messages']))
+  self.assertFalse(set((x['session_id'],x['message_id']) for x in first['messages']) &
+                   set((x['session_id'],x['message_id']) for x in second['messages']))
+  self.assertEqual(6,second['pending_count'])
+  self.assertIsNone(second['next_work_cursor'])
+
+ def test_shared_cursor_survives_ack_of_earlier_items(self):
+  self.setup_project_target()
+  for i in range(8):
+   source=f'source{i}';path=self.context.root/f'90_原始档案/连续整理/{source}/03_元数据/messages.jsonl'
+   path.parent.mkdir(parents=True)
+   content=f'用户内容{i}'
+   path.write_text(json.dumps({'session_key':source,'message_id':'u','role':'user',
+    'original_text':content,'content_sha256':hashlib.sha256(content.encode()).hexdigest()},ensure_ascii=False)+'\n','utf-8')
+   self.service.consume_project_archive('界渡','fixture',self.context.relative(path),source)
+  first=self.service.shared_project_batch('界渡','fixture','当前进度',lambda source:None)
+  refs=[{key:row[key] for key in ('session_id','message_id','version')} for row in first['messages'][:2]]
+  self.service.acknowledge_project_messages('界渡','fixture',refs,
+   {'scopes':['evidence'],'revision':'fixture'},lambda candidate:None)
+  second=self.service.shared_project_batch('界渡','fixture','当前进度',lambda source:None,
+   work_cursor=first['next_work_cursor'])
+  self.assertEqual(['source4','source5','source6','source7'],[row['session_id'] for row in second['messages']])
+  self.assertEqual(6,second['pending_count'])
+
+ def test_shared_batch_skips_invalid_and_denied_sources_without_exposing_them(self):
+  self.setup_project_target();paths=[]
+  for i in range(3):
+   source=f'source{i}';path=self.context.root/f'90_原始档案/连续整理/{source}/03_元数据/messages.jsonl'
+   path.parent.mkdir(parents=True)
+   content=f'原始内容{i}'
+   path.write_text(json.dumps({'session_key':source,'message_id':'u','role':'user',
+    'original_text':content,'content_sha256':hashlib.sha256(content.encode()).hexdigest()},ensure_ascii=False)+'\n','utf-8')
+   self.service.consume_project_archive('界渡','fixture',self.context.relative(path),source)
+   paths.append(path)
+  paths[0].write_bytes(paths[0].read_bytes().replace('原始内容0'.encode(),'已改内容0'.encode()))
+  def authorize(source):
+   if 'source1/' in source:raise PermissionError('此来源已拒绝')
+  batch=self.service.shared_project_batch('界渡','fixture','当前进度',authorize)
+  self.assertEqual(1,len(batch['messages']))
+  self.assertEqual('source2',batch['messages'][0]['session_id'])
+  self.assertEqual(1,batch['invalid_evidence_count'])
+  self.assertEqual(2,batch['pending_count'])
+  self.assertNotIn('source1',json.dumps(batch,ensure_ascii=False))
+
+ def test_mcp_project_tool_accepts_shared_read_operation(self):
+  from knowledge_bridge import mcp_server
+  with patch.object(mcp_server,'_organizer_broker',return_value={'status':'ready'}) as broker:
+   result=mcp_server.continuous_project('read_shared','界渡',{'section':'当前进度'})
+  self.assertEqual({'status':'ready'},result)
+  broker.assert_called_once_with('project',{'operation':'read_shared','project':'界渡',
+                                          'details':{'section':'当前进度'}},'continuous')
+
 if __name__=='__main__':unittest.main()

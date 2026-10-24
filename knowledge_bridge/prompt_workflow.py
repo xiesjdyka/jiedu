@@ -57,8 +57,23 @@ def distillation_gate(local_sources: dict) -> dict:
                 waiting.append(f"Hermes 历史尚未完成（{history.get('status') or '未知'}）")
             if history.get("failed_missing") is None or history.get("failed_missing") or history.get("needs_review"):
                 waiting.append("Hermes 历史有缺失或待核对项")
+    for source_id, name in (("dsh", "DSH"), ("claude", "Claude")):
+        source = sources.get(source_id) or {}
+        # Merely detecting a local application is not an Owner opt-in.
+        if not source.get("participating"):
+            continue
+        participants.append(name)
+        history = source.get("history") or {}
+        if not source.get("detected") or not source.get("readable"):
+            waiting.append(f"{name} 本机历史来源当前不可读")
+        if source.get("paused") or (source.get("live") or {}).get("status") == "paused":
+            waiting.append(f"{name} 采集已暂停")
+        if source.get("last_error") or history.get("failed_missing"):
+            waiting.append(f"{name} 当前可读历史有错误或缺失")
+        if history.get("status") != "complete":
+            waiting.append(f"{name} 本机历史检查尚未完成（{history.get('status') or '未知'}）")
     if not participants:
-        waiting.append("尚未接入可核验的 Codex 或 Hermes 历史采集，请先归档")
+        waiting.append("尚未接入可核验的聊天历史采集，请先归档")
     return {"ready": not waiting, "sources": participants, "reasons": list(dict.fromkeys(waiting))}
 
 

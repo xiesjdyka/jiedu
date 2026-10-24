@@ -5,6 +5,41 @@ import json, tomllib, yaml
 import knowledge_bridge.client_config as cc
 
 class ClientConfigTests(unittest.TestCase):
+    def test_connected_application_accepts_only_exact_existing_locator(self):
+        from knowledge_bridge.portable_entry import locator_configuration
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            program=root/'application'/'.jiedu'/'program'
+            program.mkdir(parents=True)
+            control=program.parent
+            (control/'package.json').write_text(json.dumps({
+                'format_version':1,'layout':'jiedu-application-v1',
+                'program':'program','control':'control'}),'utf-8')
+            workspace=root/'workspace'
+            (workspace/'.jiedu'/'control').mkdir(parents=True)
+            (workspace/'.jiedu'/'workspace.json').write_text(json.dumps({'workspace_id':'fixture'}),'utf-8')
+            reference=control/'control-reference.json'
+            reference.write_text(json.dumps({'format':'jiedu-workspace-connection-v1',
+                'workspace':str(workspace),'workspace_id':'fixture'}),'utf-8')
+            local=root/'local'
+            shell=local/'Microsoft'/'WindowsApps'/'pwsh.exe'
+            shell.parent.mkdir(parents=True)
+            shell.touch()
+            locator=local/'Jiedu'/'jiedu_locator.ps1'
+            locator.parent.mkdir(parents=True)
+            locator.write_text('synthetic locator','utf-8')
+            with patch.dict('os.environ',{'LOCALAPPDATA':str(local)}),patch.object(cc,'ROOT',program):
+                entry=locator_configuration('fixture')
+                self.assertTrue(cc._valid_entry(entry,'fixture'))
+                changed={**entry,'args':entry['args'][:-1]+['other']}
+                self.assertFalse(cc._valid_entry(changed,'fixture'))
+                arbitrary={**entry,'args':['-Command','knowledge_bridge.cli']}
+                self.assertFalse(cc._valid_entry(arbitrary,'fixture'))
+                reference.unlink()
+                self.assertFalse(cc._valid_entry(entry,'fixture'))
+                reference.write_text('{invalid','utf-8')
+                self.assertFalse(cc._valid_entry(entry,'fixture'))
+
     def test_application_codex_uses_bundled_stdio_runtime(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)

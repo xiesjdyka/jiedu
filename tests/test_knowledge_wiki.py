@@ -20,6 +20,32 @@ class WikiFixture(unittest.TestCase):
    self.wiki.organizer.read('client',job['job_id'],row['source_path'],0,65536)
    self.wiki.organizer.finish_source('client',job['job_id'],row['source_path'],'processed')
 class WikiTests(WikiFixture):
+ def test_frozen_prefix_accepts_append_and_next_batch_reads_only_tail(self):
+  from knowledge_bridge.wiki_snapshots import WikiSnapshots
+  job=self.claim();row=job['items'][0];source=row['source_path'];store=WikiSnapshots(self.ctx)
+  self.wiki.organizer.read('client',job['job_id'],source,0,65536,authorization_revision='fixture-revision')
+  self.wiki.organizer.finish_source('client',job['job_id'],source,'processed')
+  original=self.file.read_bytes();tail='后续更正：改用 JSON。\n'.encode('utf-8');self.file.write_bytes(original+tail)
+  proof=store.verify_frozen_prefix(row)
+  self.assertEqual(len(tail),proof['appended_bytes'])
+  with self.assertRaises(ValueError):store.verify_current(row)
+  self.assertEqual(1,self.wiki.status()['next_round_changed_sources'])
+  next_job=self.claim(new_batch=True);self.assertEqual(len(original),next_job['items'][0]['offset'])
+  page=self.wiki.organizer.read('client',next_job['job_id'],source,len(original),65536)
+  self.assertEqual(tail.decode('utf-8'),page['content'])
+  self.wiki.organizer.finish_source('client',next_job['job_id'],source,'processed')
+
+ def test_frozen_prefix_rejects_rewrite_truncation_and_identity_change(self):
+  from knowledge_bridge.wiki_snapshots import WikiSnapshots
+  job=self.claim();row=job['items'][0];store=WikiSnapshots(self.ctx);original=self.file.read_bytes()
+  self.file.write_bytes(b'X'+original[1:]+b'new tail')
+  with self.assertRaises(ValueError):store.verify_frozen_prefix(row)
+  self.file.write_bytes(original[:-1])
+  with self.assertRaises(ValueError):store.verify_frozen_prefix(row)
+  self.file.write_bytes(original+b'new tail')
+  (self.meta/'manifest.json').write_text(json.dumps({'source_key':'hermes','source_session_id':'replaced','session_key':'other'}),'utf-8')
+  with self.assertRaises(ValueError):store.verify_frozen_prefix(row)
+
  def test_disabled_and_copy_are_read_only(self):
   self.assertEqual('disabled',self.wiki.status()['phase']);self.assertTrue(self.wiki.instructions());self.assertFalse(self.wiki.path.exists())
   self.assertEqual([],self.wiki.pages([]));self.assertTrue(self.file.exists())

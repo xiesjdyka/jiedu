@@ -149,6 +149,16 @@ class ProductTools:
         key=(str,Field(...,pattern=r'^[a-zA-Z0-9_.:-]{1,128}$'))
         scope=Literal['formal','evidence','inbox']
         self.add('product_capabilities','查看界渡实际功能和边界','product',{},lambda args,check:catalog())
+        from .product_status import product_status,source_archive_progress
+        self.add('product_status','查看脱敏的版本、连接、权限和更新实时状态','product',{},
+                 lambda args,check:product_status(getattr(self,'permissions',None)))
+        self.add('source_archive_progress','查看五种来源的历史归档、新消息与已知缺口，不返回私有路径和正文','product',{},
+                 lambda args,check:source_archive_progress())
+        from .source_control import resume_existing,resume_preview
+        self.add('source_archive_resume','经主人逐次确认后，仅恢复已有且暂停的来源采集，保留原范围和游标','archive',
+                 {'source':(Literal['codex','hermes','dsh','claude'],...)},
+                 lambda args,check:resume_existing(args['source'],self.context,expected=check.confirmation_preview),
+                 None,True,lambda args:resume_preview(args['source'],self.context))
         self.add('workspace_status','查看当前工作区是否已初始化','workspace',{},lambda args,check:{'initialized':self.context.initialized,'format_version':self.context.format_version,'directories':['00_系统','01_当前状态','02_项目','03_知识','90_原始档案','99_收件箱']})
         self.add('knowledge_search','按明确范围检索知识片段','search',{'query':(str,text()),'scope':(scope,'formal'),'limit':(int,Field(default=4,ge=1,le=10))},self._search,lambda args:args['scope'])
         self.add('source_read','分页读取公开原文及版本和字节位置','sources',{'source_path':(str,text(1024)),'cursor':(str|None,None),'page_bytes':(int,Field(default=4096,ge=256,le=8192))},self._read,lambda args:resolve_document_target(self.context,args['source_path']).scope.value)
@@ -212,27 +222,30 @@ class ProductTools:
         available=[{'operation':tool.name,'title':tool.title,'area':tool.area,'state':'callable','mutation':tool.mutation} for tool in self.tools.values()]
         mapping={
             'workspace':(['workspace_status'],'初始化、切换、迁移含工作区身份变更，由Owner在工作区页面操作。'),
-            'overview':(['workspace_status','runtime_status','index_status'],'首页计数和筛选使用首页现有界面。'),
+            'overview':(['workspace_status','product_status','runtime_status','index_status'],'可读取脱敏的当前产品状态；首页计数和筛选仍使用首页界面。'),
             'objects':(['object_list','object_detail','object_read','import_selected_preview','import_selected_apply','import_jobs','import_job_detail','import_job_cancel'],'管家导入仅支持已选择文件夹中的明确文件和普通收件箱；保护保存和迁移由资料页面操作。'),
             'conversion':(['import_selected_preview','import_selected_apply'],'转换沿用已有本机转换器；二进制原件不伪装成已阅读正文。'),
             'ocr':(['import_selected_preview','import_selected_apply'],'OCR仅在已有独立运行环境和模型可用时由导入流程调用，不安装或下载环境。'),
             'search':(['knowledge_search','source_read','object_read'],'保护来源不进入该管家工具链。'),
-            'codex':([],'Codex同步器涉及已配置来源身份和游标，由归档页面操作；管家没有任意外部路径或同步器配置权限。'),
-            'hermes':([],'Hermes来源适配器仍有全局来源配置，由归档页面同步；不将管家身份冒充Hermes来源。'),
-            'sources':(['archive_sessions','archive_attachments','archive_current_conversation'],'可归档当前管家已保存的真实消息；其他客户端归档和附件原件导入使用归档页面。'),
-            'paused':([],'豆包与ChatGPT自动归档未实现；不能由管家工具伪造同步。'),
-            'access':([],'身份、接入密钥、授权与撤销只由Owner在界面设置，模型不能授予权限。'),
+            'codex':(['product_status','source_archive_progress','source_archive_resume'],'可核对Codex的脱敏连接与归档进度；仅在已有暂停配置且Owner逐次确认后恢复原范围。'),
+            'hermes':(['product_status','source_archive_progress','source_archive_resume'],'可核对Hermes的脱敏连接与归档进度；仅在已有暂停历史任务且Owner逐次确认后恢复。'),
+            'dsh':(['product_status','source_archive_progress','source_archive_resume'],'可核对DSH的脱敏连接与归档进度；仅在已有暂停配置且Owner逐次确认后恢复原范围。'),
+            'claude':(['product_status','source_archive_progress','source_archive_resume'],'可核对Claude的脱敏连接与本机缓存归档进度；仅在已有暂停配置且Owner逐次确认后恢复原范围。'),
+            'cursor':(['product_status','source_archive_progress','source_archive_resume'],'可核对Cursor的脱敏连接与本机转录归档进度；仅在已有暂停配置且Owner逐次确认后恢复原范围。'),
+            'sources':(['source_archive_progress','archive_sessions','archive_attachments','archive_current_conversation'],'五种本机来源进度与缺口可脱敏查询；当前管家对话可按真实保存记录归档。'),
+            'paused':(['source_archive_progress','source_archive_resume'],'仅已配置且暂停的来源可请求逐次确认恢复；未实现的来源不能借此首次接入或伪造同步。'),
+            'access':(['product_status'],'可查询匿名连接数量与权限计数；身份、接入密钥、授权与撤销只由Owner在界面设置。'),
             'core':(['source_read'],'仅按明确来源阅读；Core配置与身份维护在设置页面，未配置或版本变化返回未知。'),
             'candidates':(['candidate_list','candidate_detail','candidate_submit','candidate_review','candidate_preview','candidate_apply'],'外部客户端旧候选需原接入身份校验，在候选页面处理；管家提交只引用本轮实际交付来源。'),
             'undo':(['writer_undo','folder_recover'],'仅恢复有版本记录的变更，拒绝覆盖后续修改；整库快照恢复未实现。'),
             'projects':(['knowledge_search','source_read','candidate_submit','candidate_preview','candidate_apply'],'项目关系通过已有来源和Writer知识页表达；专用关联界面由项目页面操作。'),
             'continuous':(['organization_start','organization_status','organization_read','organization_finish_source'],'工具复用已有整理任务，不冒充其他客户端的持续整理授权；其调度配置由对应页面操作。'),
             'wiki':(['wiki_status','wiki_claim','wiki_pause','wiki_resume','wiki_pages','organization_read','organization_finish_source'],'管家可领取固定批次并读完再提交候选；每日外部AI调度保留原身份，不能由单次工具调用宣称自动完成。'),
-            'butler':(['product_operations','product_capabilities','archive_current_conversation'],'对话、取消、恢复和中文概述在管家页面；外部API仅保留同对话同配置的有限已完成问答，旧图须核验且受预算限制，工作区或工具派生历史可能整对省略。'),
+            'butler':(['product_operations','product_capabilities','product_status','source_archive_progress','archive_current_conversation'],'实时状态由脱敏工具查询；外部API仅保留同对话同配置的有限已完成问答，旧图须核验且受预算限制。'),
             'protection':([],'保护设置、解锁、密码及退出保护仅Owner界面；此管家链不读取受保护正文。'),
             'export':(['object_read','folder_read'],'只分页读取已授权正文；批量导出和保护导出由对应页面确认。'),
-            'resources':(['runtime_status','index_status','index_rebuild_passages'],'向量模型、GPU与资源调度设置在运行设置页面，管家段落索引不下载模型。'),
-            'package':(['runtime_status'],'应用启动、停止、升级与生命周期由应用和Owner控制，模型没有进程或命令入口。'),
+            'resources':(['product_status','runtime_status','index_status','index_rebuild_passages'],'可读脱敏当前状态；向量模型、GPU与资源调度设置在运行设置页面。'),
+            'package':(['product_status','runtime_status'],'可查询公开版本和只读更新状态；本机维护构建无可信标识时返回未知。升级与生命周期由应用和Owner控制。'),
             'unfinished':([],'沿用产品目录明确列出的未完成功能；没有未注册操作或假执行回执。'),
             'packages':([],'外部整理包由原客户端授权、快照及交付记录绑定，在整理包页面处理；此链尚无其专用适配器。'),
             'provider':(['web_read','web_search'],'模型/搜索凭据和端点由Owner设置。搜索可选且独立，只有已观察探测能力才有实测记录。'),
@@ -485,6 +498,12 @@ class ToolRunner:
 
     def _set_network(self,reader):self.active_network=reader
 
+    def _outbound_scopes(self):
+        selected=self.provider.get('selected')
+        if selected=='external':return set(self.provider['external']['data_scopes'])
+        if selected=='hermes':return set(self.provider['hermes'].get('data_scopes',[]))
+        return None
+
     def dispatch_model(self,name,raw_arguments):
         if name!='product_operation':return {'ok':False,'state':'unsupported','message':'此模型工具不存在，未执行'}
         try:
@@ -502,8 +521,8 @@ class ToolRunner:
             raise PermissionError('联网授权已变更或撤销')
         if getattr(self,'native_search_authorized',False) and (self.initial_private or any(item.get('data_scopes') for item in self.receipts)) and not self.registry.network.status()['allow_context_queries']:
             raise PermissionError('本轮资料尚未允许用于服务商联网搜索')
-        if self.provider.get('selected')=='external':
-            allowed=set(self.provider['external']['data_scopes'])
+        allowed=self._outbound_scopes()
+        if allowed is not None:
             if any(not set(item.get('data_scopes',[]))<=allowed for item in self.receipts):
                 raise PermissionError('工具结果超出允许外发的资料范围')
         if self.registry.folders:
@@ -549,16 +568,23 @@ class ToolRunner:
                 settings=self.registry.network.status()
                 if not settings['enabled']:raise PermissionError('联网尚未启用')
                 if (self.initial_private or any(item.get('data_scopes') for item in self.receipts)) and not settings['allow_context_queries']:
+                    self.activity({'operation':name,'title':tool.title,'state':'outbound_denied'})
                     return {'ok':False,'state':'outbound_denied','message':'本轮含工作区或指定文件夹资料，你尚未允许将这些资料用于联网查询或链接参数。'}
-            if self.provider.get('selected')=='external' and not scopes<=set(self.provider['external']['data_scopes']):
+            allowed=self._outbound_scopes()
+            if allowed is not None and not scopes<=allowed:
+                self.activity({'operation':name,'title':tool.title,'state':'outbound_denied','required_scopes':sorted(scopes)})
                 return {'ok':False,'state':'outbound_denied','message':'该资料范围未允许发送到外部模型，未执行'}
             self.before_send([])
             if self.permissions.butler_policies()['policies'].get(name,'deny')=='deny':
+                self.activity({'operation':name,'title':tool.title,'state':'denied'})
                 return {'ok':False,'state':'denied','message':'你已禁止此操作，未执行'}
             bound={'parameters':args,'preview':tool.confirmation(args)} if tool.confirmation else args
             ticket=self.permissions.request_butler_operation(name,bound,session=self.session,job=self.job,
-                provider_revision=self.provider['revision'],known_operations=self.registry.tools)
-            if ticket['decision']=='deny':return {'ok':False,'state':'denied','message':'你已禁止此操作，未执行'}
+                provider_revision=self.provider['revision'],known_operations=self.registry.tools,
+                force_confirm=name=='source_archive_resume' or (self.provider.get('selected')=='hermes' and tool.mutation))
+            if ticket['decision']=='deny':
+                self.activity({'operation':name,'title':tool.title,'state':'denied'})
+                return {'ok':False,'state':'denied','message':'你已禁止此操作，未执行'}
             if ticket['decision']=='ask':
                 self.activity({'operation':name,'title':tool.title,'state':'confirmation_required','request_id':ticket['id']})
                 while not self.cancel.wait(.2):
@@ -569,12 +595,14 @@ class ToolRunner:
             with self.permissions.butler_operation(ticket,cancel=self.cancel,provider_current=self.provider_current,commit_lock=tool.mutation) as check:
                 check.cancel=self.cancel;check.set_network=self._set_network
                 check.delivered=self.delivered;check.permission_revision=self.revision;check.session=self.session;check.session_revision=self.session_revision
+                check.confirmation_preview=bound['preview'] if tool.confirmation else None
                 with memory.in_workspace(self.registry.context):result=tool.handler(args,check)
             scopes|=result_scopes(result,self.registry.context)
+            self.before_send([])
             if 'protected' in scopes:
                 self.activity({'operation':name,'title':tool.title,'state':'blocked_protected','result_withheld':True})
                 return {'ok':False,'state':'blocked_protected','message':'受保护来源暂不支持此管家工具，未返回正文。'}
-            if self.provider.get('selected')=='external' and not scopes<=set(self.provider['external']['data_scopes']):
+            if allowed is not None and not scopes<=allowed:
                 self.activity({'operation':name,'title':tool.title,'state':'outbound_denied','required_scopes':sorted(scopes),'owner_private_result':result})
                 return {'ok':bool(tool.mutation),'state':'result_withheld','message':'操作已完成，但结果含未允许外发的来源资料，正文未发送。' if tool.mutation else '结果含未允许外发的来源资料，正文未发送。'}
             item={'operation':name,'title':tool.title,'area':tool.area,'state':'completed','data_scopes':sorted(scopes),'result':result}
@@ -589,8 +617,16 @@ class ToolRunner:
             return {'ok':True,'operation':name,'result':result}
         except InterruptedError:raise
         except Exception as error:
+            from .source_control import ResumeBlocked
+            if name=='source_archive_resume' and isinstance(error,ResumeBlocked):
+                item={'operation':name,'title':tool.title,'state':'blocked',
+                      'code':error.code,'next_step':error.next_step}
+                self.activity(item)
+                return {'ok':False,'state':'blocked','code':error.code,'next_step':error.next_step}
             # Supplier input, local paths and private exception bodies never become model context.
             state='denied' if isinstance(error,PermissionError) else 'failed'
-            item={'operation':name,'title':tool.title,'state':state,'error_kind':type(error).__name__}
+            kind=type(error).__name__
+            item={'operation':name,'title':tool.title,'state':state,
+                  'error_kind':kind if kind in {'ValueError','PermissionError','OSError','StateCorruptError','SourceFormatError'} else 'OperationError'}
             self.activity(item)
             return {'ok':False,'state':state,'message':'操作未完成，请在活动记录或对应功能页面核对。'}

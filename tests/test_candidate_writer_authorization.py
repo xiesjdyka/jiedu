@@ -68,7 +68,8 @@ class CandidateWriterAuthorizationTests(unittest.TestCase):
         candidate = self.candidate()
         registry = SimpleNamespace(list_clients=lambda: [{"internal_id": "client-fixture", "status": "authenticated"}])
         permissions = Mock()
-        permissions._ordinary_reads_are_open.return_value = False
+        # Explicit denial still wins when ordinary storage has no encryption.
+        permissions._ordinary_reads_are_open.return_value = True
         permissions._policy.return_value = web.PolicyDecision.DENY
         target = SimpleNamespace(scope=web.KnowledgeScope.FORMAL, selector={"path": "03_知识/来源.md"})
         previous_registry = getattr(web.app.state, "client_registry", None)
@@ -80,6 +81,7 @@ class CandidateWriterAuthorizationTests(unittest.TestCase):
                 with self.assertRaises(web.CandidateAuthorizationError) as raised:
                     web._validate_external_candidate_authorization(candidate)
             self.assertEqual("source_read_not_allowed", raised.exception.code)
+            permissions._policy.assert_called_once()
         finally:
             web.app.state.client_registry = previous_registry
             web.app.state.client_permissions = previous_permissions

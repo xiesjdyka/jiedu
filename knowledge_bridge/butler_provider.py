@@ -152,7 +152,7 @@ class ButlerProviders:
         self.lock = threading.RLock();self.on_change=[]
 
     def _load(self):
-        if not self.path.exists(): return {"selected": "local", "revision": "initial", "external": None}
+        if not self.path.exists(): return {"selected": "local", "revision": "initial", "external": None, "hermes_data_scopes": []}
         try:
             value = json.loads(self.path.read_text("utf-8"))
             if value["selected"] not in {"local", "external", "hermes"}: raise ValueError()
@@ -162,6 +162,9 @@ class ButlerProviders:
                 target=external.get('credential_target','')
                 if not isinstance(target,str) or not target.startswith(self.target_prefix) or len(target)!=len(self.target_prefix)+32:raise ValueError()
             if value['selected']=='external' and not external:raise ValueError()
+            scopes=value.get('hermes_data_scopes',[])
+            if not isinstance(scopes,list) or any(not isinstance(scope,str) for scope in scopes) or not set(scopes)<={"formal","evidence","inbox","selected_folders"}:raise ValueError()
+            value['hermes_data_scopes']=sorted(set(scopes))
             return value
         except (OSError, ValueError, KeyError, TypeError) as exc:
             raise ProviderError("管家模型配置损坏，请在设置中重新保存") from exc
@@ -179,7 +182,19 @@ class ButlerProviders:
             hermes = hermes_status()
             if hermes.get('ready') and value.get('hermes_revision') and value['hermes_revision'] != hermes.get('revision'):
                 hermes = {**hermes, 'ready':False, 'error':'Hermes 配置已变化，请重新选择以确认使用新配置'}
-            return {"selected": value["selected"], "revision": value["revision"], "external": public, "hermes":hermes}
+            return {"selected": value["selected"], "revision": value["revision"], "external": public,
+                    "hermes":{**hermes,"data_scopes":value['hermes_data_scopes']}}
+
+    def set_hermes_data_scopes(self,scopes):
+        if not isinstance(scopes,list) or any(not isinstance(scope,str) for scope in scopes) or not set(scopes)<={"formal","evidence","inbox","selected_folders"}:
+            raise ProviderError('不支持的 Hermes 外发资料范围')
+        with self.lock:
+            old=self._load()
+            if old['selected']!='hermes':raise ProviderError('请先选择 Hermes')
+            self._save({**old,'hermes_data_scopes':sorted(set(scopes)),'revision':uuid.uuid4().hex})
+            public=self.status()
+        for callback in self.on_change:callback()
+        return public
 
     def select_hermes(self):
         from .hermes_client import status as hermes_status
@@ -239,7 +254,7 @@ class ButlerProviders:
                         "native_search":native_search,"data_scopes": scopes, "credential_target": target,
                         "probe": {"state": "untested"}}
                     external=documented_capabilities(external)
-                self._save({"selected": selected, "revision": revision, "external": external})
+                self._save({**old,"selected": selected, "revision": revision, "external": external})
             except Exception:
                 if fresh_target: self.secrets.delete(fresh_target)
                 raise
@@ -268,7 +283,7 @@ class ButlerProviders:
 
     def clear_external(self):
         with self.lock:
-            old = self._load(); self._save({"selected": "local", "revision": uuid.uuid4().hex, "external": None})
+            old = self._load(); self._save({**old,"selected": "local", "revision": uuid.uuid4().hex, "external": None})
             if old.get("external"): self.secrets.delete(old["external"]["credential_target"])
             public=self.status()
         for callback in self.on_change:callback()

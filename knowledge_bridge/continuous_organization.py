@@ -63,6 +63,20 @@ class ContinuousOrganizer:
         return policy,targets[0]
     @staticmethod
     def message_key(session_id,message_id):return str(session_id)+'\0'+str(message_id)
+    @staticmethod
+    def _ensure_queue_indexes(data):
+        """Assign immutable per-source positions to legacy and new message rows."""
+        counters=data.setdefault('source_queue_counters',{})
+        groups={}
+        for row in data['messages'].values():groups.setdefault(row.get('source_id') or '',[]).append(row)
+        for source,rows in groups.items():
+            next_index=max(int(counters.get(source,0)),max((int(row['queue_index'])+1 for row in rows
+                if type(row.get('queue_index')) is int and row['queue_index']>=0),default=0))
+            missing=[row for row in rows if type(row.get('queue_index')) is not int or row['queue_index']<0]
+            missing.sort(key=lambda row:(row.get('observed_at') or '',row['evidence'].get('byte_start',0),
+                                         row.get('session_id') or '',row.get('message_id') or ''))
+            for row in missing:row['queue_index']=next_index;next_index+=1
+            counters[source]=next_index
     @visibility_operation
     def consume_project_delta(self,project,source_id,source_version,messages,client):
         """Record an adapter-supplied message delta by stable identity and version.
@@ -90,9 +104,14 @@ class ContinuousOrganizer:
             prepared.append((row,checked));bytes_read+=len(content.encode())
         with self.lock():
             state=self._project_state();data=state.setdefault('projects',{}).setdefault(project,{'messages':{},'issues':{},'source_versions':{},'archive_cursors':{}});changed=[];unchanged=[];model_bytes=0
+            self._ensure_queue_indexes(data)
             for row,checked in prepared:
                 key=self.message_key(row['session_id'],row['message_id']);old=data['messages'].get(key)
                 item={'session_id':str(row['session_id']),'message_id':str(row['message_id']),'version':row['version'],'role':str(row.get('role') or '').lower(),'provenance':row.get('provenance') or {},'evidence':checked,'source_id':source_id,'source_version':source_version,'client_id':client,'policy_revision':policy['revision'],'observed_at':now()}
+                if old:item['queue_index']=old['queue_index']
+                else:
+                    counter=data['source_queue_counters'];item['queue_index']=counter.get(source_id,0)
+                    counter[source_id]=item['queue_index']+1
                 if old and old['version']==row['version']:
                     item['processed_issues']=old.get('processed_issues',{})
                     item['provider_processed_version']=old.get('provider_processed_version')
@@ -234,6 +253,97 @@ class ContinuousOrganizer:
                 'source_read_bytes':scan['source_read_bytes'],'verification_bytes_read':scan.get('verification_bytes_read',0)+verify_bytes,
                 'target_read_bytes':len(raw),'model_deliverable_bytes':input_bytes+len(current_section.encode()),'model_actually_consumed':False,
                 'source_text_is_untrusted':True,'provider_decides_issue_and_content':True}
+    @visibility_operation
+    def shared_project_batch(self,project,client,section,authorize_source,limit=4,work_cursor=None):
+        """One bounded batch across already reconciled sources of one authorized project.
+
+        The existing per-source archive cursors do intake. This read never scans
+        the library or marks a message processed; submit/ack remains the checkpoint.
+        """
+        policy,target_rule=self._project_policy(project,client)
+        if section not in target_rule['sections']:raise PermissionError('目标章节不在策略内')
+        if not callable(authorize_source):raise PermissionError('需要逐项来源读取权限检查')
+        target=self.context.root/target_rule['path'];raw=target.read_bytes()
+        if len(raw)>131072:raise ValueError('目标文件超过128KiB读取预算')
+        pattern=re.compile(r'(?m)^## '+re.escape(section)+r'\r?\n([\s\S]*?)(?=^#{1,2} |\Z)')
+        sections=list(pattern.finditer(raw.decode('utf-8')))
+        if len(sections)!=1:raise ValueError('目标章节不存在或重复')
+        current_section=sections[0][1].strip()
+        if len(current_section.encode())>32768:raise ValueError('目标章节超过32KiB模型输入预算')
+        with self.lock():
+            state=self._project_state();data=state.setdefault('projects',{}).setdefault(project,{'messages':{},'issues':{},'source_versions':{},'archive_cursors':{}})
+            self._ensure_queue_indexes(data);save(self.project_path,state)
+        data=self.load_project(project)
+        source_access={};pending=[]
+        for row in data['messages'].values():
+            if (row.get('client_id')!=client or row.get('policy_revision')!=policy['revision'] or
+                    not knowledge_message(row) or row.get('source_missing') or
+                    row.get('source_recheck_pending') or row.get('provider_processed_version')==row['version']):
+                continue
+            source=row['evidence']['source_path']
+            if source not in source_access:
+                if not self.source_allowed(source,policy):source_access[source]=False
+                else:
+                    try:authorize_source(source);source_access[source]=True
+                    except Exception as exc:
+                        if isinstance(exc,PermissionError) or getattr(exc,'status_code',None)==403:
+                            source_access[source]=False
+                        else:raise
+            if source_access[source]:pending.append(row)
+        def queue_key(row):return (row['queue_index'],row.get('source_id') or '',row['session_id'],row['message_id'])
+        if work_cursor is not None:
+            if not isinstance(work_cursor,dict) or set(work_cursor)!={'queue_index','source_id','session_id','message_id'} or \
+                    type(work_cursor['queue_index']) is not int or work_cursor['queue_index']<0 or \
+                    any(not isinstance(work_cursor[key],str) for key in ('source_id','session_id','message_id')):
+                raise ValueError('共享批次游标无效')
+            after=(work_cursor['queue_index'],work_cursor['source_id'],work_cursor['session_id'],work_cursor['message_id'])
+        else:after=None
+        ordered=sorted((row for row in pending if after is None or queue_key(row)>after),key=queue_key)
+        bounded=max(1,min(4,int(limit)))
+        messages=[];seen={};verify_bytes=0;input_bytes=0;invalid=0;cursor=0;examined=0;last_key=None
+        while cursor<len(ordered) and len(messages)<bounded and examined<bounded*4:
+            row=ordered[cursor];cursor+=1;examined+=1;last_key=queue_key(row)
+            source=row['evidence']['source_path']
+            try:
+                ev=evidence_checked(self.context,[row['evidence']])[0]
+                line_end=ev.get('archive_line_end',ev['byte_end']);length=line_end-ev['byte_start']
+                with (self.context.root/source).open('rb') as stream:stream.seek(ev['byte_start']);line=stream.read(length)
+                record=json.loads(line)
+                if not knowledge_message(record):raise ValueError('交付前消息已不具备聊天提炼资格')
+                content=str(record.get('original_text') if record.get('original_text') is not None else record.get('content') or '')
+                if sha(content.encode())!=row['version']:raise ValueError('交付前消息版本已变化')
+            except PermissionError:
+                invalid+=1;continue
+            except (OSError,ValueError,KeyError,TypeError):
+                invalid+=1;continue
+            verify_bytes+=ev['byte_end']-ev['byte_start']+length
+            encoded=content.encode();too_long=len(encoded)>16384
+            duplicate_key=(row['role'],row['version']) if len(encoded)>=80 else None
+            duplicate_of=seen.get(duplicate_key) if duplicate_key else None
+            identity={'session_id':row['session_id'],'message_id':row['message_id'],'version':row['version']}
+            messages.append(identity|{'role':row['role'],'content':None if too_long or duplicate_of else content,
+                'content_bytes':len(encoded),'requires_paged_source_read':too_long,'duplicate_of':duplicate_of,
+                'source_path':source,'byte_start':ev['byte_start'],'archive_line_end':line_end})
+            if not too_long and not duplicate_of:input_bytes+=len(encoded)
+            if duplicate_key and not too_long:seen.setdefault(duplicate_key,identity)
+        with self.lock():
+            state=self._project_state();current=state['projects'][project]['messages']
+            for message in messages:
+                if message['requires_paged_source_read']:continue
+                item=current.get(self.message_key(message['session_id'],message['message_id']))
+                if not item or item['version']!=message['version'] or item.get('source_missing') or item.get('source_recheck_pending'):
+                    raise ValueError('交付期间来源状态已变化')
+                item['provider_exposed_version']=message['version']
+            save(self.project_path,state)
+        return {'status':'ready','project':project,'target_path':target_rule['path'],'section':section,
+                'current_section':current_section,'expected_target_hash':sha(raw),'messages':messages,
+                'pending_count':len(pending),'has_more':cursor<len(ordered),
+                'next_work_cursor':dict(zip(('queue_index','source_id','session_id','message_id'),last_key)) if cursor<len(ordered) else None,
+                'invalid_evidence_count':invalid,
+                'verification_bytes_read':verify_bytes,'target_read_bytes':len(raw),
+                'model_deliverable_bytes':input_bytes+len(current_section.encode()),'model_actually_consumed':False,
+                'source_text_is_untrusted':True,'provider_decides_issue_and_content':True,
+                'duplicate_meaning':'仅折叠本批同项目同角色的完整相同正文；所有来源身份保留'}
     @visibility_operation
     def acknowledge_project_messages(self,project,client,refs,authorization,auth_check):
         """Mark a provider-reviewed no-change batch without creating a candidate."""

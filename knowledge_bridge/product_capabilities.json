@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "authored_at": "2026-10-01",
-  "purpose": "实现能力说明；代码依据与历史验收边界，不含实时状态或用户私人资料",
+  "authored_at": "2026-10-23",
+  "purpose": "1.1.8 产品能力说明；实现目录与历史验收边界，不含实时状态或用户私人资料。证据文件变化时旧正文隐藏并要求核对。",
   "topics": [
     {
       "id": "workspace",
@@ -23,7 +23,7 @@
       "evidence": [
         {
           "path": "knowledge_bridge/workspace.py",
-          "sha256": "e121c3538c4c0e47d6b1300309c7f382ab0d0b6bca2b3b6d6e4467bac0988d98",
+          "sha256": "a13b8d23b452f1f60e1d39637646603057cc5117ee4372e9d167aedd66ee326b",
           "basis": "implementation_inspected"
         },
         {
@@ -33,12 +33,12 @@
         },
         {
           "path": "knowledge_bridge/package_layout.py",
-          "sha256": "51fe9555389711248d127e5655206eac964891c4645f5dc8bf5f0066088eb6b4",
+          "sha256": "18c3514a6cd837bab04c4c6b014192385dd9ada2866f3936fa2d5a55922c438d",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/knowledge_base.py",
-          "sha256": "2aec91cc778b588932771bf42b38a462733234e8f093eafd68fb3cdd92f61197",
+          "sha256": "27619a7acfe927453350073d918f473531157d1fcc54310745f05f72e8141a98",
           "basis": "implementation_inspected"
         }
       ],
@@ -50,7 +50,7 @@
         },
         {
           "path": "tests/test_portable_package.py",
-          "sha256": "8599e165ab6e7b4caacf974b5614ae9eecd951a6d618fba075938f5d90d408c5",
+          "sha256": "eaeb7cdee33285f2391ce78b05cda474311120ed1ba1cbade393ac509e3f85a5",
           "kind": "existing_test_not_reexecuted_by_catalog"
         }
       ]
@@ -75,7 +75,7 @@
       "evidence": [
         {
           "path": "knowledge_bridge/web.py",
-          "sha256": "7595ee928dcd63f2688c8b17ad89cb66f552764d3eab6b735ca8b2da526299a7",
+          "sha256": "0d05eb89d373bcec03ba4996a709f6313c69935983f6ff885df470f327d41ed4",
           "basis": "implementation_inspected"
         },
         {
@@ -90,7 +90,7 @@
         },
         {
           "path": "knowledge_bridge/core.py",
-          "sha256": "0c3dc7ac1e1ec1f45fceec67c74cf931b72ea773b472d8955d677cbff898d579",
+          "sha256": "c8377fd06c171033afe5362fd3dd1f1c08d8afa504e9975f77779344b40eadb2",
           "basis": "implementation_inspected"
         }
       ],
@@ -195,7 +195,7 @@
       "status": "limited",
       "summary": "图片及PDF可本机识别为可阅读文字，不默认上传文件。",
       "usage": "知识 → 导入资料后检查识别结果。普通原件与可读文字分别保存在收件箱导入目录及其_派生知识目录；选择收件箱范围搜索特征词，打开来源并核对原图。管家可选待确认资料（收件箱）；外部模型还需单独允许收件箱外发。",
-      "details": "图片支持png/jpg/jpeg/bmp/webp/tif/tiff；使用离线OCR资源，单并发、可取消，资源缺失时不会运行期自动下载。 缺资源时原件仍保存，结果明确为识别不可用；按发行包资源准备说明修复离线OCR组件后重试导入。源码安装不包含OCR环境与模型，运行期不会自动下载。",
+      "details": "图片支持 png/jpg/jpeg/bmp/webp/tif/tiff；使用离线 OCR 资源，单并发、可取消。正式 Windows 安装器在安装时联网下载并校验 OCR 资源，安装完成后可离线使用；运行期不会自动下载。源码安装需自行按开发说明准备资源。资源缺失时原件仍保存，识别状态明确提示不可用。",
       "limits": "16MiB输入、最多20页、每页1200万像素、最长边2400、180秒；表格、公式、手写、阅读顺序不保证无损，分数不证明正确。",
       "verification": "离线OCR代码与既往资源/样本验收存在；本目录不检测当前资源就绪。",
       "keywords": [
@@ -209,7 +209,7 @@
       "evidence": [
         {
           "path": "knowledge_bridge/local_ocr.py",
-          "sha256": "05ca986072ba3856f6fc9f03fa8839d4962e95952d1f8aa03d59857b42f4ccce",
+          "sha256": "3017df120ac823a47ec0aad66db9065e93b08cb00d4db292e26631654879a715",
           "basis": "implementation_inspected"
         },
         {
@@ -255,22 +255,22 @@
       "evidence": [
         {
           "path": "knowledge_bridge/retrieval.py",
-          "sha256": "a8914ca5aba0108ab202782feeea765cb11a3bf021751a0f9d1dc5064905c34e",
+          "sha256": "3e1276fd8ed4969d9a5937d7db477afd863b749c82e0441b9067ec46928262e7",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/source_reading.py",
-          "sha256": "f14236a043c59a53e4d6f6f68844968d4c3a7618213ae86da3e1c89e2280fc7f",
+          "sha256": "69a108a6af086fbdd11df07647a4ba8654b0812468238e0fffee0b54fec3fa27",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/search_scopes.py",
-          "sha256": "6918feea8641e3c011d3cd7756687efd22064a1e62c974b3e082d25aa9e8d958",
+          "sha256": "cc24db195085fb7d9153fb24be4b191db9b353d684c099a377dbec3d2caa648e",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/passage_search.py",
-          "sha256": "4ea0814ce194b80bcffcaaf731c0b1c40b1c07463db8fa4d15b0d9d0de27d5aa",
+          "sha256": "968a4cbb763917731fd40bd9b713d71ab57f4c0dcdde9ce501ba553fe452bd67",
           "basis": "implementation_inspected"
         }
       ],
@@ -308,12 +308,12 @@
       "evidence": [
         {
           "path": "knowledge_bridge/codex_source_adapter.py",
-          "sha256": "d748f3438729cd831095d8316220dbfb9e1894da74094f562a4edc1181535079",
+          "sha256": "8b09648f1a9e52fce37d313641579f63b4a9224a21991660930f914b888044d5",
           "basis": "implementation_inspected_20261001"
         },
         {
           "path": "knowledge_bridge/codex_history.py",
-          "sha256": "3bbce7ad1cf2b58af63d7c1b40b0e6f8c2947ad495d701486c8e474da0cb1f22",
+          "sha256": "4d2054b7d54364b626dd6ba1f57fb3c2027d5cf88b2a4932eec80a37844ce8cf",
           "basis": "implementation_inspected"
         },
         {
@@ -325,7 +325,7 @@
       "verification_records": [
         {
           "path": "tests/test_codex_history.py",
-          "sha256": "b8d8e9f60032bee36e6bbc454e1c6c30830a92bdaa649b78434341c5bc5367f0",
+          "sha256": "6e551319ddc4d41746fcd7f023eb82e0479e910018f1af695e44d2fdb2ed94ab",
           "kind": "existing_test_not_reexecuted_by_catalog"
         },
         {
@@ -355,17 +355,17 @@
       "evidence": [
         {
           "path": "knowledge_bridge/hermes_session_adapter.py",
-          "sha256": "7a024645c337f441a61a2c3c2e2fd5e27a1a2d6dcdfe576dffaa9bb811fdf9b7",
+          "sha256": "4a8e6e551852d0dc05c16b4cabf8bb0477339feb418aad001eef3a7144966557",
           "basis": "implementation_inspected_20261001"
         },
         {
           "path": "knowledge_bridge/archive_store.py",
-          "sha256": "0f89e459b58e188ed6464ddf5daf04e8f7553de7d5d371d8fdf2a1e989bd0963",
+          "sha256": "d3fde71a9b7bfa9b7cb41c99c9047df66d45f1e14bc1cbf526509994eca1cb9c",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/conversation_visibility.py",
-          "sha256": "e6720ea103214047e5eca89907ecbba3f86c711b6c85760c6b322eec8c84fb7c",
+          "sha256": "8801bfabf42c6065d80c8ad7caa31c69de41ee85139cf54c823aab534e0565ec",
           "basis": "implementation_inspected"
         }
       ],
@@ -386,40 +386,101 @@
       "id": "sources",
       "title": "其他AI来源与归档覆盖",
       "status": "limited",
-      "summary": "已配对客户端可主动提交消息，来源身份由主人绑定。",
-      "usage": "连接与权限中绑定来源并授权聊天保存；查看档案实际已收到的范围。",
-      "details": "通用MCP推送支持稳定消息ID及分次附件；保存idea/link到收件箱需独立权限。内置来源标签不等于独立本机采集器。",
-      "limits": "客户端推送只证明所提交内容，不能保证助手尾部或源端完整历史；链接记录不等于获取原件。豆包与ChatGPT自动归档当前暂停，不能承诺自动全量采集。",
-      "verification": "source_connections推送边界与来源注册代码可核对；暂停状态来自当前阶段已确认记录。",
+      "summary": "九个客户端预设提供接入入口；本机采集与当前 MCP 连接主动提交分别统计，保存数量以标准档案目录中可见记录为准。",
+      "usage": "在 AI 连接查看本机采集和当前连接主动提交的各自状态；到对话档案按来源核对已保存会话。",
+      "details": "Codex、Hermes、DSH、Claude、Cursor 均有客户端预设。DSH 与 Claude 的本机可读聊天只采集用户正文和助手最终答复；工具、思考和内部记录不作为普通可见聊天。设置 DSH_HOME 时，DSH 采集器和连接配置使用同一自定义根目录。Claude 需由用户在 Claude Desktop 安装准备好的扩展，并经真实读取核验连接。通用 MCP 推送支持稳定消息 ID 及分次附件；保存 idea/link 到收件箱需独立权限。 Cursor 在用户亲自连接并完成真实读取前保持待接入；首次验证后自动采集本机可读历史与新消息，已有暂停和范围保留。Cursor 用户正文和成功结束回合的最终答复进入标准档案；进度原文独立可查看，不进入普通检索或历史提炼。 WorkBuddy、OpenCode、ZCode、Kimi Work 新增独立本机采集器和手动 MCP 接入说明；只有 Owner 主动接入并完成真实读取后才默认开始采集，之前保持暂停。四源只将已完成的用户正文和助手最终答复写入标准档案，未完成进度另存为私有可见记录。",
+      "limits": "预设和配对不表示来源已开启或已采完。本机采集不归因于单个 MCP 身份；当前连接主动提交为 0 不能证明本机档案为 0。DSH/Claude 仅覆盖本机可读且授权的范围；档案目录计数与采集记录不符时提示待核对。本机 ChatGPT 工作/Codex 的采集按实时来源和标准档案核对。不能补造源端已清理内容、缺失附件或尾部。豆包工作版仅已验证的消息可提升归档；ChatGPT 云端普通聊天须由客户端明确提交；均不承诺自动全量历史。 Cursor 仅覆盖本机可读转录与 SQLite 能相互核对的消息；附件结构尚无真实样本验证，不承诺附件完整采集。未结束、失败或未知回合不发布助手最终答复。 四源历史仅覆盖本机可读且完整的会话；缺失的源端历史会明确显示缺口。四源真实附件样本尚未核验，不承诺附件采集。手动接入由用户按客户端当前配置方式完成，复制说明不等于连接成功。",
+      "verification": "分别核对 source_connections 的主动提交口径、source_adapters 的本机档案摘要、标准档案列表和来源实时状态。 四源解析已用本机真实来源做只读结构核对；隔离合成验收覆盖默认暂停、完整回合、续增量、去重和边界。实际接入状态仍以实时来源状态为准。",
       "keywords": [
         "来源",
         "其他AI",
         "Claude",
+        "DSH",
         "自定义AI",
         "推送",
         "聊天保存",
         "收集",
-        "链接"
+        "链接",
+        "Cursor",
+        "WorkBuddy",
+        "OpenCode",
+        "ZCode",
+        "Kimi Work"
       ],
       "evidence": [
         {
           "path": "knowledge_bridge/source_connections.py",
-          "sha256": "bc72e28d86d3ffd85930b84061bc4882d7cfc05c90ccc8e404a312a45529444a",
+          "sha256": "cb2fce912788aee8ebf804af3db16971c92188faac1b1c7e63131b55112e3416",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/archive_store.py",
-          "sha256": "0f89e459b58e188ed6464ddf5daf04e8f7553de7d5d371d8fdf2a1e989bd0963",
+          "sha256": "d3fde71a9b7bfa9b7cb41c99c9047df66d45f1e14bc1cbf526509994eca1cb9c",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/inbox_capture.py",
-          "sha256": "45bb28ae23ff242da216cacb3903e49b36f6be30091798d2fd176ffe769a6605",
+          "sha256": "2d84f8b0ea1d00de0ed79fdae6c0fc7c759b64f8d2a395bb6ec2e453a4717cd2",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/source_adapters.py",
-          "sha256": "d04e149375a43b2141af756a09642a826343a41fbcd98e0332c42814cca5de5a",
+          "sha256": "43bdbbed88b666ff520ab6e7a65ef61ae82081648ade5689ebcbf6a24b003cd7",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/dsh_source_adapter.py",
+          "sha256": "eabacae8dfbd0ab28ab8c4fd1da910f162dc1672f37629e9ab293b68ee793109",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/client_config.py",
+          "sha256": "28e525db1d4f5b09cff9244f52036e82571e562da5d1800ea7a583b3b577696e",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/session_archive.py",
+          "sha256": "36f9ae5cb7058317fe2e03da36bec45809b22be5720f87039cddad433eed5b86",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "static/app.js",
+          "sha256": "23e7287b0b6d24dde0064f91b243b4cc33a430f237eb2711dcd843375e73530e",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/claude_source_adapter.py",
+          "sha256": "8e422a44a9cdff4028456de34aa782d08f328ac3ad53d2c8f3333744d3bb5df9",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/client_pairing.py",
+          "sha256": "106a6a62ab5fac292d5a2171edeaec31ed8fe41e24dd06fe8601eaa911cb9ba1",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/claude_extension.py",
+          "sha256": "6956f9069e202bc4bf0ba14b71872a4306359351a34f7b8c961bfcfc766a14aa",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/cursor_source_adapter.py",
+          "sha256": "b26d7a4494dbba1f65dd6f0d87a618569b1ced533e69450765084f14e7892bc8",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/visible_conversations.py",
+          "sha256": "ecfa5364185f5ba89005b8375631bd3b48b79c956c94116fe9ab79a804370b66",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "static/local-chat-collectors.js",
+          "sha256": "8eeee14d6e0483455ee4910d9917425176e87fc024b486855d47e10bc340d6df",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/four_local_collectors.py",
+          "sha256": "a08988d7a6a99e6c3f08267294085f4ca1364f58baefc9d982b5ceac2f6fae41",
           "basis": "implementation_inspected"
         }
       ],
@@ -428,18 +489,23 @@
           "path": "tests/test_generic_pairing.py",
           "sha256": "be277d56775fa243b3f8e34cebff13fdb1aae109a87b5dc17f4bf5565a8663e1",
           "kind": "existing_test_not_reexecuted_by_catalog"
+        },
+        {
+          "path": "tests/test_four_local_collectors.py",
+          "sha256": "8ce84f6b495be3afd19d5340fdbf3c14b7d5e5503f76e0192075c11cda840790",
+          "kind": "isolated_test_executed"
         }
       ]
     },
     {
       "id": "paused",
-      "title": "豆包与ChatGPT自动归档",
-      "status": "paused",
-      "summary": "自动归档暂停，已有缓存/适配器不等于完整历史。",
-      "usage": "需要时先检查来源覆盖和显式启用范围；当前不自动启动。",
-      "details": "豆包本机结构缓存是局部发现；ChatGPT桥可在调用时收到所提交的可见消息。保留已有证据与适配器。",
-      "limits": "源端清理历史、缺失附件和助手尾部不能补造；不宣传独立完整自动归档已经交付。",
-      "verification": "当前阶段暂停边界结合source_connections与适配器代码；不是因为有接口就认定已开启。",
+      "title": "豆包与 ChatGPT 归档边界",
+      "status": "limited",
+      "summary": "豆包工作版本机缓存可按已验证消息归档；ChatGPT 云端普通聊天由客户端主动提交，状态须分别核对。",
+      "usage": "先检查来源覆盖和显式启用范围；是否正在采集以实时来源状态为准。",
+      "details": "豆包工作版支持来源绑定、缓存发现和验证后的增量归档，未验证的新缓存仍停在验证边界。ChatGPT 云端普通聊天桥接只保存客户端明确提交的可见消息，不把未提交的云端会话视为已归档。本机 ChatGPT 工作/Codex 的采集按对应来源状态和标准档案核对，当前 MCP 连接的主动提交数另行统计。",
+      "limits": "是否已启用、暂停、追平或报错须查询实时来源状态。当前连接主动提交为 0 不证明独立本机采集为 0。源端清理历史、缺失附件和助手尾部不能补造；未验证豆包缓存或未提交云端聊天不得称为完整归档。",
+      "verification": "结合 source_connections 的主动提交范围与各来源适配器实时状态核对，不因接口存在就认定来源已开启。",
       "keywords": [
         "豆包",
         "Doubao",
@@ -465,7 +531,12 @@
         },
         {
           "path": "knowledge_bridge/source_connections.py",
-          "sha256": "bc72e28d86d3ffd85930b84061bc4882d7cfc05c90ccc8e404a312a45529444a",
+          "sha256": "cb2fce912788aee8ebf804af3db16971c92188faac1b1c7e63131b55112e3416",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/source_adapters.py",
+          "sha256": "43bdbbed88b666ff520ab6e7a65ef61ae82081648ade5689ebcbf6a24b003cd7",
           "basis": "implementation_inspected"
         }
       ],
@@ -488,9 +559,9 @@
       "status": "implemented",
       "summary": "配对、配置、读知识、保存聊天和操作权限分开管理。",
       "usage": "AI连接新增客户端，检查配置预览再应用；按需要开关权限。",
-      "details": "独立身份令牌、配置确认、密钥轮换、撤销和删除；授权可按范围/会话，敏感请求走已有确认。MCP读取和候选提交不自动获得正式写权限。",
-      "limits": "撤销客户端访问与停止本机归档是不同动作；旧历史不随权限撤销自动删除。受保护读取不授权导出、改写或公开派生内容。",
-      "verification": "配对、权限与撤销代码/既往入口验收可核对。",
+      "details": "独立身份令牌、配置确认、密钥轮换、撤销和删除；授权可按范围/会话，敏感请求走已有确认。安装版已有本机定位入口需与受信模板的命令、参数完全一致，定位脚本存在且工作区连接有效。AI 连接卡片区分配置需检查、读取待复核和等待实际读取。MCP读取和候选提交不自动获得正式写权限。",
+      "limits": "配置文件存在或身份认证通过不等于当前权限下真实读取成功。撤销客户端访问与停止本机归档是不同动作；旧历史不随权限撤销自动删除。受保护读取不授权导出、改写或公开派生内容。",
+      "verification": "结合配置严格匹配、当前权限下的实际读取记录及配对/撤销状态核对；卡片标签不代表聊天采集状态。",
       "keywords": [
         "MCP",
         "配对",
@@ -505,34 +576,44 @@
       "evidence": [
         {
           "path": "knowledge_bridge/client_pairing.py",
-          "sha256": "5668e58cf3360a42244c3e70f2c37ac238c76f0e38fca6896582ec66e2c87f55",
+          "sha256": "106a6a62ab5fac292d5a2171edeaec31ed8fe41e24dd06fe8601eaa911cb9ba1",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/client_access.py",
-          "sha256": "260257f4a8251e32c6679376880b1c296cbbabbd0ba97317e141c807d929ce93",
+          "sha256": "a399e5e619dd69a741d2f55fce90fc1b81ee1b2662346a05290435c6a5e6eef8",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/client_config.py",
-          "sha256": "00d107dc10e23d49e85a6526258e3142081639312bbca61ce57e6a8c1102771f",
+          "sha256": "28e525db1d4f5b09cff9244f52036e82571e562da5d1800ea7a583b3b577696e",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "static/app.js",
+          "sha256": "23e7287b0b6d24dde0064f91b243b4cc33a430f237eb2711dcd843375e73530e",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/mcp_server.py",
-          "sha256": "eeed47ea3bdac6bdbc1fb162fbd0a1bb1a8d9f2191406373a8c01bdac0cec361",
+          "sha256": "fd517ab2f650455a2a459974fae7afba465ef3d15db2c5671eabb175e8361501",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/ai_access.py",
-          "sha256": "8c0b6e0104b17a20c1c5745f17039b55e7b9d0733c04f899869bef2b60610595",
+          "sha256": "d642c214120e60022c7a36f26bb988c22ab1df7d04ebd654633875a4f33e71c8",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/claude_extension.py",
+          "sha256": "6956f9069e202bc4bf0ba14b71872a4306359351a34f7b8c961bfcfc766a14aa",
           "basis": "implementation_inspected"
         }
       ],
       "verification_records": [
         {
           "path": "tests/test_client_pairing.py",
-          "sha256": "628255bb9a7ee75dbdf431817cc21be8e158c753142608adc9e7102f0b9a4fb0",
+          "sha256": "1442d04ffbeac41ab32382743d7527f663fc5ab5630b93a73f814925fa7986fc",
           "kind": "existing_test_not_reexecuted_by_catalog"
         },
         {
@@ -573,12 +654,12 @@
         },
         {
           "path": "knowledge_bridge/core.py",
-          "sha256": "0c3dc7ac1e1ec1f45fceec67c74cf931b72ea773b472d8955d677cbff898d579",
+          "sha256": "c8377fd06c171033afe5362fd3dd1f1c08d8afa504e9975f77779344b40eadb2",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/local_butler.py",
-          "sha256": "13fdc4dcd0d2c2aa102eeb761fd9d56743a2dfdb71d79b064831f4446b927ecc",
+          "sha256": "dfcb016d0dc23823ac1d4c8817f00848dc6c992fa02ae7aad3faf003de8322d4",
           "basis": "implementation_inspected_20261001"
         }
       ],
@@ -612,7 +693,7 @@
       "evidence": [
         {
           "path": "knowledge_bridge/organizer.py",
-          "sha256": "5c19fa5c113f1c82700efac32fe655d009c20c1f8757f3aeba592b28e2d72c07",
+          "sha256": "9e9851643a161f6878144171d363962cdcb3de0553274ce0c60030aa4d2c6b68",
           "basis": "implementation_inspected"
         },
         {
@@ -634,7 +715,7 @@
       "verification_records": [
         {
           "path": "tests/test_candidate_writer_authorization.py",
-          "sha256": "a1573bebd466cc78b3146ce73d4f9f5108bc5a1a7b1800bbfd23cc08c1877d4e",
+          "sha256": "cfacb68046356790db4c42306370ab6e916ad5f37934b9a35813fc772c6978d4",
           "kind": "existing_test_not_reexecuted_by_catalog"
         }
       ]
@@ -675,7 +756,7 @@
       "verification_records": [
         {
           "path": "tests/test_candidate_writer_authorization.py",
-          "sha256": "a1573bebd466cc78b3146ce73d4f9f5108bc5a1a7b1800bbfd23cc08c1877d4e",
+          "sha256": "cfacb68046356790db4c42306370ab6e916ad5f37934b9a35813fc772c6978d4",
           "kind": "existing_test_not_reexecuted_by_catalog"
         }
       ]
@@ -705,7 +786,7 @@
         },
         {
           "path": "knowledge_bridge/continuous_organization.py",
-          "sha256": "09ffc8d81bc6f6f513e35c239dd28eae4dd69d7b679f859739f1f56a8736c66a",
+          "sha256": "cd0ce590d9648ac7eac4cd3dadfb5fa94e82617beadb2d9dfd84425d6b0ed8ab",
           "basis": "implementation_inspected"
         },
         {
@@ -737,12 +818,12 @@
       "evidence": [
         {
           "path": "knowledge_bridge/continuous_organization.py",
-          "sha256": "09ffc8d81bc6f6f513e35c239dd28eae4dd69d7b679f859739f1f56a8736c66a",
+          "sha256": "cd0ce590d9648ac7eac4cd3dadfb5fa94e82617beadb2d9dfd84425d6b0ed8ab",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/organizer.py",
-          "sha256": "5c19fa5c113f1c82700efac32fe655d009c20c1f8757f3aeba592b28e2d72c07",
+          "sha256": "9e9851643a161f6878144171d363962cdcb3de0553274ce0c60030aa4d2c6b68",
           "basis": "implementation_inspected"
         },
         {
@@ -821,10 +902,10 @@
       "id": "butler",
       "title": "管家问答与授权工具",
       "status": "limited",
-      "summary": "管家可选择本机模型、外部兼容服务或本机 Hermes；各接入的工具与上下文能力分别标明。",
+      "summary": "管家可选择本机模型、外部兼容 API 或本机 Hermes；按注册工具、权限和主人确认执行操作。",
       "usage": "管家设置中选择模型、专用密钥、能力和外发范围；本轮开启工具后逐项设置禁止、确认或允许。",
-      "details": "独立服务配置、DeepSeek原始思考回放、工具回执、确认窗口、取消、对话恢复、Writer候选写入与撤销；指定文件夹有预览与恢复记录，联网单独开启。",
-      "limits": "本候选外部兼容 API 使用本对话同一接入配置下最近最多8对已完成问答，按容量整对省略并提示；工作区或工具派生历史、旧本地与其他配置、全库和画像不自动外发。图片需确认支持的模型，应用限额单张8MiB、每轮4张合计16MiB；每会话未发送草稿同额，可刷新恢复，24小时仅清理未绑定原件，已发送原图保留。Hermes仅文字问答、不执行界渡工具。受保护正文不能经本链路外发。",
+      "details": "外部 API 和 Hermes 均可使用公开产品帮助与已注册的界渡操作目录；实际调用由服务端权限、主人确认和审计约束。外部 API 可用同对话同接入配置的有限已完成问答；历史与图片按出站规则筛选。DeepSeek 是可选的外部 API 方案，不要求部署本地生成模型，也不会改动现有供应商配置。",
+      "limits": "工具关闭、未注册或未授权时不能假执行；注册不等于获准。管家不自动读取全库、画像或受保护正文。旧问答只在原范围与预算允许时提供；外部调用可能计费，取消与失败不能宣称成功。",
       "verification": "外部兼容工具链有合成 HTTP 验收；本机 Hermes 的 DeepSeek 配置已通过真实连续问答、重启恢复、流式取消与再问。不能外推为所有服务商已实测。",
       "keywords": [
         "管家",
@@ -841,17 +922,17 @@
       "evidence": [
         {
           "path": "knowledge_bridge/local_butler.py",
-          "sha256": "13fdc4dcd0d2c2aa102eeb761fd9d56743a2dfdb71d79b064831f4446b927ecc",
+          "sha256": "dfcb016d0dc23823ac1d4c8817f00848dc6c992fa02ae7aad3faf003de8322d4",
           "basis": "implementation_inspected_20261001"
         },
         {
           "path": "knowledge_bridge/butler_provider.py",
-          "sha256": "a043a0e037a8b6dfa14c709949f2c65a42cb874fd181c42eb529885ed830456e",
+          "sha256": "08e9ade2514354ea2a4e96e86f1b7a108240e683ed5493d6a3703177398e0c1a",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/butler_tools.py",
-          "sha256": "91fc9b2514c154aab7362c503760f31e8da80ba87cd0c5cbaad218182f662cc8",
+          "sha256": "09a5160edefaa56ffb48027734e1261ea961c0221c2ce82b9774665c001968ad",
           "basis": "implementation_inspected"
         },
         {
@@ -868,12 +949,32 @@
           "path": "knowledge_bridge/butler_network.py",
           "sha256": "11ee993cef52f1ebe26c31c5b51e75de6987732f09992c1ef65c894a9d30540c",
           "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/product_status.py",
+          "sha256": "b41cc6fcb911dde5febf377a3836d41084837fa2df76e484a2825da2374b7514",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/source_control.py",
+          "sha256": "d700e3e57e5cdf662e5293e5b197d64566c1e65f154e86970043cf2b64e562d9",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/hermes_tool_bridge.py",
+          "sha256": "6bdda55695fc289476bfb56fa39bfaf2d5bbcb8728179b2a18b88fbd7dbfd8db",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/hermes_direct_runner.py",
+          "sha256": "ec40fe65c9e109859dee76b28e4a4c59de1549c4e69a3cb34bbc568bde16686c",
+          "basis": "implementation_inspected"
         }
       ],
       "verification_records": [
         {
           "path": "tests/test_butler_generation.py",
-          "sha256": "f2fd927934756d585596c55a0c84354045dc9666128d4bf2d2acc2a23c84ce83",
+          "sha256": "ba8664ce607be08670f6831b05bacbbecf577b565b33fd333ac009ecab503d0b",
           "kind": "existing_test_not_reexecuted_by_catalog"
         },
         {
@@ -1026,7 +1127,7 @@
         },
         {
           "path": "knowledge_bridge/evidence_index.py",
-          "sha256": "7f2f355b26e770aaebed5638479183a67839fd820142c843afdf2618b5219e69",
+          "sha256": "be6dee7c51e6a92121362a028c7febfc04abdf52d401cda9db383eb8d6229dd2",
           "basis": "implementation_inspected"
         },
         {
@@ -1060,8 +1161,8 @@
       "summary": "程序、运行时和控制资料集中在.jiedu，启动器绑定所属进程。",
       "usage": "使用现有界渡启动入口；设置中检查生命周期状态和错误。",
       "details": "包标记定位工作区与组件，普通文件夹不依赖Obsidian/Git；已有自包含包和Windows本机运行时。启动/停止核验进程身份。",
-      "limits": "安装器候选已生成，本机隔离安装、首次启动、重复安装、签名程序更新与卸载保留资料通过；本候选全新 Windows 验收和公开发布渠道仍待完成。",
-      "verification": "原生 WebView、关闭隐藏、托盘和重复启动复用后台已实测；公开发布前继续核对最终候选。",
+      "limits": "Windows x64 的 1.1.8 安装器已公开发布。安装和升级仍需核对下载、校验、磁盘空间与运行结果；失败应报告实际错误，不能承诺每次必定成功。",
+      "verification": "1.1.8 公开发布链接见 README；实际已安装版本须查询本机状态。",
       "keywords": [
         "安装",
         "启动",
@@ -1074,7 +1175,7 @@
       "evidence": [
         {
           "path": "knowledge_bridge/package_layout.py",
-          "sha256": "51fe9555389711248d127e5655206eac964891c4645f5dc8bf5f0066088eb6b4",
+          "sha256": "18c3514a6cd837bab04c4c6b014192385dd9ada2866f3936fa2d5a55922c438d",
           "basis": "implementation_inspected"
         },
         {
@@ -1089,19 +1190,29 @@
         },
         {
           "path": "knowledge_bridge/bridge_launcher.py",
-          "sha256": "1b78a3557fc490fd48888ede48dea4701b6e267b885a191edca3a0416e2172b6",
+          "sha256": "06cb2277e4485d2e6e535477e71edea26488ce9a3907c99a8d07ebbad97c09b2",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/process_runtime.py",
-          "sha256": "684bb2dab8eca13709a4b509488bef01b68382a6dac985053ecd6f499ccb039b",
+          "sha256": "f0a260f57273b681e8584d7504a4b4f6453a38ef7020932f06aaa82c0fe54dad",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "VERSION",
+          "sha256": "333d89aa068c7ab9eb7fe7ba55387e02b26fafdcfa06b62d2e45e3d0a43c3b9a",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "README.md",
+          "sha256": "ec7ed183cce587e048b8d9f6d0f05eee9c4cee85cf9d06436f89ec11e2db81f1",
           "basis": "implementation_inspected"
         }
       ],
       "verification_records": [
         {
           "path": "tests/test_portable_package.py",
-          "sha256": "8599e165ab6e7b4caacf974b5614ae9eecd951a6d618fba075938f5d90d408c5",
+          "sha256": "eaeb7cdee33285f2391ce78b05cda474311120ed1ba1cbade393ac509e3f85a5",
           "kind": "existing_test_not_reexecuted_by_catalog"
         },
         {
@@ -1115,7 +1226,7 @@
       "id": "unfinished",
       "title": "明确未完成的能力",
       "status": "unfinished",
-      "summary": "整体快照恢复、任意格式无损转换、所有智能体历史采集和全库无人值守整理仍未完成；消费者发布尚有验收门槛。",
+      "summary": "整体快照恢复、任意格式无损转换、所有智能体全历史采集和全库无人值守整理仍未完成。",
       "usage": "遇到这些需求先核对范围，保留原件和现有恢复记录。",
       "details": "当前已有原件保全、Writer单次撤销、局部迁移和组件包，不把它们当作通用整库恢复。未知来源、旧记录缺证及未补跑整理维持缺口。",
       "limits": "没有承诺全历史采集、全库整理完成、绝对安全或模型回答必然正确。产品目标只是计划依据，不能作为已实现验收。",
@@ -1127,7 +1238,6 @@
         "快照",
         "恢复",
         "任意格式",
-        "通用安装",
         "全部",
         "成熟"
       ],
@@ -1169,7 +1279,7 @@
       "evidence": [
         {
           "path": "knowledge_bridge/manual_extraction.py",
-          "sha256": "9ddf1225fc27c806d1245c108b44c4b1458016a5828ab5dc964e19aa26975858",
+          "sha256": "7b190718ea4ef55fe54f9bcb56d361b15c67b6ac0df2a95da68326bc925b975f",
           "basis": "implementation_inspected"
         },
         {
@@ -1260,12 +1370,12 @@
       "evidence": [
         {
           "path": "knowledge_bridge/web.py",
-          "sha256": "7595ee928dcd63f2688c8b17ad89cb66f552764d3eab6b735ca8b2da526299a7",
+          "sha256": "0d05eb89d373bcec03ba4996a709f6313c69935983f6ff885df470f327d41ed4",
           "basis": "implementation_inspected"
         },
         {
           "path": "knowledge_bridge/core.py",
-          "sha256": "0c3dc7ac1e1ec1f45fceec67c74cf931b72ea773b472d8955d677cbff898d579",
+          "sha256": "c8377fd06c171033afe5362fd3dd1f1c08d8afa504e9975f77779344b40eadb2",
           "basis": "implementation_inspected"
         }
       ],
@@ -1281,11 +1391,11 @@
       "id": "hermes_chat",
       "title": "通过本机 Hermes 连续问答",
       "status": "limited",
-      "summary": "管家可选择本机已安装并配置模型的 Hermes，复用其软件运行环境。",
+      "summary": "管家可选择本机已安装并配置模型的 Hermes，并经界渡权限核对调用已注册工具。",
       "usage": "管家模型设置 → Hermes → 检测并使用；之后在管家中发送问题。",
-      "details": "界渡保留自己的对话。最近同一配置下最多八轮已完成问答、合计最多16KB历史随本轮提供；服务重启后可继续。支持流式输出和取消。公开产品能力说明按问题提供给模型。",
-      "limits": "当前仅问答，不执行界渡工具、不自动读取知识库、不继承原 Hermes 会话和私人记忆。思考与输出由 Hermes 管理。已实测 DeepSeek 配置；其他兼容服务尚未逐家实测。自定义服务地址暂不支持。使用会消耗 Hermes 所配置服务的额度。",
-      "verification": "本轮真实软件调用已通过首轮、重启后连续问答、输出中取消、取消后再问；原 Hermes 配置只读。",
+      "details": "界渡保留自己的对话。有限的同一配置已完成问答可随本轮提供；支持流式输出和取消。公开产品能力按需查询，界渡操作经注册目录、服务端权限和主人确认，工具回执可审计。",
+      "limits": "不继承原 Hermes 会话和私人记忆；不自动读取知识库或向模型注入私库。Hermes 所配置的模型服务可能计费，工具关闭或未授权时不得调用或声称执行。具体模型兼容性与当前连接状态须实时核对。",
+      "verification": "已实现 Hermes 问答与界渡工具桥接；具体安装和授权状态由实时工具核对。",
       "keywords": [
         "Hermes",
         "本机软件",
@@ -1296,13 +1406,28 @@
       "evidence": [
         {
           "path": "knowledge_bridge/hermes_client.py",
-          "sha256": "3a19cfc92f4af052d20752ed063ca3731148d665953d208f22a4028849d27449",
+          "sha256": "8f8663dd5ad956ea8c9df127adf9d7db4d47f02909a0f7dc6b8815a6a588785e",
           "basis": "candidate_implementation"
         },
         {
           "path": "knowledge_bridge/local_butler.py",
-          "sha256": "13fdc4dcd0d2c2aa102eeb761fd9d56743a2dfdb71d79b064831f4446b927ecc",
+          "sha256": "dfcb016d0dc23823ac1d4c8817f00848dc6c992fa02ae7aad3faf003de8322d4",
           "basis": "candidate_implementation"
+        },
+        {
+          "path": "knowledge_bridge/hermes_tool_bridge.py",
+          "sha256": "6bdda55695fc289476bfb56fa39bfaf2d5bbcb8728179b2a18b88fbd7dbfd8db",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/hermes_direct_runner.py",
+          "sha256": "ec40fe65c9e109859dee76b28e4a4c59de1549c4e69a3cb34bbc568bde16686c",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "knowledge_bridge/butler_tools.py",
+          "sha256": "09a5160edefaa56ffb48027734e1261ea961c0221c2ce82b9774665c001968ad",
+          "basis": "implementation_inspected"
         }
       ],
       "verification_records": [
@@ -1317,11 +1442,11 @@
       "id": "software_update",
       "title": "桌面安装与检查更新",
       "status": "limited",
-      "summary": "候选安装器带独立 Python 运行环境；设置页可主动检查签名更新。",
-      "usage": "运行 Windows x64 安装器，选择专用安装目录；首次启动选择知识工作区。设置 → 关于界渡与更新 → 检查更新。",
-      "details": "安装器无需预装 Python/Git；缺少 WebView2 时调用微软安装入口。程序更新先验证发布信息签名、有效期、版本和文件哈希，写入失败可回退。运行环境依赖变化需完整安装器。",
-      "limits": "当前公开更新渠道尚未发布，不能宣称已上线；候选安装器无商业代码签名。新安装器的全新 Windows 验收仍待完成，旧源码版本的虚拟机验收不能替代本版本。安装器不内置 OCR、语义模型或本地聊天模型。",
-      "verification": "本机隔离安装、无旧配置首次启动、重复安装保留资料、签名程序更新重启、卸载保留资料和进度已通过；新候选全新 Windows 与真实公网更新发布未验收。",
+      "summary": "Windows x64 的 1.1.8 安装器已公开发布；设置页可检查签名更新。",
+      "usage": "从官方 1.1.8 发布页下载 Windows x64 setup.exe；安装时联网下载并校验 OCR 与向量资源。已安装用户可在设置 → 关于界渡与更新检查更新。",
+      "details": "安装器无需预装 Python/Git；缺少 WebView2 时调用微软安装入口。安装器下载并校验 OCR 和语义向量资源，安装完成后两项可离线使用；不附带管家生成模型。更新流程核对签名、有效期、版本和文件哈希，按更新范围选择程序包或完整安装器。",
+      "limits": "1.1.8 公开发布不代表本机已经安装、更新通道当前可达或每次升级必定成功。安装器尚无 Windows 发布者签名，系统可能显示未知发布者。安装和更新需满足联网、校验及磁盘空间等条件；失败时应查看实际状态和错误。",
+      "verification": "VERSION 与 README 记录 1.1.8 公开发布；desktop/installer.iss 定义运行时、OCR 和向量资源的下载校验及生成模型不附带说明。实时已安装版本和更新结果须查本机状态。",
       "keywords": [
         "安装器",
         "软件更新",
@@ -1332,32 +1457,44 @@
       "evidence": [
         {
           "path": "knowledge_bridge/online_update.py",
-          "sha256": "ef4bb26de2539e614c6a76e04995d7d6a9f1b55cfb2aabba2be6e0a751cdc94f",
+          "sha256": "7d3b5755d77dcd7f93f153afea7c862d44b6ef05ea492234f3bcc2ab9dfcaff4",
           "basis": "candidate_implementation"
         },
         {
           "path": "knowledge_bridge/desktop_update.py",
-          "sha256": "5f92471045eff0d82604701de3cf6f4e779588919ff882821f06a6a5444037d4",
+          "sha256": "6b69b7c62364dfd5d961d20d74b33099586c60a39c426ee6b653f39b641eb56d",
           "basis": "candidate_implementation"
         },
         {
           "path": "desktop/installer.iss",
-          "sha256": "250d3b6629dcd0fc7735db20e74b5f8841dfab5912d65e1a7832855a7e6e20b3",
+          "sha256": "81b151e491032cd97d79d4ef6558b0c7d931a156e2aad1ed5fe35afe4ef0eb93",
           "basis": "candidate_implementation"
+        },
+        {
+          "path": "VERSION",
+          "sha256": "333d89aa068c7ab9eb7fe7ba55387e02b26fafdcfa06b62d2e45e3d0a43c3b9a",
+          "basis": "implementation_inspected"
+        },
+        {
+          "path": "README.md",
+          "sha256": "ec7ed183cce587e048b8d9f6d0f05eee9c4cee85cf9d06436f89ec11e2db81f1",
+          "basis": "implementation_inspected"
         }
       ],
       "verification_records": [
         {
           "path": "tests/test_online_update.py",
-          "sha256": "63e81e707f8c38e560ec6ee2f054a46dd4ee0166af8a3a7c2724937bafa1a95c",
+          "sha256": "e0b0cbd5131bc139da1d2ece6bfc3fcaa6e872f9eced5522c0324cb2f5994714",
           "kind": "test_source_not_full_coverage"
         },
         {
           "path": "tests/test_desktop_update.py",
-          "sha256": "eb07fea8f54471b099fb42f6c8924cad574e74a1ecc5b15a4e3493db97db42d9",
+          "sha256": "8d969cdbbe0da3c6b1d9d1f1c3df4fe75d99124b3e284e7252337e6171ea71a2",
           "kind": "test_source_not_full_coverage"
         }
       ]
     }
-  ]
+  ],
+  "release_version": "1.1.8",
+  "review_status": "2026-10-22 maintenance candidate"
 }

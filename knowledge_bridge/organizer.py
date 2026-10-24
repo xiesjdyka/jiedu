@@ -36,7 +36,7 @@ def reject_protected(value, _field=None):
         raise PermissionError('受保护来源不能进入公开整理链')
 
 @visibility_operation
-def evidence_checked(context,evidence):
+def evidence_checked(context,evidence,*,allow_frozen_prefix=False):
     reject_protected(evidence)
     if not isinstance(evidence,list) or not 1<=len(evidence)<=32:raise ValueError('需要 1–32 条可核验来源证据')
     normalized=[]
@@ -52,10 +52,11 @@ def evidence_checked(context,evidence):
             if ev.get('archive_message_id') is not None:raise ValueError('归档消息证据必须直接核验当前标准消息行，不能混用文件快照')
             from .wiki_snapshots import WikiSnapshots
             store=WikiSnapshots(context);row,snapshot=store.evidence_row(ev)
-            store.verify_current(row)
+            if allow_frozen_prefix:store.verify_frozen_prefix(row)
+            else:store.verify_current(row)
             raw=snapshot[start:end]
             if len(raw)!=end-start or raw.decode('utf-8')!=quote:raise ValueError('引用与历史快照字节不一致')
-            normalized.append({'source_path':target.relative_path,'scope':target.scope.value,'version':version,'byte_start':start,'byte_end':end,'quote':quote,'quote_sha256':sha(raw),'verification':'delivered_snapshot_and_current_source_hash','snapshot_id':row['snapshot_id'],'snapshot_job_id':ev['snapshot_job_id'],'source_sha256':row['source_sha256'],'captured_at':row['captured_at']})
+            normalized.append({'source_path':target.relative_path,'scope':target.scope.value,'version':version,'byte_start':start,'byte_end':end,'quote':quote,'quote_sha256':sha(raw),'verification':'delivered_snapshot_and_current_source_prefix' if allow_frozen_prefix else 'delivered_snapshot_and_current_source_hash','snapshot_id':row['snapshot_id'],'snapshot_job_id':ev['snapshot_job_id'],'source_sha256':row['source_sha256'],'captured_at':row['captured_at']})
             continue
         path=context.root/target.relative_path
         archived=ev.get('archive_message_id') is not None
@@ -192,7 +193,12 @@ class Organizer:
                     if row.get('delivered_authorization_revision')!=revision or row.get('status') not in {'reading','read_complete','processed','skipped'}:continue
                     if row.get('snapshot_id'):
                         from .wiki_snapshots import WikiSnapshots
-                        try:WikiSnapshots(self.context).verify_current(row)
+                        try:
+                            store=WikiSnapshots(self.context)
+                            if (job.get('reorganization_job_schema') and job.get('captured_authorization_revision')==revision
+                                    and row.get('offset')==row.get('total_bytes')):
+                                store.verify_frozen_prefix(row)
+                            else:store.verify_current(row)
                         except (OSError,ValueError):continue
                     else:
                         source=self.context.root/row['source_path']
@@ -248,6 +254,14 @@ def _submit(context,client,target_path,content,reason,evidence,*,action='create'
             if old.get('client_id')==client and old.get('request_id')==request_id:
                 if old.get('request_digest')!=request_digest:raise ValueError('同一 request_id 的内容发生变化；请使用新的请求标识')
                 if old.get('authorization')!=authorization:continue
+                if renewal_job:
+                    # A crash may have saved the successor before closing its
+                    # old candidate. Retry must recheck the frozen evidence and
+                    # target before claiming that the old item was processed.
+                    evidence_checked(context,evidence,allow_frozen_prefix=old.get('append_stable_window') is True)
+                    current_target=sha(target.read_bytes()) if target.exists() else 'missing'
+                    if current_target!=expected_target_hash or current_target!=renewal_job['expected_target_hash']:
+                        raise ValueError('目标与已读取版本不同，请重新读取')
                 _link_candidate(context,client,job_id,existing,evidence)
                 if renewal_job:renewal.complete(client,renewal_job,existing['candidate_id'])
                 return {'request_id':request_id,'candidate_id':existing['candidate_id'],'candidate_created':False,'status':existing['status'],'formal_write_performed':False,'target_path':target_path,'action':action}
@@ -255,13 +269,24 @@ def _submit(context,client,target_path,content,reason,evidence,*,action='create'
         if ev.get('snapshot_job_id'):
             Organizer(context).load(ev['snapshot_job_id'],client)
             if job_id!=ev['snapshot_job_id']:raise ValueError('快照候选必须关联实际读取任务')
-    checked=evidence_checked(context,evidence)
+    append_stable=False
+    if job_id and authorization and authorization.get('revision') and evidence and any(e.get('snapshot_id') for e in evidence):
+        job=Organizer(context).load(job_id,client)
+        revision=authorization['revision']
+        append_stable=all(
+            (not ev.get('snapshot_id')) or any(
+                row['source_path']==ev.get('source_path') and row.get('snapshot_id')==ev.get('snapshot_id')
+                and row['offset']==row['total_bytes'] and row.get('delivered_authorization_revision')==revision
+                for row in job['sources'])
+            for ev in evidence)
+    checked=evidence_checked(context,evidence,allow_frozen_prefix=append_stable)
     if expected_target_hash is None:raise ValueError('更新必须提供已读取目标的 SHA-256；创建使用 missing')
     actual=sha(target.read_bytes()) if target.exists() else 'missing'
     if actual!=expected_target_hash:raise ValueError('目标与已读取版本不同，请重新读取')
     if (action=='create')!=(actual=='missing'):raise ValueError('创建/更新动作与目标存在状态不符')
     provenance={'interface':source_interface,'client_id':client,'target_path':target_path,'proposed_action':action,'expected_target_hash':expected_target_hash,'reason':reason,'conflict_status':conflict_status,'uncertainties':uncertainties or [],'request_id':request_id,'request_digest':request_digest,'job_id':job_id,'evidence_verified':True,'storage_policy':'open'}
     if authorization:provenance['authorization']=authorization
+    if append_stable:provenance['append_stable_window']=True
     if continuity:provenance['continuity']=continuity
     if job_id:
         service=Organizer(context);job=service.load(job_id,client)

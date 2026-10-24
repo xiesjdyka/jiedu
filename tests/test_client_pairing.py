@@ -14,6 +14,60 @@ from knowledge_bridge.workspace import initialize_workspace
 
 
 class PairingTransactionTests(unittest.TestCase):
+    def test_handoff_is_scoped_to_client_workspace_and_one_use(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);registry,permissions,_,_=self.harness(root)
+            manager=PairingTransactionManager(registry,permissions)
+            ticket=manager.issue_handoff('codex')
+            with self.assertRaises(ValueError):manager.redeem_handoff(ticket['token'],'hermes',ticket['workspace_id'])
+            with self.assertRaises(ValueError):manager.redeem_handoff(ticket['token'],'codex','other-workspace')
+            with patch.object(manager,'quick_connect',return_value={'outcome':'paired'}) as connect:
+                self.assertEqual('paired',manager.redeem_handoff(ticket['token'],'codex',ticket['workspace_id'])['outcome'])
+                connect.assert_called_once_with('codex')
+            with self.assertRaises(ValueError):manager.redeem_handoff(ticket['token'],'codex',ticket['workspace_id'])
+
+    def test_handoff_repair_preserves_identity_policy_and_collection_cursor(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);registry,permissions,adapter,patches=self.harness(root)
+            with patches[0],patches[1],patches[2],patches[3],patches[4]:
+                manager=PairingTransactionManager(registry,permissions)
+                first=manager.quick_connect('codex')
+                identity=first['client']['internal_id']
+                permissions.set_policy(identity,'formal','read','deny')
+                source=registry.context.sync/'codex-source-adapter.json'
+                before=source.read_bytes()
+                adapter.path.write_text('[mcp_servers.existing]\ncommand = "existing.exe"\n','utf-8')
+                ticket=manager.issue_handoff('codex')
+                repaired=manager.redeem_handoff(ticket['token'],'codex',ticket['workspace_id'])
+                self.assertEqual('repaired',repaired['outcome'])
+                self.assertEqual(identity,repaired['client']['internal_id'])
+                self.assertEqual('deny',next(row['decision'] for row in permissions.policies(identity)
+                                  if row['scope']=='formal' and row['operation']=='read'))
+                self.assertEqual(before,source.read_bytes())
+                self.assertIn('mcp_servers.knowledge_bridge',adapter.path.read_text('utf-8'))
+                current=adapter.path.read_text('utf-8')
+                stale=tomllib.loads(current)['mcp_servers']['knowledge_bridge']['env']['KNOWLEDGE_BRIDGE_CLIENT_SECRET']
+                adapter.path.write_text(current.replace(stale,'stale-fixture-secret'),'utf-8')
+                again=manager.quick_connect('codex')
+                self.assertEqual('repaired',again['outcome'])
+                self.assertEqual(identity,again['client']['internal_id'])
+                self.assertEqual(before,source.read_bytes())
+                current=adapter.path.read_text('utf-8')
+                self.assertIn('KNOWLEDGE_BRIDGE_CLIENT_ID = "codex"',current)
+                adapter.path.write_text(current.replace('KNOWLEDGE_BRIDGE_CLIENT_ID = "codex"',
+                    'KNOWLEDGE_BRIDGE_CLIENT_ID = "wrong_agent"'),'utf-8')
+                foreign=adapter.path.read_bytes()
+                with self.assertRaises(ValueError):manager.quick_connect('codex')
+                self.assertEqual(foreign,adapter.path.read_bytes())
+                self.assertEqual(before,source.read_bytes())
+
+    def test_missing_rule_defaults_match_new_pairing_defaults(self):
+        paired={(scope,operation,decision) for scope,operation,decision
+                in PairingTransactionManager._policies(None) if scope!='protected'}
+        missing={(row['scope'],row['operation'],row['decision'])
+                 for row in ClientPermissionService.default_policies()}
+        self.assertEqual(paired,missing)
+
     def harness(self, root: Path):
         context=initialize_workspace(root/"workspace")
         registry=ClientIdentityRegistry(context,root/"machine")

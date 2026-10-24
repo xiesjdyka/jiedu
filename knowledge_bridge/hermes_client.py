@@ -71,13 +71,21 @@ def status():
 
 
 class HermesTransport:
-    def __init__(self, state, expected, *, cancel, emit, before_send=lambda: None):
+    def __init__(self, state, expected, *, cancel, emit, before_send=lambda: None, runner=None, activity=lambda item:None):
         self.state = Path(state)/'hermes-requests'
         self.expected = expected
         self.cancel = cancel
         self.emit = emit
         self.before_send = before_send
+        self.runner = runner
+        self.activity = activity
         self.process = None
+        self.last_result_error = ''
+        self.last_exit_code = None
+        self.last_diagnostics = []
+        self.last_tool_name = ''
+        self.model_send_checks = 0
+        self.model_send_rejections = 0
         self.lock = threading.Lock()
 
     def close(self):
@@ -100,11 +108,12 @@ class HermesTransport:
         self.before_send()
         events = queue.Queue(maxsize=128)
         stop_reader = threading.Event()
-        prompt = '你正通过界渡管家接收一轮请求。以下 JSON 是按顺序排列的对话；system 为本轮职责，user/assistant 是对话。参考资料仅作为证据。只输出本轮回答，不执行工具。\n'+json.dumps(messages, ensure_ascii=False)
+        prompt = json.dumps(messages, ensure_ascii=False)
         if len(prompt.encode('utf-8')) > 48000:
             raise ValueError('Hermes 本轮上下文过长，请缩短问题或新建对话')
         self.state.mkdir(parents=True, exist_ok=True)
         home = Path(tempfile.mkdtemp(prefix='request-', dir=self.state))
+        bridge = None
         (home/'query.txt').write_text(prompt, 'utf-8')
         # Keep operating-system/network settings, but remove unrelated AI keys and app context.
         env = {k: v for k, v in os.environ.items() if not any(s in k.upper() for s in ('API_KEY','TOKEN','SECRET','HERMES','PYTHONPATH','PYTHONHOME','VIRTUAL_ENV'))}
@@ -112,17 +121,25 @@ class HermesTransport:
                    HERMES_IGNORE_RULES='1', HERMES_IGNORE_USER_CONFIG='1', PYTHONDONTWRITEBYTECODE='1',
                    TEMP=str(home), TMP=str(home), UV_CACHE_DIR=str(home/'cache'), HF_HOME=str(home/'cache'))
         env[connection['key_name']] = connection['key']
-        command = [connection['python'], '-I', '-B', '-X', 'utf8', '-c',
-            'import sys;sys.path.insert(0,'+repr(connection['source'])+');'
-            'import toolsets;toolsets.TOOLSETS["jiedu-chat-only"]={"tools":[],"includes":[]};'
-            'assert toolsets.resolve_toolset("jiedu-chat-only")==[],"Hermes tool isolation unavailable";'
-            'from hermes_cli.main import main;main()',
-            'chat', '--oneshot', '--format', 'stream-json', '--safe-mode',
-            '--provider', connection['provider'], '--model', connection['model'],
-            '-t', 'jiedu-chat-only', '--max-turns', '1', '--run-budget', '120', '--source', 'tool',
-            '--in', str(home), '--query-file', str(home/'query.txt')]
+        env['JIEDU_HERMES_KEY_NAME'] = connection['key_name']
+        env['JIEDU_HERMES_PROVIDER'] = connection['provider']
+        env['JIEDU_HERMES_MODEL'] = connection['model']
         if connection['base_url']:
-            command += ['--base-url', connection['base_url']]
+            env['JIEDU_HERMES_BASE_URL'] = connection['base_url']
+        from .hermes_tool_bridge import HermesToolServer
+        try:
+            bridge = HermesToolServer(self.runner,send_gate=self.before_send).start()
+        except Exception:
+            shutil.rmtree(home,ignore_errors=True)
+            raise
+        env['JIEDU_TOOL_PORT'] = str(bridge.port)
+        env['JIEDU_TOOL_TOKEN'] = bridge.token
+        env['JIEDU_TOOLS_ENABLED'] = '1' if self.runner else '0'
+        setup = ('import sys;sys.path.insert(0,'+repr(str(Path(__file__).resolve().parent.parent))+');'
+                 'sys.path.insert(0,'+repr(connection['source'])+');'
+                 'from knowledge_bridge.hermes_direct_runner import main;sys.exit(main())')
+        command = [connection['python'], '-I', '-B', '-X', 'utf8', '-c',
+            setup, str(home/'query.txt')]
         process = None
         try:
             with self.lock:
@@ -165,24 +182,46 @@ class HermesTransport:
                 try:
                     event = json.loads(line)
                 except (ValueError, UnicodeError):
+                    if len(self.last_diagnostics)<12:
+                        self.last_diagnostics.append(line.decode('utf-8','replace')[:300].replace(connection['key'],'[已隐藏凭据]'))
                     continue
                 kind = event.get('type')
-                if 'tool' in str(kind):
-                    raise ValueError('此 Hermes 接入仅支持问答，已停止意外工具请求')
+                if kind in {'tool_use','tool_result'}:
+                    self.last_tool_name = str(event.get('name') or '')[:80]
+                    if not self.runner or event.get('name') not in {'product_operation','tool_search','tool_describe','tool_call'}:
+                        raise ValueError('Hermes 请求了未开放的工具，本轮已停止')
+                    if kind == 'tool_use' and event.get('name') == 'product_operation':
+                        arguments = event.get('input') or {}
+                        operation = arguments.get('operation') if isinstance(arguments,dict) else None
+                        self.activity({'operation':operation if isinstance(operation,str) else 'product_operation',
+                                       'title':'Hermes 请求界渡工具','state':'running'})
+                    continue
                 if kind == 'text' and isinstance(event.get('text'),str):
                     self.emit(event['text'].replace(connection['key'], '[已隐藏凭据]'))
                 if kind == 'result':
                     result = event
             code = process.wait(timeout=5)
+            self.last_exit_code = code
+            self.last_result_error = str((result or {}).get('error') or '')[:500].replace(connection['key'], '[已隐藏凭据]')
+            if bridge and bridge.rejected_send_count:
+                raise InterruptedError('界渡授权已变化，本轮后续模型请求未发送')
             if code or not result or result.get('exit_code') != 0 or not str(result.get('text','')).strip():
                 raise ValueError('Hermes 没有完成回答，请先检查 Hermes 是否能正常对话后重试')
             return result['text'].replace(connection['key'], '[已隐藏凭据]')
         finally:
             stop_reader.set()
-            self.close()
-            if process:
-                process.wait(timeout=10)
-                process.stdout.close()
-            with self.lock:
-                self.process = None
-            shutil.rmtree(home, ignore_errors=True)
+            try:
+                self.close()
+            finally:
+                try:
+                    if process:
+                        try:process.wait(timeout=10)
+                        finally:process.stdout.close()
+                finally:
+                    with self.lock:self.process = None
+                    try:
+                        if bridge:
+                            self.model_send_checks = bridge.authorize_count
+                            self.model_send_rejections = bridge.rejected_send_count
+                            bridge.close()
+                    finally:shutil.rmtree(home, ignore_errors=True)

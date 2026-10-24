@@ -24,7 +24,6 @@ class CandidateReorganizationTests(unittest.TestCase):
         for scope in ['formal','evidence']:
             for operation in ['search','read']:self.permissions.set_policy(self.client,scope,operation,'allow')
         self.permissions.set_policy(self.client,'formal','submit_candidate','allow')
-        self.stack.enter_context(patch.object(self.permissions,'_ordinary_reads_are_open',return_value=False))
         for key,value in [('client_registry',self.registry),('client_permissions',self.permissions),('protection_control',self.manager)]:self.stack.enter_context(patch.object(web.app.state,key,value,create=True))
         for name in ['CANDIDATE_EVENTS','STAGING_EVENTS','AUDIT_EVENTS']:self.stack.enter_context(patch.object(memory,name,base/(name+'.jsonl')))
         self.stack.enter_context(patch.object(web,'active_workspace',return_value=self.context))
@@ -125,6 +124,74 @@ class CandidateReorganizationTests(unittest.TestCase):
         self.assertNotIn('delivered_authorization_revision',json.dumps(page))
         saved=service.load(job['job_id'],self.client)
         self.assertEqual(web._organization_auth_revision(self.client,[]),saved['sources'][0]['delivered_authorization_revision'])
+
+    def test_snapshot_candidate_append_stays_reviewable_but_new_permission_requires_reread(self):
+        from knowledge_bridge.wiki_snapshots import WikiSnapshots
+        frozen=WikiSnapshots(self.context).capture([self.source])
+        job=Organizer(self.context).start(self.client,'evidence','90_原始档案/测试','snapshot-current',snapshots=frozen)
+        page=self.call('read',{'job_id':job['job_id'],'source_path':self.source})
+        ev={k:page[k] for k in ('source_path','version','snapshot_id','snapshot_job_id')}|{'byte_start':0,'byte_end':page['returned_bytes'],'quote':page['content']}
+        result=self.call('submit',self.payload|{'evidence':[ev],'job_id':job['job_id'],'request_id':'snapshot-current'})
+        current=memory.candidate_source(result['candidate_id'])
+        source_file=self.context.root/self.source
+        source_file.write_bytes(source_file.read_bytes()+'后续更正：改用 JSON。\n'.encode())
+        legacy=copy.deepcopy(current);legacy['provenance'].pop('append_stable_window')
+        self.assertEqual('source_version_changed',web._candidate_readiness(legacy)['code'])
+        ready=web._candidate_readiness(current)
+        self.assertEqual('reviewable',ready['state']);self.assertGreater(ready['append_pending_bytes'],0)
+        self.assertIn('CSV',web._candidate_preview(current)['diff'])
+        target_file=self.context.root/self.target
+        target_file.write_text('# 测试\n另一个目标版本。\n','utf-8')
+        with self.assertRaises(ValueError):web._candidate_preview(current)
+        target_file.write_bytes(self.initial_target)
+        self.change_revision()
+        self.assertEqual('authorization_revision_expired',web._candidate_readiness(current)['code'])
+        with self.assertRaises(web.CandidateAuthorizationError):web._candidate_preview(current)
+
+    def test_reorganization_job_survives_append_and_closes_one_old_candidate(self):
+        from knowledge_bridge.candidate_reorganization import CandidateReorganization
+        from knowledge_bridge.knowledge_wiki import KnowledgeWiki
+        self.change_revision()
+        KnowledgeWiki(self.context).claim(self.client,lambda _:None)
+        renewal=CandidateReorganization(self.context)
+        revision=web._organization_auth_revision(self.client,[])
+        batch=renewal.attach({'status':'up_to_date'},self.client,lambda _:None,web._candidate_readiness,revision)
+        item=batch['reorganization']['items'][0];job_id=item['job_id']
+        self.assertEqual(self.old,item['old_candidate_id'])
+        source_file=self.context.root/self.source
+        source_file.write_bytes(source_file.read_bytes()+'后续更正：改用 JSON。\n'.encode())
+        self.assertTrue(renewal.row_current(Organizer(self.context).load(job_id,self.client)['sources'][0]))
+        source_page=self.call('read',{'job_id':job_id,'source_path':self.source})
+        self.call('read',{'job_id':job_id,'source_path':self.target})
+        evidence={k:source_page[k] for k in ('source_path','version','snapshot_id','snapshot_job_id')}|{'byte_start':0,'byte_end':source_page['returned_bytes'],'quote':source_page['content']}
+        result=self.call('submit',self.payload|{'evidence':[evidence],'job_id':job_id,'request_id':'renew-after-append'})
+        successor=memory.candidate_source(result['candidate_id'])
+        self.assertEqual('reorganized',memory.candidate_source(self.old)['status'])
+        self.assertTrue(successor['provenance']['append_stable_window'])
+        source_file.write_bytes(source_file.read_bytes()+'还有一条更新。\n'.encode())
+        self.assertEqual('reviewable',web._candidate_readiness(successor)['state'])
+        self.assertEqual(2,len(memory.list_candidates()))
+
+    def test_retry_never_closes_old_item_when_saved_snapshot_was_lost(self):
+        from knowledge_bridge.candidate_reorganization import CandidateReorganization
+        from knowledge_bridge.knowledge_wiki import KnowledgeWiki
+        from knowledge_bridge.wiki_snapshots import WikiSnapshots
+        self.change_revision();KnowledgeWiki(self.context).claim(self.client,lambda _:None)
+        renewal=CandidateReorganization(self.context);revision=web._organization_auth_revision(self.client,[])
+        batch=renewal.attach({'status':'up_to_date'},self.client,lambda _:None,web._candidate_readiness,revision)
+        job_id=batch['reorganization']['items'][0]['job_id']
+        page=self.call('read',{'job_id':job_id,'source_path':self.source})
+        self.call('read',{'job_id':job_id,'source_path':self.target})
+        ev={k:page[k] for k in ('source_path','version','snapshot_id','snapshot_job_id')}|{'byte_start':0,'byte_end':page['returned_bytes'],'quote':page['content']}
+        payload=self.payload|{'evidence':[ev],'job_id':job_id,'request_id':'interrupted-renewal'}
+        with patch.object(CandidateReorganization,'complete',side_effect=OSError('interrupted')):
+            with self.assertRaises(HTTPException):self.call('submit',payload)
+        self.assertEqual('pending',memory.candidate_source(self.old)['status'])
+        self.assertEqual(2,len(memory.list_candidates()))
+        WikiSnapshots(self.context).path(page['snapshot_id']).unlink()
+        with self.assertRaises(HTTPException):self.call('submit',payload)
+        self.assertEqual('pending',memory.candidate_source(self.old)['status'])
+        self.assertFalse(renewal.load()['batches'][batch['reorganization']['batch_id']]['tasks'][0]['resolved'])
 
 
 if __name__=='__main__':unittest.main()

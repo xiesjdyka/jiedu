@@ -34,6 +34,7 @@ class LocalToolHTTPTests(unittest.TestCase):
             runtime=SimpleNamespace(close=lambda:None,config=lambda:{'context_tokens':8192},status=lambda:{'state':'ready'},
                 headers=lambda:{'Authorization':'Bearer synthetic-owned-key'},endpoint=lambda:'http://127.0.0.1:'+str(server.server_port))
             service=LocalButler(context,runtime=runtime,permissions=permissions,tool_registry=registry,start_worker=False)
+            self.assertIs(registry.permissions,permissions)
             self.addCleanup(service.close);sid=service.create_session()['id'];jid=service.submit(sid,'synthetic tool question',tools_enabled=True)['id']
             saved={'snapshot':{},'sources':[],'budget':{'effective':{'max_output_tokens':512},'history_messages':0}}
             service._update(jid,state='running',context=json.dumps(saved));service.cancel_event=threading.Event()

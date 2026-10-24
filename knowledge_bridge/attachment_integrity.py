@@ -8,7 +8,8 @@ import tempfile
 from pathlib import Path
 
 
-def store_verified(folder: Path, name_for_digest, *, source=None, data=None):
+def store_verified(folder: Path, name_for_digest, *, source=None, data=None,
+                   expected_sha256=None, expected_size=None):
     folder.mkdir(parents=True, exist_ok=True)
     temporary = None
     try:
@@ -24,7 +25,11 @@ def store_verified(folder: Path, name_for_digest, *, source=None, data=None):
                 after = os.fstat(incoming.fileno())
                 if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
                     raise OSError('附件读取期间来源发生变化，请重试')
-        sha = digest.hexdigest(); destination = folder / name_for_digest(sha)
+        sha = digest.hexdigest()
+        if ((expected_sha256 is not None and sha.casefold() != expected_sha256.casefold()) or
+                (expected_size is not None and size != expected_size)):
+            raise OSError('来源附件在核验后发生变化；未归档该文件')
+        destination = folder / name_for_digest(sha)
         duplicate = False
         try:
             # Same-volume hard link atomically publishes completed bytes and never clobbers.

@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 import knowledge_bridge.source_adapters as adapters
@@ -7,7 +8,7 @@ import knowledge_bridge.source_adapters as adapters
 class SourceAdapterRegistryTests(unittest.TestCase):
     def test_saved_messages_and_check_time_are_not_connection_success(self):
         with patch('knowledge_bridge.codex_source_adapter.CodexSourceAdapter') as cls:
-            cls.return_value.status.return_value={'enabled':True,'discovered_session_count':2,'authorized_session_count':2,
+            cls.return_value.status.return_value={'enabled':True,'archive_policy':'all','discovered_session_count':2,'authorized_session_count':2,
                 'last_sync_at':'2026-09-25T01:00:00Z','last_message_sync_at':'2026-09-24T10:00:00Z','total_archived_message_count':17,'pending_backfill_count':1}
             row=adapters._codex_probe()
         self.assertEqual(17,row['saved']['message_count'])
@@ -76,9 +77,9 @@ class SourceAdapterRegistryTests(unittest.TestCase):
             self.assertEqual("error", failed["state"])
             self.assertIn("fixture failure", failed["detail"])
             cls.return_value.status.return_value = {
-                "enabled": True, "discovered_session_count": 2,
+                "enabled": True, "archive_policy": "all", "discovered_session_count": 2,
                 "authorized_session_count": 2,
-                "last_error": None, "last_sync_at": "2026-01-01",
+                "last_error": None, "last_sync_at": datetime.now(timezone.utc).isoformat(),
                 "failed_session_count": 0, "missing_attachment_count": 0}
             healthy = adapters._codex_probe()
             self.assertEqual("automatic", healthy["state"])
@@ -86,14 +87,14 @@ class SourceAdapterRegistryTests(unittest.TestCase):
     def test_codex_snapshot_time_is_not_sync_evidence_and_empty_scope_is_not_running(self):
         with patch("knowledge_bridge.codex_source_adapter.CodexSourceAdapter") as cls:
             cls.return_value.status.return_value = {
-                "enabled": True, "discovered_session_count": 2,
+                "enabled": True, "archive_policy": "all", "discovered_session_count": 2,
                 "authorized_session_count": 2, "last_error": None,
                 "snapshot_updated_at": "2026-01-01", "last_sync_at": None}
             configured_only = adapters._codex_probe()
             self.assertEqual("awaiting_first_sync", configured_only["state"])
             self.assertNotIn("正在", configured_only["summary"])
             cls.return_value.status.return_value = {
-                "enabled": True, "discovered_session_count": 59,
+                "enabled": True, "archive_policy": "selected", "discovered_session_count": 59,
                 "authorized_session_count": 0, "last_error": None,
                 "last_sync_at": "2026-01-01"}
             empty_scope = adapters._codex_probe()
@@ -103,7 +104,7 @@ class SourceAdapterRegistryTests(unittest.TestCase):
     def test_codex_gap_or_pending_backfill_is_not_reported_as_fully_caught_up(self):
         with patch("knowledge_bridge.codex_source_adapter.CodexSourceAdapter") as cls:
             cls.return_value.status.return_value = {
-                "enabled": True, "discovered_session_count": 4,
+                "enabled": True, "archive_policy": "all", "discovered_session_count": 4,
                 "authorized_session_count": 3, "last_error": None,
                 "last_sync_at": "2026-01-01", "pending_backfill_count": 1,
                 "gap_detected": True}
@@ -111,6 +112,19 @@ class SourceAdapterRegistryTests(unittest.TestCase):
         self.assertEqual("degraded", degraded["state"])
         self.assertIn("待补档 1", degraded["detail"])
         self.assertIn("断档检测：有", degraded["detail"])
+
+    def test_codex_all_sqlite_only_and_unknown_or_stale_policy_are_not_misreported(self):
+        fresh=datetime.now(timezone.utc).isoformat()
+        base={"enabled":True,"archive_policy":"all","discovered_session_count":2,
+              "authorized_session_count":0,"last_sync_at":fresh,
+              "sqlite":{"detected":True,"sources":[{"readable":True,"history":{"status":"complete"}}]}}
+        with patch("knowledge_bridge.codex_source_adapter.CodexSourceAdapter") as cls:
+            cls.return_value.status.return_value=base
+            self.assertEqual('automatic',adapters._codex_probe()['state'])
+            cls.return_value.status.return_value=base|{'archive_policy':None}
+            self.assertEqual('unverified',adapters._codex_probe()['state'])
+            cls.return_value.status.return_value=base|{'last_sync_at':'2026-01-01'}
+            self.assertEqual('degraded',adapters._codex_probe()['state'])
 
     def test_connection_status_does_not_attribute_global_collector_to_revoked_client(self):
         adapter = {"adapter_id": "codex_local", "runtime": {
@@ -123,6 +137,24 @@ class SourceAdapterRegistryTests(unittest.TestCase):
         active = adapters.connection_status({"status": "authenticated"}, archive, policies, adapter)
         self.assertTrue(active["state"].startswith("independent_collector_"))
         self.assertIn("独立运行", active["detail"])
+
+    def test_collection_status_is_independent_of_mcp_archive_permission(self):
+        archive = {"bound": True}
+        local = {"adapter_id": "codex_local", "runtime": {
+            "state": "automatic", "summary": "本机自动归档", "detail": "正常"}}
+        denied = [{"scope": "evidence", "operation": "raw_archive",
+                   "decision": "deny", "selector": {}}]
+        self.assertEqual("independent_collector_automatic",
+            adapters.connection_status({"status": "authenticated"}, archive, denied, local)["state"])
+        cursor = {"adapter_id": "cursor_local", "runtime": {
+            "state": "automatic", "summary": "Cursor 本机归档已检查", "detail": "已保存 8 条"}}
+        self.assertEqual("independent_collector_automatic",
+            adapters.connection_status({"status": "authenticated"}, archive, denied, cursor)["state"])
+        generic = {"adapter_id": "generic_mcp_push", "runtime": {"state": "push_only"}}
+        self.assertEqual("awaiting_push",
+            adapters.connection_status({"status": "authenticated"}, archive, [], generic)["state"])
+        self.assertEqual("permission_denied",
+            adapters.connection_status({"status": "authenticated"}, archive, denied, generic)["state"])
 
 
 if __name__ == "__main__":

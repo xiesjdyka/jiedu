@@ -10,7 +10,7 @@ from .conversation_visibility import exclusion_aliases, exclusion_reason
 CANONICAL_ROOT=active_workspace().raw_archive
 ATTACHMENT_MANIFEST=active_workspace().state/"attachments"/"manifest.jsonl"
 DISPLAY_CACHE=active_workspace().cache/"archive-display.json"
-CLIENT_NAMES={"chatgpt":"ChatGPT","hermes":"Hermes","codex":"ChatGPT"}
+CLIENT_NAMES={"chatgpt":"ChatGPT","hermes":"Hermes","codex":"ChatGPT","cursor":"Cursor"}
 STANDARD_MESSAGE_HEADING=re.compile(r"(?m)^## MESSAGE\s+([^\s｜|]+)\s*[｜|]\s*(USER|ASSISTANT|SYSTEM)\s*$")
 GENERIC_ARCHIVE_TITLE=re.compile(r"^(?:未命名对话(?:\s+\d{4}-\d{2}-\d{2}(?:\s+\d{4})?)?(?:\s+\[[0-9a-f]{8}\])?|[AB]|[0-9a-f]{12}|(?:hermes|chatgpt)(?:\s*[·_-].*)?)$",re.I)
 def _read_json(path,default):

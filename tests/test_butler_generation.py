@@ -128,15 +128,16 @@ class ButlerRuntimeUiTests(unittest.TestCase):
         root=Path(__file__).resolve().parents[1]
         controls=(root/'static/butler-controls.js').read_text('utf-8')
         source=(root/'static/butler.js').read_text('utf-8')
-        runtime='function runtime(value){'+controls.split('  function runtime(value){',1)[1].split('\n  bindForm(',1)[0]
+        helper='function thinkingPresentation('+controls.split('  function thinkingPresentation(',1)[1].split('\n  function runtime(',1)[0]
+        runtime=helper+'\nfunction runtime(value){'+controls.split('  function runtime(value){',1)[1].split('\n  bindForm(',1)[0]
         snippets=[next(line for line in source.splitlines() if marker in line) for marker in
                   ['function saveChoices(){','function choiceLabels(){',"$('#butlerThinking').onclick="]]
         harness=r'''
 const assert=require('node:assert/strict'),vm=require('node:vm'),nodes=new Map(),saved={};
-function $(id){if(!nodes.has(id)){const attrs={},label={textContent:''};nodes.set(id,{value:'512',setAttribute:(k,v)=>attrs[k]=v,getAttribute:k=>attrs[k]||'false',querySelector:()=>label,querySelectorAll:()=>[]})}return nodes.get(id)}
+function $(id){if(!nodes.has(id)){const attrs={},label={textContent:''};nodes.set(id,{value:'512',dataset:{},setAttribute:(k,v)=>attrs[k]=v,getAttribute:k=>attrs[k]||'false',querySelector:()=>label,querySelectorAll:()=>[]})}return nodes.get(id)}
 const context={$ ,q:id=>$('#'+id),provider:{selected:'external',external:{thinking_mode:'switchable',model:'synthetic-model',data_scopes:[]}},lastRuntime:null,
 window:{ButlerThinkingPreference:false},localStorage:{setItem:(key,value)=>saved[key]=value},memoryKey:()=>'fixture',lengthLabels:{512:'标准'},
-toolCapability(){},document:{dispatchEvent(){}},CustomEvent:class{}};
+toolCapability(){},scopes:{},document:{dispatchEvent(){}},CustomEvent:class{}};
 vm.createContext(context);vm.runInContext(RUNTIME,context);
 context.window.ButlerControls={thinkingMode:()=>'switchable',runtime:()=>context.runtime()};
 vm.runInContext(SNIPPETS.join('\n'),context);context.runtime();
@@ -159,13 +160,14 @@ context.window.ButlerControls.thinkingMode=()=>'unsupported';$('#butlerThinking'
         if not node:self.skipTest('Node.js is needed for this isolated UI logic check')
         source=(Path(__file__).resolve().parents[1]/'static/butler-controls.js').read_text('utf-8')
         function=source.split('  function runtime(value){',1)[1].split('\n  bindForm(',1)[0]
-        function='function runtime(value){'+function
+        helper='function thinkingPresentation('+source.split('  function thinkingPresentation(',1)[1].split('\n  function runtime(',1)[0]
+        function=helper+'\nfunction runtime(value){'+function
         harness=r'''
 const assert=require('node:assert/strict'),vm=require('node:vm');
 function render(provider,value){
   const nodes=new Map();
-  function q(id){if(!nodes.has(id)){const attributes={};const label={textContent:''};nodes.set(id,{textContent:'',title:'',value:'512',setAttribute:(k,v)=>attributes[k]=v,getAttribute:k=>attributes[k],querySelector:()=>label})}return nodes.get(id)}
-  const context={provider,lastRuntime:null,q,window:{ButlerThinkingPreference:false},toolCapability(){},document:{dispatchEvent(){}},CustomEvent:class{}};
+  function q(id){if(!nodes.has(id)){const attributes={};const label={textContent:''};nodes.set(id,{textContent:'',title:'',value:'512',dataset:{},setAttribute:(k,v)=>attributes[k]=v,getAttribute:k=>attributes[k],querySelector:()=>label})}return nodes.get(id)}
+  const context={provider,lastRuntime:null,q,window:{ButlerThinkingPreference:false},scopes:{},toolCapability(){},document:{dispatchEvent(){}},CustomEvent:class{}};
   vm.runInNewContext(FUNCTION,context);context.runtime(value);
   return {note:q('butlerOutgoingScope').textContent,model:q('butlerModel').textContent};
 }

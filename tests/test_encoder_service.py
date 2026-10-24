@@ -6,6 +6,7 @@ import unittest
 import urllib.error
 import urllib.request
 from pathlib import Path
+from unittest.mock import patch
 from knowledge_bridge import encoder_service as service
 
 class FakeBackend:
@@ -32,7 +33,7 @@ class EncoderServiceTests(unittest.TestCase):
     def test_no_auth_cannot_invoke(self):
         item=service.descriptor(self.root)
         req=urllib.request.Request(f"http://127.0.0.1:{item['port']}/encode",data=b'{}')
-        with self.assertRaises(urllib.error.HTTPError) as error:urllib.request.urlopen(req)
+        with self.assertRaises(urllib.error.HTTPError) as error:urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req)
         self.assertEqual(error.exception.code,403);self.assertFalse(self.backend.loaded)
     def test_idle_status_polling_does_not_keep_model_alive(self):
         service.call(self.root,'warmup')
@@ -47,5 +48,49 @@ class EncoderServiceTests(unittest.TestCase):
     def test_bad_input_retains_server(self):
         with self.assertRaises(RuntimeError):service.call(self.root,'encode',{'texts':[3]})
         self.assertTrue(service.status(self.root)['pid'])
+
+    def test_ten_minute_default_and_no_status_wakeup(self):
+        import inspect
+        self.assertEqual(inspect.signature(service.serve).parameters['idle_seconds'].default,600)
+        with tempfile.TemporaryDirectory() as empty,patch.object(service.subprocess,'Popen') as launch:
+            self.assertEqual(service.status(Path(empty))['state'],'available_unloaded')
+            launch.assert_not_called()
+
+    def test_interactive_request_never_loads_cold_worker(self):
+        with self.assertRaises(TimeoutError):service.call(self.root,'encode',{'texts':['query'],'require_loaded':True,'lock_timeout':.1})
+        self.assertFalse(self.backend.loaded)
+
+    def test_encode_captures_workspace_once_and_cold_race_does_not_restart(self):
+        with patch.object(service,'root',side_effect=[self.root,Path('wrong-workspace')]) as root,patch.object(service,'ensure') as ensure,patch.object(service,'call',return_value={'vectors':[[1.,2.]]}) as call:
+            service.encode(['query'],lock_timeout=.1)
+            root.assert_called_once();ensure.assert_not_called()
+            self.assertEqual(call.call_args.args[0],self.root)
+            self.assertTrue(call.call_args.args[2]['require_loaded'])
+        with patch.object(service,'root',side_effect=[self.root,Path('wrong-workspace')]) as root,patch.object(service,'ensure') as ensure,patch.object(service,'call',return_value={'vectors':[[1.,2.]]}) as call:
+            service.encode(['background'])
+            root.assert_called_once();ensure.assert_called_once_with(self.root)
+            self.assertEqual(call.call_args.args[0],self.root)
+
+    def test_failed_warmup_is_visible_then_recovers(self):
+        with patch.object(self.backend,'warmup',side_effect=ImportError('fixture')):
+            with self.assertRaises(RuntimeError):service.call(self.root,'warmup')
+        state=service.status(self.root)
+        self.assertEqual(state['state'],'load_failed');self.assertEqual(state['error'],'ImportError')
+        service.call(self.root,'warmup')
+        self.assertEqual(service.status(self.root)['state'],'loaded')
+
+    def test_concurrent_warmup_requests_share_one_request(self):
+        entered=threading.Event();release=threading.Event()
+        def hold(*args,**kwargs):entered.set();release.wait(3)
+        with patch.object(service,'root',return_value=self.root),patch.object(service,'status',return_value={'state':'available_unloaded'}),patch.object(service,'ensure',side_effect=hold) as ensure,patch.object(service,'call'):
+            try:
+                self.assertTrue(service.warmup());self.assertTrue(entered.wait(1))
+                for _ in range(6):self.assertFalse(service.warmup())
+                self.assertEqual(ensure.call_count,1)
+            finally:
+                release.set()
+                deadline=time.monotonic()+2
+                while service._warmup_pending and time.monotonic()<deadline:time.sleep(.01)
+        self.assertFalse(service._warmup_pending)
 
 if __name__=='__main__':unittest.main()

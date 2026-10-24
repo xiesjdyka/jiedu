@@ -92,6 +92,30 @@ class PolicyDecision(str, Enum):
     ALLOW = "allow"
 
 
+# Defaults only fill absent generic rules. An exact or generic stored choice
+# always wins, and protected knowledge has no implicit grant.
+ORDINARY_DEFAULT_ALLOW = frozenset({
+    (KnowledgeScope.FORMAL, ClientOperation.SEARCH),
+    (KnowledgeScope.FORMAL, ClientOperation.READ),
+    (KnowledgeScope.FORMAL, ClientOperation.CONTEXT),
+    (KnowledgeScope.FORMAL, ClientOperation.SUBMIT_CANDIDATE),
+    (KnowledgeScope.EVIDENCE, ClientOperation.SEARCH),
+    (KnowledgeScope.EVIDENCE, ClientOperation.READ),
+    (KnowledgeScope.EVIDENCE, ClientOperation.RAW_ARCHIVE),
+    (KnowledgeScope.INBOX, ClientOperation.SEARCH),
+    (KnowledgeScope.INBOX, ClientOperation.READ),
+    (KnowledgeScope.INBOX, ClientOperation.CONTEXT),
+    (KnowledgeScope.INBOX, ClientOperation.SAVE_INBOX),
+    (KnowledgeScope.WORKSPACE, ClientOperation.SEARCH),
+    (KnowledgeScope.WORKSPACE, ClientOperation.READ),
+    (KnowledgeScope.WORKSPACE, ClientOperation.CONTEXT),
+})
+
+
+def default_client_decision(scope: KnowledgeScope, operation: ClientOperation) -> PolicyDecision:
+    return PolicyDecision.ALLOW if (scope, operation) in ORDINARY_DEFAULT_ALLOW else PolicyDecision.DENY
+
+
 @dataclass(frozen=True)
 class ClientIdentity:
     claimed_id: str
@@ -384,6 +408,21 @@ class ClientIdentityRegistry:
             row['verified_at']=row.get('verified_at') or stamp;row['last_used_at']=stamp
             row['last_read_at']=stamp;row['last_read_scope']=str(scope);row['last_read_tool']=str(tool)[:80]
             row['last_auth_failure_at']=None;self._save(data)
+            local_first_read = row.get('client_type') in {'cursor','workbuddy','opencode','zcode','kimi'}
+            local_source = row.get('client_type')
+        if local_first_read:
+            # The Owner-issued Cursor handoff authorizes the same first-pairing
+            # collection as other branded clients. Never replace saved scope.
+            try:
+                if local_source == 'cursor':
+                    from .cursor_source_adapter import CursorSourceAdapter
+                    adapter = CursorSourceAdapter(self.context)
+                else:
+                    from .four_local_collectors import LocalCompletedCollector
+                    adapter = LocalCompletedCollector(local_source,self.context)
+                adapter.configure('all', owner_confirmed=True, only_if_absent=True)
+            except (OSError, ValueError, PermissionError):
+                pass
 
     def list_clients(self) -> list[dict]:
         return [self.public_row(row) for row in self._load()["clients"].values() if not row.get("deleted_at")]
@@ -428,6 +467,13 @@ class ClientIdentityRegistry:
         return bool(identity.authenticated and row and not row.get('revoked_at') and
                     identity.credential_version and hmac.compare_digest(
                         identity.credential_version, str(row.get('secret_verifier') or '')))
+
+    def configured_secret_matches(self, internal_id: str, secret: str | None) -> bool:
+        """Read-only config check; a bad stored secret must not count as a live login."""
+        if not isinstance(secret,str) or not secret:return False
+        row=self._load()['clients'].get(internal_id) or {}
+        return bool(row and not row.get('revoked_at') and hmac.compare_digest(
+            str(row.get('secret_verifier') or ''),self._digest(secret)))
 
     def rotate(self, internal_id: str) -> dict:
         with self._lock:
@@ -505,6 +551,10 @@ class ClientIdentityRegistry:
 
 
 class ClientPermissionService:
+    # These two diagnostics contain only allowlisted public product facts.
+    # A saved Owner choice always takes precedence over this upgrade default.
+    DEFAULT_BUTLER_POLICIES={'product_status':'allow','source_archive_progress':'allow'}
+
     def __init__(self, registry: ClientIdentityRegistry, *, clock=time.time):
         self.registry = registry
         self.context = registry.context
@@ -522,11 +572,15 @@ class ClientPermissionService:
     def _butler_state(data):
         return data.setdefault('butler', {'revision':uuid.uuid4().hex,'policies':{},'grants':{},'requests':{}})
 
+    @classmethod
+    def _effective_butler_policies(cls,state):
+        return {**cls.DEFAULT_BUTLER_POLICIES,**state.get('policies',{})}
+
     def butler_policies(self):
         with self._lock,_interprocess_lock(self.lock_path):
             data=self._load();missing='butler' not in data;state=self._butler_state(data)
             if missing:self._save(data)
-            return {'revision':state['revision'],'policies':state['policies'],
+            return {'revision':state['revision'],'policies':self._effective_butler_policies(state),
                     'file_access':state.get('file_access',{'mode':'off'}),
                     'pending':[dict(value,id=key) for key,value in state['requests'].items() if value['state']=='pending']}
 
@@ -561,7 +615,7 @@ class ClientPermissionService:
         state=self._load().get('butler') or {}
         return bool(receipt.get('authority')=='owner_butler_service' and
             receipt.get('revision')==state.get('revision') and
-            state.get('policies',{}).get(operation,'deny')!='deny' and
+            self._effective_butler_policies(state).get(operation,'deny')!='deny' and
             receipt.get('session_revision',0)==state.get('session_revisions',{}).get(receipt.get('session'),0))
 
     def set_butler_policy(self,operation,decision,*,known_operations):
@@ -593,19 +647,19 @@ class ClientPermissionService:
         for callback in self.on_butler_change:callback('*')
         return self.butler_policies()
 
-    def request_butler_operation(self,operation,arguments,*,session,job,provider_revision,known_operations):
+    def request_butler_operation(self,operation,arguments,*,session,job,provider_revision,known_operations,force_confirm=False):
         if operation not in known_operations:raise ValueError('管家操作不存在')
         binding=_digest_request('butler_operation',{'operation':operation,'arguments':arguments,
             'session':session,'job':job,'provider_revision':provider_revision})
         session_binding=_digest_request('butler_session',{'operation':operation,'session':session,'provider_revision':provider_revision})
         with self._lock,_interprocess_lock(self.lock_path):
             data=self._load();state=self._butler_state(data)
-            decision=state['policies'].get(operation,'deny')
+            decision=self._effective_butler_policies(state).get(operation,'deny')
             destructive=operation in {'folder_delete','folder_move','folder_rename'} and state.get('file_access',{}).get('mode','off')!='off'
-            if destructive:decision='ask'
             if decision=='deny':return {'decision':'deny','reason':'operation_forbidden'}
+            if destructive or force_confirm:decision='ask'
             grant=state['grants'].get(session_binding) or {}
-            allowed=not destructive and (decision=='allow' or (isinstance(grant,dict) and grant.get('revision')==state['revision']))
+            allowed=not (destructive or force_confirm) and (decision=='allow' or (isinstance(grant,dict) and grant.get('revision')==state['revision']))
             for key,row in state['requests'].items():
                 if row['binding']==binding and row['revision']==state['revision'] and row['state'] in {'pending','approved','denied'}:
                     return {'decision':'ask','id':key,'state':row['state'],'revision':state['revision'],'binding':binding,'operation':operation}
@@ -615,6 +669,7 @@ class ClientPermissionService:
             key=uuid.uuid4().hex
             state['requests'][key]={'operation':operation,'arguments':arguments,'session':session,'job':job,
                 'provider_revision':provider_revision,'binding':binding,'session_binding':session_binding,
+                'force_confirm':force_confirm,
                 'session_revision':state.get('session_revisions',{}).get(session,0),
                 'revision':state['revision'],'state':'approved' if allowed else 'pending','created_at':_now(),'expires_at':self._clock()+900}
             self._save(data)
@@ -626,7 +681,7 @@ class ClientPermissionService:
             data=self._load();state=self._butler_state(data);row=state['requests'].get(request_id)
             if not row or row['state']!='pending' or row['revision']!=state['revision'] or row['expires_at']<=self._clock():
                 raise ValueError('确认请求已失效、撤销或处理')
-            if row['operation'] in {'folder_delete','folder_move','folder_rename'} and state.get('file_access',{}).get('mode','off')!='off' and duration!='request':raise ValueError('删除、移动和重命名须逐次核对具体对象')
+            if (row.get('force_confirm') or (row['operation'] in {'folder_delete','folder_move','folder_rename'} and state.get('file_access',{}).get('mode','off')!='off')) and duration!='request':raise ValueError('此操作须逐次核对具体对象')
             row['state']='approved' if approved else 'denied';row['duration']=duration
             if approved and duration=='session':state['grants'][row['session_binding']]={'revision':state['revision'],'session':row['session']}
             if approved and duration=='persistent':state['policies'][row['operation']]='allow'
@@ -713,20 +768,6 @@ class ClientPermissionService:
             grant = self._session_reads.get(internal_id)
             return sorted(grant[1] & {'protected'}) if grant and session_id and grant[0] == session_id else []
 
-    def _ordinary_reads_are_open(self) -> bool:
-        """Encryption-off workspaces expose ordinary reads to paired identities.
-
-        This is deliberately derived from the persisted workspace setting so every
-        independent STDIO process observes the same rule after restart.  Missing or
-        malformed settings remain conservative.
-        """
-        try:
-            value = json.loads(local_path("protection-control.json").read_text("utf-8"))
-            workspace = (value.get("workspaces") or {}).get(self.context.workspace_id) or {}
-            return workspace.get("protected_storage_enabled") is False
-        except (OSError, ValueError, AttributeError):
-            return False
-
     def _load(self) -> dict:
         try:
             value = json.loads(self.path.read_text("utf-8"))
@@ -760,6 +801,11 @@ class ClientPermissionService:
 
     def policies(self, internal_id: str) -> list[dict]:
         return list(self._load()["rules"].get(internal_id,{}).values())
+
+    @staticmethod
+    def default_policies() -> list[dict]:
+        return [{'scope':scope.value,'operation':operation.value,'decision':'allow'}
+                for scope,operation in sorted(ORDINARY_DEFAULT_ALLOW,key=lambda row:(row[0].value,row[1].value))]
 
     def restore_recommended(self, internal_id: str) -> list[dict]:
         """Owner-requested reset of only generic ordinary rules for one client.
@@ -798,7 +844,7 @@ class ClientPermissionService:
     def _policy_from(self, data: dict, internal_id: str, scope: KnowledgeScope,
                      operation: ClientOperation, selector: dict | None) -> PolicyDecision:
         row=self._policy_row_from(data,internal_id,scope,operation,selector)
-        return PolicyDecision(row['decision']) if row else PolicyDecision.DENY
+        return PolicyDecision(row['decision']) if row else default_client_decision(scope,operation)
 
     def _policy_row_from(self, data: dict, internal_id: str, scope: KnowledgeScope,
                          operation: ClientOperation, selector: dict | None) -> dict | None:
@@ -826,14 +872,11 @@ class ClientPermissionService:
                                 scope=scope_value.value,operation=operation_value.value)
             return AccessDecision(PolicyDecision.DENY,"client_not_authenticated")
         self.registry.mark_protocol_seen(identity)
-        ordinary_default=(self._ordinary_reads_are_open() and
-                          scope in {'formal','evidence','inbox'} and
-                          operation in {'search','read','context'})
         binding=self._binding(identity,scope_value,operation_value,binding_selector)
         with self._lock, _interprocess_lock(self.lock_path):
             data=self._load();now=self._clock()
             rule=self._policy_row_from(data,identity.internal_id or "",scope_value,operation_value,selector)
-            decision=PolicyDecision(rule['decision']) if rule else (PolicyDecision.ALLOW if ordinary_default else PolicyDecision.DENY)
+            decision=PolicyDecision(rule['decision']) if rule else default_client_decision(scope_value,operation_value)
             if (scope in self.session_read_scopes(identity.internal_id or '', protection_session) and
                     scope == 'protected' and operation in {'search', 'read_protected'}):
                 decision = PolicyDecision.ALLOW
@@ -888,7 +931,7 @@ class ClientPermissionService:
                             "success" if decision==PolicyDecision.ALLOW else "rejected",
                             None if decision==PolicyDecision.ALLOW else "policy_denied",
                             scope=scope_value.value,operation=operation_value.value)
-        return AccessDecision(decision,"ordinary_read_open" if decision==PolicyDecision.ALLOW and ordinary_default and rule is None else
+        return AccessDecision(decision,"ordinary_default_allow" if decision==PolicyDecision.ALLOW and rule is None else
                               "policy_allow" if decision==PolicyDecision.ALLOW else "policy_deny")
 
     def pending(self) -> list[dict]:

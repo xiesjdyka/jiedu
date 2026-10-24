@@ -84,6 +84,8 @@ def mother_distillation_prompt(source_labels: list[str], workspace_label: str) -
         "领取任务后先读取现有正式母档、当前状态和相关项目文件，再按服务端固定清单与 offset 分批完整读取来源；"
         "未读完的部分不得视为覆盖。逐条与现有母档去重、核对时间和冲突，不用后来的转述覆盖原始证据。\n"
         f"本次来源标签（仅供识别）：{json.dumps(labels, ensure_ascii=False)}\n"
+        + ("Claude 来源只代表本机当前可读缓存；云端和已清理历史总量未知，不得宣称 Claude 全部历史已经补齐。\n"
+           if "Claude" in labels else "")
         + _CLASSIFICATION + "\n"
         "输出每项候选的目标路径、完整拟议内容、来源定位、事实/推断状态、时间、冲突、理由和回滚依据；"
         "无变化也要说明。调用 organization_finish_source 记录每个来源的实际处理结果。"
@@ -107,6 +109,11 @@ def _wiki_workspace_binding(context: WorkspaceContext) -> str:
 
 _DAILY_SOURCE_WORK = (
     "只处理服务端本轮固定 job：对每个 job_id 调用 organization_status，从真实 next_offset 翻页到清单末尾；"
+    "同一工作区同一时刻只由一个已绑定的整理执行者领取和处理任务，其他客户端只查看或等待；"
+    "所有已接入来源先归档再按来源版本进入整理，不要让各客户端并发建 job 或各自从头整理全库。"
+    "在待处理来源间轮转，每次先处理最多4项来源或64KiB原文，再核对服务端状态和预算；本次定时回合最多处理32项来源，"
+    "达到执行预算时保留当前 offset，不把未读完项标为完成，并以真实原因登记本次未完成，下一次定时回合接续。"
+    "首轮历史积压可能分多次完成；之后仅处理服务端判定新增或变化的版本。"
     "逐项查看 status、source_path、version、total_bytes 和已有 offset。先查已有候选和处理结果，"
     "同一 job、来源版本、目标和拟议正文已有有效结果就不重复提交；复用已完成项及可验证的断点，"
     "对未读完的来源调用 organization_read，从实际 offset 连续读取到 total_bytes；不能跳页、用摘要代替全文，"

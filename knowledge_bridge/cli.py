@@ -10,6 +10,13 @@ def main():
     q=sub.add_parser("search"); q.add_argument("query"); q.add_argument("--mode",choices=["keyword","vector","hybrid"],default="hybrid")
     sub.add_parser("status"); mcp=sub.add_parser("mcp")
     mcp.add_argument('--transport',choices=['stdio','localhost_http'])
+    handoff=sub.add_parser('handoff')
+    handoff.add_argument('--client',choices=['codex','hermes','dsh','claude','cursor'],required=True)
+    handoff.add_argument('--console',required=True)
+    handoff.add_argument('--workspace-id',required=True)
+    handoff.add_argument('--program-root',required=True)
+    handoff.add_argument('--console-pid',type=int,required=True)
+    handoff.add_argument('--token',required=True)
     for role in ("console", "watch"):
         service = sub.add_parser(role)
         service.add_argument("--launch-id")
@@ -22,6 +29,13 @@ def main():
         service.add_argument("--embedding-duty-cycle", type=float)
     a=p.parse_args()
     os.environ["KNOWLEDGE_BRIDGE_PROCESS_ROLE"] = a.cmd
+    if a.cmd=='handoff':
+        from .one_prompt_connect import redeem
+        try:print(redeem(a.client,a.console,a.workspace_id,a.program_root,a.console_pid,a.token))
+        except (OSError,ValueError) as exc:
+            print(f'界渡接入未完成：{exc}',file=sys.stderr)
+            raise SystemExit(2)
+        return
     if a.cmd in {"console", "watch"} and a.launch_id:
         import sys
         from pathlib import Path

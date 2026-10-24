@@ -29,15 +29,25 @@ def _codex_probe() -> dict:
     from .codex_source_adapter import CodexSourceAdapter
     status = CodexSourceAdapter().status()
     enabled = bool(status.get("enabled"))
+    policy = status.get('archive_policy')
     found = int(status.get("discovered_session_count") or 0)
-    sqlite_detected = bool((status.get('sqlite') or {}).get('detected'))
-    sqlite_pending = any((item.get('history') or {}).get('status') in {None, 'not_started', 'reading'}
-                         for item in (status.get('sqlite') or {}).get('sources', []))
+    sqlite = status.get('sqlite') or {}
+    sqlite_detected = bool(sqlite.get('detected'))
+    sqlite_sources = sqlite.get('sources') or []
+    sqlite_pending = any((item.get('history') or {}).get('status') not in {'complete','completed_with_review'}
+                         for item in sqlite_sources)
+    sqlite_ready = any(item.get('readable') and (item.get('history') or {}).get('status') in {'complete','completed_with_review'}
+                       for item in sqlite_sources)
     authorized = int(status.get("authorized_session_count") or 0)
     missing = int(status.get("missing_attachment_count") or 0)
     error = status.get("last_error")
     failed = int(status.get("failed_session_count") or 0)
+    unresolved = int(status.get("needs_review_event_count") or 0)
     synced = bool(status.get("last_sync_at"))
+    try:
+        sync_age=(datetime.now(timezone.utc)-datetime.fromisoformat(str(status['last_sync_at']).replace('Z','+00:00'))).total_seconds()
+        recent_sync=0<=sync_age<120
+    except (KeyError,TypeError,ValueError):recent_sync=False
     pending = int(status.get("pending_backfill_count") or 0)
     gap = bool(status.get("gap_detected"))
     if error or failed:
@@ -49,15 +59,21 @@ def _codex_probe() -> dict:
     elif not found and not sqlite_detected:
         state, summary = "source_unavailable", "未发现 Codex 会话来源"
         detail = "采集开关已开启，但没有发现可读取的源会话，因此不能标为正在归档。"
-    elif not authorized and status.get('archive_policy') == 'selected':
+    elif policy not in {'all','selected'}:
+        state, summary = 'unverified', '采集范围需要核对'
+        detail = '未取得明确的 all 或 selected 采集策略；旧同步记录不能证明当前正在采集。'
+    elif not authorized and (policy=='selected' or not sqlite_ready):
         state, summary = "awaiting_authorization", "已发现 Codex 会话，尚无获准采集范围"
-        detail = f"已发现 {found} 个会话，但当前授权会话为 0；不会自动采集。"
+        detail = f"已发现 {found} 个 JSONL 会话，当前授权会话为 0；SQLite 来源尚无可确认的完成状态。"
     elif not synced:
         state, summary = "awaiting_first_sync", "已发现来源，等待首次同步"
         detail = f"已发现 {found} 个会话，已授权 {authorized} 个；尚无真实成功同步记录。"
-    elif gap or pending or sqlite_pending:
+    elif gap or pending or sqlite_pending or unresolved:
         state, summary = "degraded", "自动归档运行中，但仍有待处理范围"
-        detail = f"已发现 {found} 个会话，已授权 {authorized} 个；待补档 {pending} 个；断档检测：{'有' if gap else '无'}。"
+        detail = f"已发现 {found} 个会话，已授权 {authorized} 个；待补档 {pending} 个；未识别来源记录 {unresolved} 项；断档检测：{'有' if gap else '无'}。"
+    elif not recent_sync:
+        state, summary = 'degraded', '自动归档最近未获运行证据'
+        detail = '最近一次成功同步已超过两分钟，或缺少有效同步时间；请检查后台采集器。'
     else:
         state, summary = "automatic", "本机采集器正在自动归档"
         detail = f"已发现 {found} 个会话，已授权 {authorized} 个；缺失附件 {missing} 个；当前没有待补档或断档。"
@@ -227,9 +243,191 @@ def _generic_probe() -> dict:
     }
 
 
+def _local_collector_saved(adapter, state: dict, source_key: str) -> dict:
+    """Count this local collector's sessions in the standard archive index."""
+    from .durable_state import read_object, StateCorruptError
+
+    registry = read_object(adapter.context.archive_registry, {"sessions": {}})
+    sessions = registry.get("sessions")
+    if not isinstance(sessions, dict):
+        raise StateCorruptError("会话目录表结构无效")
+    indexed = []
+    for item in sessions.values():
+        if not isinstance(item, dict) or item.get("source_key") != source_key:
+            continue
+        if not str(item.get("source_instance") or "").startswith(source_key + ":"):
+            continue
+        relative = item.get("relative_path")
+        if not isinstance(relative, str):
+            continue
+        folder = (adapter.context.root / relative).resolve()
+        try:
+            folder.relative_to(adapter.context.raw_archive.resolve())
+        except ValueError:
+            continue
+        manifest = folder / "03_元数据" / "manifest.json"
+        if manifest.is_file() and int(item.get("message_count") or 0) > 0:
+            indexed.append(item)
+    messages = sum(int(item.get("message_count") or 0) for item in indexed)
+    recorded = int((state.get("history") or {}).get("archived_messages") or 0)
+    error = state.get("last_error")
+    return {"session_count": len(indexed), "message_count": messages,
+            "last_checked_at": state.get("last_sync_at"),
+            "last_saved_at": max((str(item.get("updated_at") or "") for item in indexed), default=None),
+            "location": "90_原始档案/" + {"dsh":"DSH","claude":"Claude","cursor":"Cursor"}.get(source_key,"其他"),
+            "last_result": "档案目录待核对" if recorded > messages else
+                           "采集异常" if error else "已检查来源" if state.get("last_sync_at") else "尚无同步记录"}
+
+
+def _dsh_probe() -> dict:
+    from .dsh_source_adapter import DSHSourceAdapter
+    adapter = DSHSourceAdapter()
+    state = adapter.status()
+    saved = _local_collector_saved(adapter, state, "dsh")
+    index_gap = saved["last_result"] == "档案目录待核对"
+    found = len(state["discovered_sessions"])
+    enabled = state["enabled"]
+    return {
+        "state": ("awaiting_owner" if not state.get("ever_configured") else
+                  "paused" if not enabled else "source_unavailable" if not found else
+                  "degraded" if state.get("last_error") or index_gap else "automatic" if state.get("last_sync_at")
+                  else "awaiting_first_sync"),
+        "source_detected": bool(found),
+        "summary": ("等待你接入 DSH 聊天归档" if not state.get("ever_configured") else
+                    "DSH 采集已暂停" if not enabled else
+                    "DSH 来源不可用" if not found else
+                    "DSH 归档需要检查" if state.get("last_error") or index_gap else
+                    "DSH 本机归档已检查" if state.get("last_sync_at") else "等待 DSH 首次采集"),
+        "detail": f"本机发现 {found} 个会话；仅采集获准范围中的用户消息和已完成最终答复。"
+                  "工具与思考不进入档案。",
+        "saved": saved,
+        "capabilities": _capabilities(source_discovery="supported", new_session_discovery="supported",
+            user_text="supported", assistant_final_text="supported", attachments="explicit_references",
+            continuous_collection="polling", restart_resume="supported", standard_archive="supported",
+            searchable_archive="supported_after_save", knowledge_organization_input="review_required"),
+    }
+
+
+def _claude_probe() -> dict:
+    from .claude_source_adapter import ClaudeSourceAdapter
+    adapter = ClaudeSourceAdapter()
+    state = adapter.status()
+    saved = _local_collector_saved(adapter, state, "claude")
+    index_gap = saved["last_result"] == "档案目录待核对"
+    found = state["source_detected"]
+    enabled = state["enabled"]
+    errors = state["history"]["current_decode_errors"]
+    return {
+        "state": ("awaiting_owner" if not state.get("ever_configured") else
+                  "paused" if not enabled else "source_unavailable" if not found else
+                  "partial" if errors or state.get("last_error") or index_gap else
+                  "automatic" if state.get("last_sync_at") else "awaiting_first_sync"),
+        "source_detected": found,
+        "summary": ("等待你接入 Claude 聊天归档" if not state.get("ever_configured") else
+                    "Claude 采集已暂停" if not enabled else
+                    "Claude 本机缓存不可用" if not found else
+                    "Claude 本机归档需要检查" if index_gap else
+                    "Claude 本机缓存仅部分可读" if errors else
+                    "Claude 本机归档已检查" if state.get("last_sync_at") else "等待 Claude 首次采集"),
+        "detail": "只采集本机当前缓存中的用户消息和已完成最终答复；云端及已清理历史总量未知。",
+        "saved": saved,
+        "capabilities": _capabilities(source_discovery="supported", new_session_discovery="local_cache_only",
+            user_text="supported", assistant_final_text="supported", attachments="explicit_references_only",
+            continuous_collection="polling_current_cache", restart_resume="supported",
+            standard_archive="local_cache_only", searchable_archive="supported_after_save",
+            knowledge_organization_input="review_required"),
+    }
+
+
+def _cursor_probe() -> dict:
+    from .cursor_source_adapter import CursorSourceAdapter
+    adapter = CursorSourceAdapter()
+    state = adapter.status()
+    saved = _local_collector_saved(adapter, state, "cursor")
+    configured = state.get("ever_configured")
+    enabled = state.get("enabled")
+    found = state.get("source_detected")
+    error = state.get("last_error")
+    indexed_gap = (state.get("indexed_without_transcript") or {}).get("in_scope_count") or 0
+    pending = (state.get("history") or {}).get("pending_turns") or 0
+    return {"state": "awaiting_owner" if not configured else "paused" if not enabled else
+            "source_unavailable" if not found else "degraded" if error or indexed_gap else
+            "automatic" if state.get("last_sync_at") else "awaiting_first_sync",
+            "source_detected": bool(found),
+            "summary": "等待你接入 Cursor" if not configured else "Cursor 采集已暂停" if not enabled else
+                       "Cursor 来源不可用" if not found else "Cursor 归档需要检查" if error else
+                       "Cursor 有索引历史待核验" if indexed_gap else
+                       "Cursor 等待当前答复完成" if pending else "Cursor 本机归档已检查",
+            "detail": "获准范围内的用户正文和成功结束回合的最终答复进入标准档案；进度原文单独可查。"
+                      + (f"另有 {indexed_gap} 个非空索引会话缺少结束转录，暂未入档。" if indexed_gap else "")
+                      + "图片附件已发送链路尚未真实验证。",
+            "saved": saved,
+            "capabilities": _capabilities(source_discovery="supported", new_session_discovery="local_transcripts_with_index_gap_report",
+                user_text="supported", assistant_final_text="verified_completed_turns_only",
+                attachments="unverified", continuous_collection="polling_after_owner_connection",
+                restart_resume="supported", standard_archive="verified_messages_only",
+                searchable_archive="verified_messages_only", knowledge_organization_input="review_required")}
+
+
+def _four_probe(source: str) -> dict:
+    from .four_local_collectors import LocalCompletedCollector, SOURCES
+    adapter = LocalCompletedCollector(source)
+    state = adapter.status()
+    saved = _local_collector_saved(adapter, state, source)
+    configured = state.get("ever_configured")
+    enabled = state.get("enabled")
+    found = state.get("source_detected")
+    error = state.get("last_error")
+    pending = (state.get("history") or {}).get("pending_turns") or 0
+    unverified = (state.get("history") or {}).get("unverified_turns") or 0
+    gap = (state.get("indexed_without_transcript") or {}).get("in_scope_count") or 0
+    try:
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(
+            str(state["last_sync_at"]).replace("Z", "+00:00"))).total_seconds()
+        recent = 0 <= age < 120
+    except (KeyError, TypeError, ValueError):
+        recent = False
+    stale = bool(state.get("last_sync_at")) and not recent
+    label = SOURCES[source]
+    attachment_detail = ("已发送本地图片逐件核验并归档，缺原件的引用待核对。" if source == "workbuddy" else
+                         "图片仅保留来源引用，尚未取得可核验原件。" if source == "zcode" else
+                         "真实已发送附件待样本验证。")
+    return {"state": "awaiting_owner" if not configured else "paused" if not enabled else
+            "source_unavailable" if not found else "degraded" if error or unverified or gap or stale else
+            "automatic" if state.get("last_sync_at") else "awaiting_first_sync",
+            "source_detected": bool(found),
+            "summary": f"等待你接入 {label}" if not configured else f"{label} 采集已暂停" if not enabled else
+                       f"{label} 来源不可用" if not found else f"{label} 归档需要检查" if error or unverified else
+                       f"{label} 有索引历史待核验" if gap else
+                       f"{label} 最近检查已过期" if stale else
+                       f"{label} 等待当前答复完成" if pending else f"{label} 本机归档已检查",
+            "detail": "只保存获准来源中已完成轮次的用户正文与最终答复；思考、工具和系统注入排除。"
+                      + (f"范围内另有 {gap} 个索引会话缺少可读转录。" if gap else "")
+                      + "进度说明只在私有原文查看；" + attachment_detail,
+            "saved": saved,
+            "capabilities": _capabilities(source_discovery="supported", new_session_discovery="local_index_only",
+                user_text="completed_turns_only", assistant_final_text="verified_completed_turns_only",
+                attachments="verified_local_images_only" if source == "workbuddy" else "references_only" if source == "zcode" else "unverified", continuous_collection="supported",
+                restart_resume="supported", standard_archive="verified_messages_only",
+                searchable_archive="verified_messages_only", knowledge_organization_input="review_required")}
+
+
+def _workbuddy_probe(): return _four_probe("workbuddy")
+def _opencode_probe(): return _four_probe("opencode")
+def _zcode_probe(): return _four_probe("zcode")
+def _kimi_probe(): return _four_probe("kimi")
+
+
 ADAPTERS = (
     ("codex_local", "Codex", "authorized_local_read", _codex_probe),
     ("hermes_local", "Hermes", "authorized_local_read", _hermes_probe),
+    ("dsh_local", "DSH", "authorized_local_read", _dsh_probe),
+    ("claude_local", "Claude", "authorized_local_read", _claude_probe),
+    ("cursor_local", "Cursor", "authorized_local_read", _cursor_probe),
+    ("workbuddy_local", "WorkBuddy", "authorized_local_read", _workbuddy_probe),
+    ("opencode_local", "OpenCode", "authorized_local_read", _opencode_probe),
+    ("zcode_local", "ZCode", "authorized_local_read", _zcode_probe),
+    ("kimi_local", "Kimi Work", "authorized_local_read", _kimi_probe),
     ("doubao_work_local", "豆包工作版", "authorized_local_read", _doubao_probe),
     ("generic_mcp_push", "通用 MCP", "explicit_client_push", _generic_probe),
 )
@@ -237,6 +435,9 @@ ADAPTERS = (
 
 def adapter_id_for(client_type: str | None) -> str:
     return {"codex": "codex_local", "hermes": "hermes_local",
+            "dsh": "dsh_local", "claude": "claude_local", "cursor": "cursor_local",
+            "workbuddy": "workbuddy_local", "opencode": "opencode_local",
+            "zcode": "zcode_local", "kimi": "kimi_local",
             "doubao_work": "doubao_work_local"}.get(
         (client_type or "").strip().casefold(), "generic_mcp_push")
 
@@ -275,29 +476,27 @@ def for_client(client_type: str | None, rows: list[dict] | None = None) -> dict:
 
 def connection_status(client: dict, archive: dict, policies: list[dict], adapter: dict) -> dict:
     """Describe this identity without attributing a global collector to it."""
+    from .client_access import ClientOperation, KnowledgeScope, default_client_decision
     decision = next((row.get("decision") for row in policies
                      if row.get("scope") == "evidence" and row.get("operation") == "raw_archive"
-                     and not row.get("selector")), "deny")
+                     and not row.get("selector")), default_client_decision(KnowledgeScope.EVIDENCE,ClientOperation.RAW_ARCHIVE).value)
     if client.get("status") == "revoked":
         return {"state": "revoked", "summary": "当前客户端已撤销",
                 "detail": "该身份不会继续提交或被归因为自动归档；已有档案保持不变。"}
     if not archive.get("bound"):
         return {"state": "source_unbound", "summary": "当前客户端尚未绑定聊天来源",
                 "detail": "即使本机存在独立采集器，也不能把它的运行状态归到这条连接。"}
+    adapter_id = adapter.get("adapter_id")
+    runtime = adapter.get("runtime") or adapter
+    if adapter_id in {"codex_local", "hermes_local", "dsh_local", "claude_local", "cursor_local",
+                      "workbuddy_local", "opencode_local", "zcode_local", "kimi_local", "doubao_work_local"}:
+        return {"state": "independent_collector_" + str(runtime.get("state") or "unverified"),
+                "summary": (runtime.get("summary") or "本机采集状态未验证") + "（独立于此连接）",
+                "detail": (runtime.get("detail") or "") + " 该采集器独立运行；MCP 读取和主动提交权限另行判定。"}
     if decision != "allow":
         return {"state": "permission_required" if decision == "ask" else "permission_denied",
                 "summary": "当前客户端等待一次性归档确认" if decision == "ask" else "当前客户端未获准归档",
                 "detail": "来源已登记，但原始归档权限不是永久允许。"}
-    adapter_id = adapter.get("adapter_id")
-    runtime = adapter.get("runtime") or adapter
-    if adapter_id in {"codex_local", "hermes_local"}:
-        return {"state": "independent_collector_" + str(runtime.get("state") or "unverified"),
-                "summary": (runtime.get("summary") or "本机采集状态未验证") + "（独立于此连接）",
-                "detail": (runtime.get("detail") or "") + " 该采集器独立运行，不由当前 MCP 配对身份启动。"}
-    if adapter_id == "doubao_work_local":
-        return {"state": runtime.get("state") or "unverified",
-                "summary": runtime.get("summary") or "豆包采集状态未验证",
-                "detail": runtime.get("detail") or ""}
     if archive.get("last_archived_at") or int(archive.get("message_count") or 0) > 0:
         return {"state": "push_received", "summary": "已收到客户端主动提交",
                 "detail": f"已收到 {int(archive.get('message_count') or 0)} 条消息；源端历史总量仍未知。"}

@@ -45,4 +45,27 @@ class ConnectionDeletionTests(unittest.TestCase):
    def racing(*args,**kwargs):write(new);return original(*args,**kwargs)
    stack.enter_context(patch.object(cc,'preview',racing))
    result=cc.remove_identity_configuration(r,old['internal_id']);self.assertEqual(['hermes'],result['skipped']);self.assertEqual(new['secret'],a.detect()['entry']['env']['KNOWLEDGE_BRIDGE_CLIENT_SECRET'])
+ def test_paired_deletion_parses_each_configuration_format(self):
+  for key in ('codex','dsh','claude','cursor'):
+   with self.subTest(client=key),tempfile.TemporaryDirectory() as t,ExitStack() as stack:
+    p=Path(t);r=ClientIdentityRegistry(initialize_workspace(p/'workspace'),p/'registry')
+    row=r.create(key,key,key,'stdio');adapter=type(cc.ADAPTERS[key])();adapter.path=p/'client-config'
+    adapter.path.write_text(adapter.render('',key,row['secret']),'utf-8')
+    for name,value in {'ADAPTERS':{key:adapter},'DATA':p/'state','BACKUPS':p/'backups','AUDIT':p/'audit.jsonl'}.items():stack.enter_context(patch.object(cc,name,value))
+    r.delete(row['internal_id'])
+    self.assertEqual([key],cc.remove_identity_configuration(r,row['internal_id'])['removed'])
+    self.assertFalse(adapter.detect().get('entry'))
+ def test_rewrite_after_preview_before_apply_is_preserved(self):
+  with tempfile.TemporaryDirectory() as t,ExitStack() as stack:
+   p=Path(t);r=ClientIdentityRegistry(initialize_workspace(p/'workspace'),p/'registry')
+   row=r.create('hermes','Hermes','hermes','stdio');a=cc.HermesAdapter();a.path=p/'config.yaml'
+   a.path.write_text(a.render('','hermes',row['secret']),'utf-8');r.delete(row['internal_id'])
+   for name,value in {'ADAPTERS':{'hermes':a},'DATA':p/'state','BACKUPS':p/'backups','AUDIT':p/'audit.jsonl'}.items():stack.enter_context(patch.object(cc,name,value))
+   original=cc.apply
+   def racing(token):
+    a.path.write_text('other_setting: changed\n','utf-8')
+    return original(token)
+   stack.enter_context(patch.object(cc,'apply',racing))
+   with self.assertRaisesRegex(ValueError,'其他程序修改'):cc.remove_identity_configuration(r,row['internal_id'])
+   self.assertEqual('other_setting: changed\n',a.path.read_text('utf-8'))
 if __name__=='__main__':unittest.main()

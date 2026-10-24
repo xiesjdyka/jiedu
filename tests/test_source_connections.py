@@ -62,6 +62,8 @@ class SourceConnectionTests(unittest.TestCase):
         self.assertTrue(second['duplicate']);self.assertEqual(first['capture_id'],second['capture_id'])
         self.assertEqual(before,raw.read_bytes())
         self.assertNotIn('A video link; save this idea',(self.context.root/first['path']).read_text('utf-8'))
+        self.assertEqual('allow',self.permissions.authorize(identity,'inbox','save_inbox').outcome.value)
+        self.permissions.set_policy(identity.internal_id,'inbox','save_inbox','deny')
         self.assertEqual('deny',self.permissions.authorize(identity,'inbox','save_inbox').outcome.value)
 
     def test_attachment_backfill_and_binding_failure_rollback(self):

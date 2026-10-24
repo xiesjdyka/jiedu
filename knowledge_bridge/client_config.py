@@ -9,7 +9,7 @@ import yaml
 
 from .core import ROOT, VAULT
 from .workspace import local_path
-from .package_layout import python_executable, component
+from .package_layout import python_executable, component, package_root, connected_workspace
 from .redaction import redact_text
 
 DATA = local_path("client-config")
@@ -125,7 +125,158 @@ class HermesAdapter(Adapter):
         data=yaml.safe_load(text) or {}
         if not isinstance(data,dict): raise ValueError("无效YAML配置")
 
-ADAPTERS={"codex":CodexAdapter(),"hermes":HermesAdapter(),"other":Adapter()}
+_DSH_BEGIN = "# BEGIN JIEDU MCP CONNECTION"
+_DSH_END = "# END JIEDU MCP CONNECTION"
+
+class _DSHPatchLoader(yaml.SafeLoader):
+    pass
+
+_DSHPatchLoader.add_constructor('tag:yaml.org,2002:js',
+    lambda loader,node: loader.construct_scalar(node))
+
+def _dsh_patch_rows(text: str) -> list:
+    if not text.strip():return []
+    try:value=yaml.load(text,Loader=_DSHPatchLoader)
+    except yaml.YAMLError as exc:raise ValueError('DSH 补丁配置无法解析，原文件保持不变') from exc
+    if not isinstance(value,list) or not all(isinstance(row,dict) for row in value):
+        raise ValueError('DSH 补丁配置必须是条目列表，原文件保持不变')
+    return value
+
+def _dsh_conflicts(value) -> bool:
+    if isinstance(value,dict):
+        if value.get('serverName')=='knowledge_bridge' or value.get('id')=='jiedu-knowledge-bridge':
+            return True
+        return any(_dsh_conflicts(child) for child in value.values())
+    return any(_dsh_conflicts(child) for child in value) if isinstance(value,list) else False
+
+
+class DSHAdapter(Adapter):
+    id="dsh"; label="DSH"
+    def __init__(self, path: Path | None = None):
+        home=Path(os.getenv("DSH_HOME", Path.home()/".dsh"))
+        self.path=path or home/"profiles"/"desktop"/"cordis.patch.yml"
+    def _block(self, old: str):
+        if old.count(_DSH_BEGIN)!=old.count(_DSH_END) or old.count(_DSH_BEGIN)>1:
+            raise ValueError('DSH 界渡补丁标记不完整或重复，原文件保持不变')
+        if not old.count(_DSH_BEGIN):return None
+        start=old.find(_DSH_BEGIN);end=old.find(_DSH_END)
+        if end<start:raise ValueError('DSH 界渡补丁标记顺序错误，原文件保持不变')
+        return old[start+len(_DSH_BEGIN):end].strip()
+    def detect(self):
+        old=self.path.read_text("utf-8") if self.path.is_file() else ""
+        entry=None
+        try:
+            self.validate(old)
+            rows=_dsh_patch_rows(old)
+            block=self._block(old)
+            if block:
+                parsed=_dsh_patch_rows(block)
+                items=parsed[0].get('insert',[]) if len(parsed)==1 else []
+                if items and isinstance(items[0],dict):entry=items[0].get('config')
+            elif _dsh_conflicts(rows):entry={"unmanaged_existing":True}
+        except ValueError:
+            entry={"invalid_existing":True}
+        return {"installed":self.path.parent.is_dir(),"config_path":str(self.path),
+                "config_exists":self.path.is_file(),"entry":entry}
+    def render(self,old,client_id: str | None = None,secret: str | None = None):
+        _dsh_patch_rows(old)
+        old=self.remove(old)
+        if _dsh_conflicts(_dsh_patch_rows(old)):
+            raise ValueError("DSH 已有非界渡管理的同名 MCP 服务，请先核对")
+        c=_command(client_id or "dsh",secret)
+        config={"serverName":"knowledge_bridge","transport":"stdio",
+                "command":c["command"],"args":c["args"],"env":c["env"]}
+        if c.get("cwd"):config["cwd"]=c["cwd"]
+        row={"insert":[{"id":"jiedu-knowledge-bridge",
+                        "name":"@deepseek-ai/dsh-mcp-client","config":config}]}
+        block=_DSH_BEGIN+"\n"+yaml.safe_dump([row],allow_unicode=True,sort_keys=False)+_DSH_END
+        return old.rstrip()+"\n\n"+block+"\n"
+    def remove(self,old):
+        if self._block(old) is None:return old
+        pattern=re.compile(r"(?ms)^"+re.escape(_DSH_BEGIN)+r"\n.*?^"+re.escape(_DSH_END)+r"\n?")
+        if not pattern.search(old):raise ValueError('DSH 界渡补丁边界无法核验，原文件保持不变')
+        return pattern.sub("",old)
+    def validate(self,text):
+        rows=_dsh_patch_rows(text)
+        block=self._block(text)
+        if block is None:return
+        parsed=_dsh_patch_rows(block)
+        if len(parsed)!=1:
+            raise ValueError("DSH MCP 补丁结构无效")
+        rows=parsed[0].get("insert")
+        if not isinstance(rows,list) or len(rows)!=1 or rows[0].get("name")!="@deepseek-ai/dsh-mcp-client":
+            raise ValueError("DSH MCP 服务条目无效")
+        config=rows[0].get("config") or {}
+        if config.get("transport")!="stdio" or config.get("serverName")!="knowledge_bridge":
+            raise ValueError("DSH MCP 连接方式无效")
+        if _dsh_conflicts(_dsh_patch_rows(self.remove(text))):
+            raise ValueError('DSH 其他补丁含同名服务或条目标识')
+
+
+class ClaudeAdapter(Adapter):
+    id="claude"; label="Claude"
+    def __init__(self, path: Path | None = None):
+        local=Path(os.getenv("LOCALAPPDATA",Path.home()/"AppData"/"Local"))
+        msix=local/"Packages"/"Claude_pzs8sxrjxfjjc"/"LocalCache"/"Roaming"/"Claude"
+        roaming=Path(os.getenv("APPDATA",Path.home()/"AppData"/"Roaming"))/"Claude"
+        self.ambiguous=path is None and msix.is_dir() and roaming.is_dir()
+        self.path=path or (msix if msix.is_dir() else roaming)/"claude_desktop_config.json"
+    def detect(self):
+        if self.ambiguous:
+            return {"installed":True,"config_path":None,"config_exists":None,
+                    "entry":{"invalid_existing":True,"ambiguous_profiles":True}}
+        data={}
+        if self.path.is_file():
+            try:data=json.loads(self.path.read_text("utf-8"))
+            except (ValueError,OSError):pass
+        return {"installed":self.path.parent.is_dir(),"config_path":str(self.path),
+                "config_exists":self.path.is_file(),"entry":(data.get("mcpServers") or {}).get(NAME) if isinstance(data,dict) else None}
+    def render(self,old,client_id: str | None = None,secret: str | None = None):
+        if self.ambiguous:raise ValueError("检测到多个 Claude 配置目录；请先明确选择目标")
+        data=json.loads(old) if old.strip() else {}
+        if not isinstance(data,dict):raise ValueError("Claude 桌面配置根节点必须是对象")
+        servers=data.setdefault("mcpServers",{})
+        if not isinstance(servers,dict):raise ValueError("Claude MCP 服务配置无效")
+        c=_command(client_id or "claude",secret)
+        servers[NAME]={key:c[key] for key in ("command","args","env")}
+        return json.dumps(data,ensure_ascii=False,indent=2)+"\n"
+    def remove(self,old):
+        data=json.loads(old) if old.strip() else {}
+        servers=data.get("mcpServers")
+        if isinstance(servers,dict):servers.pop(NAME,None)
+        return json.dumps(data,ensure_ascii=False,indent=2)+"\n"
+    def validate(self,text):
+        if not isinstance(json.loads(text),dict):raise ValueError("Claude 桌面配置根节点必须是对象")
+
+
+class CursorAdapter(Adapter):
+    id="cursor"; label="Cursor"
+    def __init__(self): self.path=Path.home()/".cursor"/"mcp.json"
+    def detect(self):
+        try:data=json.loads(self.path.read_text("utf-8")) if self.path.is_file() else {}
+        except (OSError,ValueError):data={}
+        servers=data.get("mcpServers") if isinstance(data,dict) else None
+        return {"installed":self.path.parent.is_dir(),"config_path":str(self.path),
+                "config_exists":self.path.is_file(),"entry":servers.get(NAME) if isinstance(servers,dict) else None}
+    def render(self,old,client_id=None,secret=None):
+        data=json.loads(old) if old.strip() else {}
+        if not isinstance(data,dict):raise ValueError("Cursor MCP 根节点必须是对象")
+        servers=data.setdefault("mcpServers",{})
+        if not isinstance(servers,dict):raise ValueError("Cursor MCP 服务配置无效")
+        c=_command(client_id or "cursor",secret)
+        servers[NAME]={key:c[key] for key in ("command","args","env")}
+        return json.dumps(data,ensure_ascii=False,indent=2)+"\n"
+    def remove(self,old):
+        data=json.loads(old) if old.strip() else {}
+        servers=data.get("mcpServers")
+        if isinstance(servers,dict):servers.pop(NAME,None)
+        return json.dumps(data,ensure_ascii=False,indent=2)+"\n"
+    def validate(self,text):
+        if not isinstance(json.loads(text),dict):raise ValueError("Cursor MCP 根节点必须是对象")
+
+
+ADAPTERS={"cursor":CursorAdapter(),"codex":CodexAdapter(),"hermes":HermesAdapter(),
+          "dsh":DSHAdapter(),"claude":ClaudeAdapter(),"other":Adapter()}
 def _entry_identity(entry):
     return entry.get("env",{}).get("KNOWLEDGE_BRIDGE_CLIENT_ID") if isinstance(entry,dict) and isinstance(entry.get("env",{}),dict) else None
 def _valid_entry(entry,client_id=None):
@@ -134,11 +285,19 @@ def _valid_entry(entry,client_id=None):
     if command.startswith("http://"): return command.startswith("http://127.0.0.1")
     if command.startswith("https://") or "0.0.0.0" in command: return False
     args=" ".join(map(str,entry.get("args",[])))
-    if component("control", ROOT) is not None and component("workspace", ROOT) is not None:
+    control=package_root(ROOT)
+    try:
+        locator_allowed=control is not None and (component("workspace", ROOT) is not None or
+                                                 connected_workspace(control) is not None)
+    except (OSError,ValueError):
+        locator_allowed=False
+    if locator_allowed:
         from .portable_entry import locator_configuration
         expected=locator_configuration(client_id or 'other')
         if command==expected['command'] and entry.get('args')==expected['args']:
             return Path(command).is_file() and Path(expected['args'][6]).is_file()
+    if Path(command).name.casefold() in {'pwsh.exe','powershell.exe'}:
+        return False
     executable=Path(command).exists() and ("knowledge_bridge.cli" in args or (Path(command).name.casefold()=="kb.exe" and "mcp" in args))
     return executable
 def statuses():
@@ -152,7 +311,7 @@ def statuses():
             "declared_identity":identity,"credential_present":credential_present,
             "identity_configured":identity==key,"identity_upgrade_available":bool(entry and valid and identity!=key),
             "config_state":state,"bridge_path":str(ROOT),"python_path":str(_python()),
-            "vault_path":str(VAULT),"transport":"stdio","restart_required":key=="codex"})
+            "vault_path":str(VAULT),"transport":"stdio","restart_required":key in {"codex","claude"}})
     return rows
 def _masked(value: str, secret: str | None) -> str:
     return value.replace(secret,"<配对秘密：确认时安全写入>") if secret else value
@@ -169,8 +328,15 @@ def preview(client,action="install",*,client_id: str | None = None,
     render_base=old.replace("\r\n","\n")
     new=a.remove(render_base) if action=="remove" else a.render(render_base,client_id,secret); a.validate(new)
     if action!="remove":
-        parsed=tomllib.loads(new) if client=="codex" else (yaml.safe_load(new) or {})
-        bridge=(parsed.get("mcp_servers") or {}).get(NAME) if isinstance(parsed,dict) else None
+        if client=="codex":
+            parsed=tomllib.loads(new);bridge=(parsed.get("mcp_servers") or {}).get(NAME)
+        elif client=="hermes":
+            parsed=yaml.safe_load(new) or {};bridge=(parsed.get("mcp_servers") or {}).get(NAME)
+        elif client=="dsh":
+            parsed=yaml.safe_load(a._block(new)) or []
+            bridge=parsed[0]["insert"][0]["config"]
+        else:
+            parsed=json.loads(new);bridge=(parsed.get("mcpServers") or {}).get(NAME)
         if not isinstance(bridge,dict):raise ValueError("界渡本机连接配置缺失")
         controlled=json.dumps(bridge,ensure_ascii=False)
         if "0.0.0.0" in controlled or "http://" in controlled or "https://" in controlled:
@@ -184,7 +350,7 @@ def preview(client,action="install",*,client_id: str | None = None,
             "config":redact_text(_masked(new,secret)),
             "changed":old!=new,"requires_confirmation":True,
             "backup_directory":str(BACKUPS),"rollback":"应用失败时自动恢复修改前配置；应用后可使用备份文件恢复。",
-            "restart_required":client=="codex"}
+            "restart_required":client in {"codex","claude"}}
 
 def cancel(token: str) -> bool:
     with _EPHEMERAL_LOCK:
@@ -239,12 +405,14 @@ def remove_identity_configuration(registry, internal_id):
         if not isinstance(env,dict):continue
         if not registry.credential_matches(internal_id,env.get('KNOWLEDGE_BRIDGE_CLIENT_ID'),env.get('KNOWLEDGE_BRIDGE_CLIENT_SECRET','')):
             continue
-        pending=preview(key,'remove',ephemeral=True)
+        pending=preview(key,'remove',secret=env.get('KNOWLEDGE_BRIDGE_CLIENT_SECRET'),ephemeral=True)
         # preview may have raced with a client rewrite: verify its exact snapshot.
         with _EPHEMERAL_LOCK:
             snapshot=_EPHEMERAL_PENDING[pending['token']]['old']
-        parsed=tomllib.loads(snapshot) if key=='codex' else (yaml.safe_load(snapshot) or {})
-        snapshot_env=parsed.get('mcp_servers',{}).get(NAME,{}).get('env',{})
+        if key=='codex':snapshot_env=tomllib.loads(snapshot).get('mcp_servers',{}).get(NAME,{}).get('env',{})
+        elif key=='hermes':snapshot_env=(yaml.safe_load(snapshot) or {}).get('mcp_servers',{}).get(NAME,{}).get('env',{})
+        elif key=='dsh':snapshot_env=(yaml.safe_load(adapter._block(snapshot)) or [{}])[0].get('insert',[{}])[0].get('config',{}).get('env',{})
+        else:snapshot_env=(json.loads(snapshot).get('mcpServers') or {}).get(NAME,{}).get('env',{})
         if not registry.credential_matches(internal_id,snapshot_env.get('KNOWLEDGE_BRIDGE_CLIENT_ID'),snapshot_env.get('KNOWLEDGE_BRIDGE_CLIENT_SECRET','')):
             cancel(pending['token']);skipped.append(key);continue
         apply(pending['token']);removed.append(key)

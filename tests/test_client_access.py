@@ -13,12 +13,42 @@ from unittest.mock import patch
 
 import knowledge_bridge.client_access as client_access_module
 from knowledge_bridge.client_access import (
-    ClientIdentity, ClientIdentityRegistry, ClientPermissionService, PolicyDecision, stdio_identity,
+    ClientIdentity, ClientIdentityRegistry, ClientPermissionService, PolicyDecision,
+    ORDINARY_DEFAULT_ALLOW, stdio_identity,
 )
 from knowledge_bridge.workspace import initialize_workspace
 
 
 class ClientRegistryTests(unittest.TestCase):
+    def test_missing_ordinary_rules_default_allow_without_overwriting_explicit_choices(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base=Path(temporary);context=initialize_workspace(base/'workspace')
+            registry=ClientIdentityRegistry(context,base/'machine')
+            created=registry.create('old_agent','Old Agent','test','stdio')
+            identity=registry.authenticate('old_agent',created['secret'])
+            service=ClientPermissionService(registry)
+            self.assertEqual(14,len(ORDINARY_DEFAULT_ALLOW))
+            self.assertEqual(14,len(service.default_policies()))
+            self.assertEqual([],service.policies(identity.internal_id))
+            for scope,operation in ORDINARY_DEFAULT_ALLOW:
+                with self.subTest(scope=scope.value,operation=operation.value):
+                    self.assertEqual(PolicyDecision.ALLOW,
+                        service.authorize(identity,scope.value,operation.value).outcome)
+                    self.assertEqual(PolicyDecision.ALLOW,
+                        service._policy(identity.internal_id,scope,operation,None))
+            self.assertEqual([],service.policies(identity.internal_id))
+            self.assertEqual(PolicyDecision.DENY,
+                service.authorize(identity,'protected','read_protected').outcome)
+            service.set_policy(identity.internal_id,'workspace','read','deny')
+            self.assertEqual(PolicyDecision.DENY,
+                service.authorize(identity,'workspace','read',{'project':'one'}).outcome)
+            service.set_policy(identity.internal_id,'workspace','read','ask',{'project':'one'})
+            self.assertEqual(PolicyDecision.ASK,
+                service.authorize(identity,'workspace','read',{'project':'one'}).outcome)
+            self.assertEqual(PolicyDecision.DENY,
+                service.authorize(identity,'workspace','read',{'project':'two'}).outcome)
+            self.assertEqual(2,len(service.policies(identity.internal_id)))
+
     def test_persisted_approval_expiry_uses_cross_process_wall_clock(self):
         with tempfile.TemporaryDirectory() as temporary:
             base=Path(temporary);context=initialize_workspace(base/"workspace")
@@ -173,7 +203,7 @@ class ClientRegistryTests(unittest.TestCase):
                 self.assertEqual(PolicyDecision.DENY,restarted.authorize(restarted_identity,"inbox","read").outcome)
                 service.set_policy(identity.internal_id,'inbox','read','allow')
                 self.assertEqual(PolicyDecision.ALLOW,service.authorize(identity,'inbox','read').outcome)
-                self.assertEqual(PolicyDecision.DENY,service.authorize(identity,"formal","submit_candidate").outcome)
+                self.assertEqual(PolicyDecision.ALLOW,service.authorize(identity,"formal","submit_candidate").outcome)
                 self.assertEqual(PolicyDecision.DENY,service.authorize(identity,"protected","read_protected").outcome)
                 with self.assertRaises(ValueError):
                     service.grant_session_read(identity.internal_id,"session",["inbox"])

@@ -24,7 +24,9 @@
     const progress=$('#archiveProgress');if(!progress||$('#motherDistillation'))return;
     const card=document.createElement('section');card.id='motherDistillation';card.className='prompt-workflow-card';
     card.innerHTML='<div><h2>提炼母档</h2><p>全部已接入的历史来源完成补档后，复制指令交给你正在使用的 AI，按证据提出分类建议；正式知识仍须你审核。</p></div><p id="motherDistillationStatus" role="status">正在核对历史补档…</p><details id="motherDistillationDetails" hidden><summary>查看具体原因</summary><p></p></details><div class="prompt-workflow-actions"><button id="refreshMotherGate" type="button" class="copy-button">刷新条件</button><button id="copyMotherPrompt" type="button" class="primary" disabled>复制提炼母档提示词</button></div>';
-    progress.after(card);
+    let tools=$('#archiveOrganizeTools');
+    if(!tools){tools=document.createElement('details');tools.id='archiveOrganizeTools';tools.className='archive-diagnostics';tools.innerHTML='<summary>整理工具</summary>';($('#archiveAdvanced')||$('#archivesHub')).append(tools)}
+    tools.append(card);
     $('#refreshMotherGate').onclick=()=>refreshGate(true);
     $('#copyMotherPrompt').onclick=async event=>{
       const button=event.currentTarget;button.disabled=true;

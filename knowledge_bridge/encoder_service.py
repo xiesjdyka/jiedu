@@ -14,6 +14,10 @@ import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+IDLE_SECONDS = 600
+_warmup_lock = threading.Lock()
+_warmup_pending = set()
+
 
 def enabled():
     return os.environ.get('KNOWLEDGE_BRIDGE_PROCESS_ROLE') in {'console','watch'} and os.environ.get('JIEDU_ENCODER_CHILD')!='1'
@@ -74,19 +78,34 @@ def ensure(directory=None):
 
 
 def encode(texts,*,local_only=False,batch_size=None,lock_timeout=None):
-    ensure()
-    result=call(root(),'encode',{'texts':list(texts),'local_only':local_only,'batch_size':batch_size,'lock_timeout':lock_timeout},timeout=600)
+    directory=root()
+    # Bounded interactive requests must not restart a worker that expired after
+    # the readiness check. The next query may warm it; this one falls back.
+    if lock_timeout is None:ensure(directory)
+    result=call(directory,'encode',{'texts':list(texts),'local_only':local_only,'batch_size':batch_size,
+        'lock_timeout':lock_timeout,'require_loaded':lock_timeout is not None},timeout=600)
     import numpy as np
     return np.asarray(result['vectors'],dtype='float32')
 
 
 def warmup():
+    directory = root()
+    key = str(directory.resolve())
     def load():
-        try:ensure();call(root(),'warmup',timeout=180)
+        try:ensure(directory);call(directory,'warmup',timeout=180)
         except Exception:pass  # Status/next explicit request reports the actual load failure.
-    current=status()
+        finally:
+            with _warmup_lock:_warmup_pending.discard(key)
+    current=status(directory)
     if current.get('state') in {'loaded','loading'}:return False
-    threading.Thread(target=load,name='encoder-warmup-request',daemon=True).start();return True
+    with _warmup_lock:
+        if key in _warmup_pending:return False
+        _warmup_pending.add(key)
+    try:threading.Thread(target=load,name='encoder-warmup-request',daemon=True).start()
+    except BaseException:
+        with _warmup_lock:_warmup_pending.discard(key)
+        raise
+    return True
 
 
 def stop(directory=None):
@@ -108,17 +127,17 @@ class Backend:
             batch_size=payload.get('batch_size'),lock_timeout=payload.get('lock_timeout')).tolist()
 
 
-def serve(directory,backend=None,idle_seconds=120,ready=None):
+def serve(directory,backend=None,idle_seconds=IDLE_SECONDS,ready=None):
     directory=Path(directory);directory.mkdir(parents=True,exist_ok=True)
     backend=backend or Backend();token=secrets.token_urlsafe(32);gate=threading.Lock()
-    state={'last_used':time.monotonic(),'busy':False,'stopping':False}
+    state={'last_used':time.monotonic(),'busy':False,'stopping':False,'last_error':None}
     class Handler(BaseHTTPRequestHandler):
         def log_message(self,*args):pass
         def reply(self,code,data):
-            raw=json.dumps(data).encode();self.send_response(code);self.send_header('Content-Type','application/json')
-            self.send_header('Content-Length',str(len(raw)));self.end_headers()
-            try:self.wfile.write(raw)
-            except (BrokenPipeError,ConnectionResetError):pass
+            try:
+                raw=json.dumps(data).encode();self.send_response(code);self.send_header('Content-Type','application/json')
+                self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw)
+            except (BrokenPipeError,ConnectionResetError,ConnectionAbortedError):pass
         def do_POST(self):
             if not hmac.compare_digest(self.headers.get('Authorization',''),'Bearer '+token):return self.reply(403,{'error':'未授权'})
             try:
@@ -128,6 +147,7 @@ def serve(directory,backend=None,idle_seconds=120,ready=None):
                 if self.path=='/status':
                     public=backend.status()
                     if state['busy'] and public.get('state')!='loaded':public.update(state='loading',runtime_state='loading')
+                    elif state['last_error'] and public.get('state')!='loaded':public.update(state='load_failed',runtime_state='failed',error=state['last_error'])
                     return self.reply(200,{**public,'pid':os.getpid(),'shared_service':True,'busy':state['busy'],'idle_seconds':idle_seconds})
                 if self.path=='/stop':
                     state['stopping']=True
@@ -139,13 +159,22 @@ def serve(directory,backend=None,idle_seconds=120,ready=None):
                     return self.reply(400,{'error':'无效向量输入'})
                 wait=payload.get('lock_timeout');wait=600 if wait is None else max(0,min(600,float(wait)))
                 if not gate.acquire(timeout=wait):return self.reply(409,{'error':'共享向量模型正忙'})
+                performed_work=False
                 try:
                     if state['stopping']:return self.reply(409,{'error':'向量服务正在释放，稍后重试'})
-                    state['busy']=True;state['last_used']=time.monotonic()
-                    result={'vectors':backend.encode(payload)} if self.path=='/encode' else (backend.warmup() or {'loaded':True})
+                    if payload.get('require_loaded') and backend.status().get('state')!='loaded':
+                        return self.reply(409,{'error':'向量模型已释放或尚未就绪，本次可使用关键词检索'})
+                    state['busy']=True;state['last_used']=time.monotonic();performed_work=True
+                    try:
+                        result={'vectors':backend.encode(payload)} if self.path=='/encode' else (backend.warmup() or {'loaded':True})
+                    except Exception as exc:
+                        state['last_error']=type(exc).__name__
+                        raise
+                    state['last_error']=None
                     self.reply(200,result)
                 finally:
-                    state['last_used']=time.monotonic();state['busy']=False;gate.release()
+                    if performed_work:state['last_used']=time.monotonic()
+                    state['busy']=False;gate.release()
                     if state['stopping']:threading.Thread(target=server.shutdown,daemon=True).start()
             except TimeoutError as exc:self.reply(409,{'error':str(exc)})
             except Exception as exc:self.reply(500,{'error':type(exc).__name__+': '+str(exc)[:250]})

@@ -48,6 +48,8 @@ class NormalizedAttachment:
     media_type: str | None = None
     inline_data: bytes | None = None
     original_name_source: str = "source"
+    expected_sha256: str | None = None
+    expected_size: int | None = None
 
 
 @dataclass(frozen=True)
@@ -88,6 +90,13 @@ class SourceRegistry:
         "chatgpt_web": ("ChatGPT", "ChatGPT Web", "web"),
         "codex": ("ChatGPT", "Codex", "desktop_agent"),
         "hermes": ("Hermes", "Hermes", "desktop_agent"),
+        "dsh": ("DSH", "DSH", "desktop_agent"),
+        "claude": ("Claude", "Claude", "desktop_agent"),
+        "cursor": ("Cursor", "Cursor", "desktop_agent"),
+        "workbuddy": ("WorkBuddy", "WorkBuddy", "desktop_agent"),
+        "opencode": ("OpenCode", "OpenCode", "desktop_agent"),
+        "zcode": ("ZCode", "ZCode", "desktop_agent"),
+        "kimi": ("Kimi Work", "Kimi Work", "desktop_agent"),
         "doubao_work": ("豆包", "豆包工作版", "desktop_agent"),
     }
 
@@ -545,7 +554,8 @@ class ArchiveStore:
         from .attachment_integrity import store_verified
         folder = self.context.root / item["relative_path"] / "02_附件"; folder.mkdir(parents=True, exist_ok=True)
         destination, digest, size, duplicate = store_verified(
-            folder, lambda sha: f'{sha}{extension}', source=source, data=spec.inline_data)
+            folder, lambda sha: f'{sha}{extension}', source=source, data=spec.inline_data,
+            expected_sha256=spec.expected_sha256, expected_size=spec.expected_size)
         row.update({"sha256": digest, "stored_path": self.context.relative(destination),
                     "size_bytes": size, "status": "available", "missing": False,
                     "duplicate": duplicate})

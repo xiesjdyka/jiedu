@@ -1,5 +1,6 @@
 """One scoped passage contract for UI, MCP and direct clients."""
 import json
+import time
 from pathlib import Path
 from .search_scopes import search_scope
 from .workspace import active_workspace
@@ -7,6 +8,21 @@ from .workspace import active_workspace
 MODES={'keyword','vector','hybrid'}
 SCOPES={'formal','evidence','inbox','workspace'}
 FORMAL_PREFIXES=('00_系统/','01_当前状态/','02_项目/','03_知识/')
+
+MODEL_READY_WAIT_SECONDS = 5.0
+
+def query_model_status(core):
+    """Wake on actual search; bounded cold-start wait, never on status polling."""
+    current=core.local_model_status()
+    if current['state'] not in {'available_unloaded','loading'}:return current
+    deadline=time.monotonic()+MODEL_READY_WAIT_SECONDS
+    core.start_model_warmup()
+    while True:
+        current=core.local_model_status()
+        if current['state'] not in {'available_unloaded','loading'}:return current
+        remaining=deadline-time.monotonic()
+        if remaining<=0:return current
+        time.sleep(min(.1,remaining))
 
 class DirectoryRetrievalContext:
     def __init__(self,root):
@@ -36,11 +52,12 @@ class RetrievalService:
                     from . import evidence_index as backend
                 elif scope=='workspace':
                     from . import workspace_vector as backend
-                model_state=core.local_model_status()
+                model_state=(query_model_status(core) if Path(core.VAULT).resolve()==self.context.root.resolve()
+                             else core.local_model_status())
                 if Path(core.VAULT).resolve()!=self.context.root.resolve():reason='向量索引工作区不匹配'
                 elif model_state['state']=='unavailable':reason='本机没有完整的向量模型缓存，已回退段落检索'
                 elif model_state['state'] in {'available_unloaded','loading'}:
-                    core.start_model_warmup();model_state=core.local_model_status();reason='本机向量模型正在后台加载，本次先使用段落检索；后续查询会自动启用语义检索'
+                    reason='本机向量模型仍在加载，本次先返回关键词结果；加载完成后的查询会自动使用语义检索，闲置10分钟后释放内存'
                 elif model_state['state']=='load_failed':reason='本机向量模型加载失败，已回退段落检索'
                 elif core.model_busy():reason='后台索引或其他请求占用共享向量模型，本次使用段落检索；未等待后台索引完成'
                 else:

@@ -1,5 +1,6 @@
 // Read-only status polling; importing is owned by the standalone worker.
 let codexArchiveTimer = null, codexArchiveBusy = false;
+let codexIssueOffset = 0;
 
 function codexReferenceDescription(row) {
   const kind={uploaded:'上传附件',delivery_link:'交付文件链接',text_reference:'正文文件引用',legacy_reference:'旧文件引用'}[row.kind]||'文件引用';
@@ -13,6 +14,7 @@ async function loadCodexArchiveStatus() {
   clearTimeout(codexArchiveTimer);
   const open = new Set([...box.querySelectorAll('details[open]')].map(x => x.dataset.codexDetails));
   const referenceDetailHTML=box.querySelector('#codexReferenceDetails')?.innerHTML||'';
+  const issueDetailHTML=box.querySelector('#codexIssueDetails')?.innerHTML||'';
   try {
     const d = await api('/api/codex-archive/summary', {force:true, ttl:0});
     if(d.recovery_required){
@@ -28,6 +30,7 @@ async function loadCodexArchiveStatus() {
     const attachmentSaved = Math.max(0, (d.total_attachment_count||0)-(d.missing_attachment_count||0));
     const issues = (h.items||[]).filter(x => ['failed','needs_review','source_missing','excluded'].includes(x.status));
     const auditBusy=(f.pending_sources||0)>0, unresolved=d.needs_review_event_count||0;
+    const unknownResponses=Number(f.remaining_categories?.unknown_response_item||0);
     const bodiesVerified=f.started&&!auditBusy&&!f.failed_sources&&!unresolved&&f.completed_sources===f.sources;
     const heading=!d.enabled?'自动归档已暂停':!d.discovered_session_count?'未发现本机 Codex 会话来源':f.failed_sources?'正文核对遇到问题':auditBusy?'正在核对并补齐历史聊天':unresolved?'还有内容尚未确认':bodiesVerified?'历史聊天正文已核对':labels[h.status]||'正在读取状态';
     const resolved=f.resolved_categories||{}, internalCount=Object.entries(resolved).reduce((sum,[kind,count])=>sum+(kind==='public_message'?0:count),0);
@@ -36,7 +39,7 @@ async function loadCodexArchiveStatus() {
       <div class="codex-import-heading"><div><small>界渡后台 · Codex 自动归档</small><h3>${esc(heading)}</h3></div><span>${d.last_error?'采集异常，请检查':!d.enabled?'已暂停':!d.snapshot_available?'等待首次检查':!fresh?'最近采集待核验':'自动同步已开启'}</span></div>
       ${d.live_backlog?.pending_bytes?`<p class="codex-import-note" role="status">有新内容正在同步（${d.live_backlog.pending_bytes<1048576?Math.max(1,Math.ceil(d.live_backlog.pending_bytes/1024))+' KB':(d.live_backlog.pending_bytes/1048576).toFixed(1)+' MiB'}）。${d.archive_policy==='paused'?'继续归档后会从原进度续接。':'后台会接着保存，不需要重新导入。'}</p>`:''}
       <p class="codex-import-note">${bodiesVerified?'已逐项核对本批来源中的聊天正文；新消息继续自动保存。附件是否取得原件单独列出。':auditBusy?'正在对照原始记录，补齐旧格式聊天；已经保存的消息不会重复添加。':unresolved?'下列待核对内容尚不能算作已完整归档。源文件和已存记录均保留。':!d.discovered_session_count?'目前没有可读取的本机 Codex 会话；发现来源后界渡才会开始补齐和持续采集。':'界渡后台自动保存可读取的本机 Codex 对话，重启后从原进度继续。'}</p>
-      ${f.started?`<label class="codex-import-progress">正文核对 · ${auditBusy?auditPercent+'%':bodiesVerified?'已完成':'有待确认内容'}<progress max="100" value="${auditPercent}"></progress></label><p class="codex-import-note">已核对 ${f.verified_session_ids?.length||0} 个会话，${f.completed_sources||0} / ${f.sources||0} 份来源。核对范围截止本批捕获的来源位置。</p>`:h.batch_id?`<label class="codex-import-progress">来源文件读取 · ${scanned}%<progress max="100" value="${scanned}"></progress></label><p class="codex-import-note">文件读取比例不等于聊天完整性；未知内容会单独提示。</p>`:'<p class="codex-import-note">先选择归档范围，界渡会保存首次导入进度。</p>'}
+      ${f.started?`<label class="codex-import-progress">来源记录读取 · ${auditPercent}%<progress max="100" value="${auditPercent}" aria-label="来源记录读取比例，不表示全部内容已识别"></progress></label><p class="codex-import-note">已核对 ${f.verified_session_ids?.length||0} 个会话，${f.completed_sources||0} / ${f.sources||0} 份来源。${unresolved?`仍有 ${unresolved} 项内容未识别${unknownResponses?`，其中 ${unknownResponses} 项为当前无法分类的响应记录`:''}；原记录保留，尚不能算完整归档。`:''}读取比例只表示本批来源位置已检查。</p>`:h.batch_id?`<label class="codex-import-progress">来源文件读取 · ${scanned}%<progress max="100" value="${scanned}"></progress></label><p class="codex-import-note">文件读取比例不等于聊天完整性；未知内容会单独提示。</p>`:'<p class="codex-import-note">先选择归档范围，界渡会保存首次导入进度。</p>'}
       <div class="knowledge-base-summary codex-import-summary">
         <div><span>已保存正文</span><strong>${d.total_archived_message_count??'待核对'} 条</strong></div>
         <div><span>本次补齐旧消息</span><strong>${f.repaired_messages||0} 条</strong></div>
@@ -55,7 +58,7 @@ async function loadCodexArchiveStatus() {
         ${d.archive_policy!=='all'&&d.resume_policy!=='all'?'<button id="allCodexArchive" class="copy-button">启用自动归档：全部可读历史＋新消息</button>':''}
       </div>
       <p class="codex-import-note">暂停同时停止历史导入与新消息采集；已有档案和进度会保留。未取得的文件保留原路径或链接；重试时会核验原件，不能用同名新文件替代。</p>
-      ${issues.length?`<details data-codex-details="issues"><summary>需要关注的来源 · ${issues.length}${h.details_limited?'（最多展示30份）':'份'}</summary><div class="interface-list">${issues.map(x=>`<div class="interface-row"><div><b>${esc((d.discovered_sessions||[]).find(s=>s.session_id===x.session_id)?.title||'未命名对话')}</b><small>${esc(stateLabels[x.status]||x.status)}${x.error?' · '+esc(x.error):''}</small><small class="selectable">${esc(x.source_file)}</small></div></div>`).join('')}</div></details>`:''}
+      ${issues.length?`<details data-codex-details="issues"><summary>需要关注的来源 · ${h.issue_total??issues.length} 份</summary><div id="codexIssueDetails" class="interface-list">${issues.map(x=>`<div class="interface-row"><div><b>${esc((d.discovered_sessions||[]).find(s=>s.session_id===x.session_id)?.title||'未命名对话')}</b><small>${esc(stateLabels[x.status]||x.status)}${x.error?' · '+esc(x.error):''}</small><small class="selectable">${esc(x.source_file)}</small></div></div>`).join('')}</div>${h.details_limited?'<button id="loadMoreCodexIssues" class="copy-button" type="button">加载更多来源</button>':''}</details>`:''}
       ${d.discovery_issues?.length?`<p class="codex-import-note">有 ${d.discovery_issues.length} 份来源无法识别或读取，未计入已完成范围。</p><details data-codex-details="discovery"><summary>查看无法读取的来源</summary>${d.discovery_issues.map(x=>`<p class="codex-import-note">${esc(x.source_file)} · ${esc(x.reason)}</p>`).join('')}</details>`:''}
       <details data-codex-details="scope"><summary>归档范围 · ${d.authorized_session_count||0} / ${d.discovered_session_count||0} 个会话</summary><p>${d.archive_policy==='all'||d.resume_policy==='all'?'包含以后新增的本地对话；已移出的会话继续排除。':'仅归档下面选中的会话。'}</p><div class="interface-list">${(d.discovered_sessions||[]).map(x=>{const c=cursors[x.session_id]||{};return `<div class="interface-row"><div><b>${esc(x.title)}</b><small>${x.authorized?`${esc(stateLabels[c.body_status]||'等待导入')} · ${c.archived_message_count||0} 条正文${c.missing_attachment_count?' · '+c.missing_attachment_count+' 条文件引用未取得原件':''}${c.attachment_failed_count?' · 附件保存失败':''}`:'不在归档范围'} · ${x.fragment_count||1} 份日志</small>${c.last_error?`<small>${esc(c.last_error)}</small>`:''}</div><button class="copy-button" data-codex-session="${esc(x.session_id)}" data-authorized="${x.authorized?'true':'false'}">${x.authorized?'移出范围':'加入归档'}</button></div>`}).join('')||'<p>暂未发现本地 Codex 对话。</p>'}</div></details>
       <details data-codex-details="attachment-references"><summary>附件原件情况 · ${referenceStats.unavailable_references||0} 次引用未取得 / ${referenceStats.unique_unavailable_sources||0} 个不同文件来源</summary><p>${esc(referenceStats.notice||'引用尚未分类，请先核对来源。')}</p>${referenceStats.recovery_review?.reviewed?`<p>已逐条核对 ${referenceStats.recovery_review.reviewed} 次历史引用，已补回 ${referenceStats.recovery_review.recovered} 次引用的可核验内容${referenceStats.recovery_review.rendered_image_copies?`（其中 ${referenceStats.recovery_review.rendered_image_copies} 次为当时工具返回的图片副本，不能保证原文件编码相同）`:""}。其余保留原链接与具体原因；同一文件可能在不同日期被多次引用。</p>`:''}<button id="loadCodexReferenceDetails" class="copy-button">查看具体文件与原因</button><div id="codexReferenceDetails"></div>${(referenceStats.unavailable||[]).map(row=>`<p class="selectable">${esc({uploaded:'上传附件',delivery_link:'交付链接',text_reference:'正文引用',legacy_reference:'旧引用，类别待核对'}[row.kind]||'类别待核对')} · ${esc(row.original_name||row.reference)} · ${esc(codexReferenceDescription(row))}<br>${esc(row.title||'')} ${esc(row.message_timestamp?formatTime(row.message_timestamp):'')}<br>${esc(row.source_path||row.reference)}</p>`).join('')}</details>
@@ -63,6 +66,9 @@ async function loadCodexArchiveStatus() {
       <p id="codexArchiveFeedback" role="status" aria-live="polite"></p>`;
     box.querySelectorAll('details').forEach(x => {x.open=open.has(x.dataset.codexDetails)});
     box.querySelector('#codexReferenceDetails').innerHTML=referenceDetailHTML;
+    if(codexIssueOffset&&box.querySelector('#codexIssueDetails'))box.querySelector('#codexIssueDetails').innerHTML=issueDetailHTML;
+    if(codexIssueOffset>=Number(h.issue_total||issues.length))box.querySelector('#loadMoreCodexIssues')?.remove();
+    box.querySelector('#loadMoreCodexIssues')?.addEventListener('click',async event=>{const button=event.currentTarget;button.disabled=true;try{const page=await api('/api/codex-archive/issues?offset='+String(codexIssueOffset||issues.length)+'&limit=30',{force:true,ttl:0});const host=box.querySelector('#codexIssueDetails');if(!host)return;host.insertAdjacentHTML('beforeend',(page.items||[]).map(x=>`<div class="interface-row"><div><b>${esc((d.discovered_sessions||[]).find(s=>s.session_id===x.session_id)?.title||'未命名对话')}</b><small>${esc(stateLabels[x.status]||x.status)}${x.error?' · '+esc(x.error):''}</small><small class="selectable">${esc(x.source_file)}</small></div></div>`).join(''));codexIssueOffset=page.next_offset||page.total;if(!page.has_more)button.remove()}catch(error){button.disabled=false;showToast('来源详情读取失败，请重试')}});
     async function action(button, route, payload, message) {
       codexArchiveBusy=true; button.disabled=true;
       const feedback=box.querySelector('#codexArchiveFeedback');feedback.textContent='正在处理这一批，请稍候…';

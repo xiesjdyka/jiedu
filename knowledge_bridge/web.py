@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Literal
 import base64,hashlib,json,re,sqlite3
 from fastapi import FastAPI, HTTPException, Request
@@ -42,6 +43,10 @@ from .ai_chat_bridge import status as ai_chat_status,ask as ai_chat_ask,test_con
 _adapter_stop=threading.Event()
 _codex_adapter_stop=threading.Event()
 _doubao_adapter_stop=threading.Event()
+_dsh_adapter_stop=threading.Event()
+_claude_adapter_stop=threading.Event()
+_cursor_adapter_stop=threading.Event()
+_four_adapter_stop=threading.Event()
 _governance_stop=threading.Event()
 _evidence_stop=threading.Event()
 _workspace_workers_lock=threading.RLock()
@@ -56,10 +61,18 @@ def _workspace_workers(app):
         from .hermes_session_adapter import run as hermes
         from .codex_source_adapter import run as codex
         from .doubao_session_adapter import run as doubao
+        from .dsh_source_adapter import run as dsh
+        from .claude_source_adapter import run as claude
+        from .cursor_source_adapter import run as cursor
+        from .four_local_collectors import run as four_collectors
         specs.extend([('evidence-update-worker',evidence,(_evidence_stop,),_evidence_stop),
             ('hermes-session-adapter',hermes,(5.0,_adapter_stop),_adapter_stop),
             ('codex-source-adapter',codex,(10.0,_codex_adapter_stop),_codex_adapter_stop),
-            ('doubao-session-adapter',doubao,(5.0,_doubao_adapter_stop),_doubao_adapter_stop)])
+            ('doubao-session-adapter',doubao,(5.0,_doubao_adapter_stop),_doubao_adapter_stop),
+            ('dsh-source-adapter',dsh,(5.0,_dsh_adapter_stop),_dsh_adapter_stop),
+            ('claude-source-adapter',claude,(10.0,_claude_adapter_stop),_claude_adapter_stop),
+            ('cursor-source-adapter',cursor,(10.0,_cursor_adapter_stop),_cursor_adapter_stop),
+            ('four-local-collectors',four_collectors,(10.0,_four_adapter_stop),_four_adapter_stop)])
     return specs
 
 def _start_workspace_workers(app):
@@ -79,7 +92,8 @@ def _start_workspace_workers(app):
 
 def _stop_workspace_workers(app):
     with _workspace_workers_lock:
-        for event in (_adapter_stop,_codex_adapter_stop,_doubao_adapter_stop,_governance_stop,_evidence_stop):event.set()
+        for event in (_adapter_stop,_codex_adapter_stop,_doubao_adapter_stop,
+                      _dsh_adapter_stop,_claude_adapter_stop,_cursor_adapter_stop,_four_adapter_stop,_governance_stop,_evidence_stop):event.set()
 
 @asynccontextmanager
 async def lifespan(app):
@@ -140,7 +154,7 @@ async def lifespan(app):
     if butler:butler.close()
     manager=getattr(app.state,"protection_control",None)
     if manager:manager.close()
-    _adapter_stop.set();_codex_adapter_stop.set();_doubao_adapter_stop.set();_governance_stop.set();_evidence_stop.set()
+    _adapter_stop.set();_codex_adapter_stop.set();_doubao_adapter_stop.set();_dsh_adapter_stop.set();_claude_adapter_stop.set();_cursor_adapter_stop.set();_four_adapter_stop.set();_governance_stop.set();_evidence_stop.set()
     for worker in workers:worker.join(timeout=3)
 app=FastAPI(title="界渡",docs_url="/api/docs",lifespan=lifespan)
 
@@ -426,6 +440,19 @@ def butler_select_hermes(request:Request):
             return service.providers.select_hermes()
     return _butler_call(select)
 
+class ButlerHermesScopes(BaseModel):
+    data_scopes:list[str]=Field(default_factory=list)
+
+@app.post('/api/butler/providers/hermes-scopes')
+def butler_hermes_scopes(payload:ButlerHermesScopes,request:Request):
+    service=_butler(request)
+    def save():
+        with service.lock,service.db() as db:
+            if db.execute("SELECT 1 FROM jobs WHERE state IN ('queued','running') LIMIT 1").fetchone():
+                raise ValueError('请先停止或等候本轮完成，再更改 Hermes 资料范围')
+            return service.providers.set_hermes_data_scopes(payload.data_scopes)
+    return _butler_call(save)
+
 class ButlerNativeSearch(BaseModel):
     enabled:bool=Field(strict=True)
 
@@ -672,6 +699,9 @@ class ClientPairRequest(BaseModel):
     transport:str=Field(default="stdio",max_length=32)
     read_policies:dict[str,str]|None=None
     product_family:str|None=Field(default=None,max_length=80)
+class ClientHandoffRequest(BaseModel):
+    token:str=Field(min_length=32,max_length=128)
+    workspace_id:str=Field(min_length=1,max_length=128)
 class ClientPolicyRequest(BaseModel):
     scope:str;operation:str;decision:str;selector:dict|None=None
 class ClientApprovalRequest(BaseModel):
@@ -995,9 +1025,103 @@ def api_protection_auto_lock(request:Request,payload:ProtectionAutoLockRequest):
     except OwnerSessionRequired:raise HTTPException(403,"Owner 会话无效或已过期")
     return manager.status(request.cookies.get(OWNER_COOKIE))
 
+def _client_read_verification_current(row,policies,permissions,configuration_current=True,configuration_modified_at=None):
+    last_read=row.get('last_read_at')
+    if not last_read or row.get('status')=='revoked' or configuration_current is False:return False
+    # A historical read cannot prove current connectivity for any client.
+    # A stopped client keeps its configuration and archive; it simply needs a
+    # new successful read before the UI can claim a verified connection.
+    try:
+        age=(datetime.now(timezone.utc)-datetime.fromisoformat(last_read.replace('Z','+00:00'))).total_seconds()
+        if not 0<=age<=300:return False
+    except (ValueError,TypeError,OverflowError):return False
+    # These collectors do not own a readable MCP config file, so also require
+    # independent evidence that the application is installed.
+    if row.get('client_type') in {'workbuddy','opencode','zcode','kimi'}:
+        from .client_installation import state as installation_state
+        if installation_state(row['client_type'])!='present':return False
+    if row.get('client_type')=='cursor' and configuration_modified_at:
+        try:
+            if datetime.fromisoformat(configuration_modified_at)>datetime.fromisoformat(last_read):return False
+        except ValueError:return False
+    if (row.get('rotated_at') or '')>last_read or (row.get('last_auth_failure_at') or '')>last_read:return False
+    if any((policy.get('updated_at') or '')>last_read for policy in policies):return False
+    tool=row.get('last_read_tool') or ''
+    operation=('context' if tool in {'memory_bootstrap','get_project_state','context_state'} else
+               'search' if 'search' in tool else 'read')
+    try:
+        return permissions._policy(row['internal_id'],KnowledgeScope(row.get('last_read_scope')),
+                                   ClientOperation(operation),None)==PolicyDecision.ALLOW
+    except (ValueError,TypeError):return False
+
+_ORDINARY_READ_OPERATIONS=(
+    (KnowledgeScope.FORMAL,ClientOperation.SEARCH),(KnowledgeScope.FORMAL,ClientOperation.READ),
+    (KnowledgeScope.FORMAL,ClientOperation.CONTEXT),(KnowledgeScope.EVIDENCE,ClientOperation.SEARCH),
+    (KnowledgeScope.EVIDENCE,ClientOperation.READ),(KnowledgeScope.INBOX,ClientOperation.SEARCH),
+    (KnowledgeScope.INBOX,ClientOperation.READ),(KnowledgeScope.INBOX,ClientOperation.CONTEXT),
+    (KnowledgeScope.WORKSPACE,ClientOperation.SEARCH),(KnowledgeScope.WORKSPACE,ClientOperation.READ),
+    (KnowledgeScope.WORKSPACE,ClientOperation.CONTEXT),
+)
+
+def _client_ordinary_read_policy(internal_id,policies,permissions):
+    decisions=[permissions._policy(internal_id,scope,operation,None) for scope,operation in _ORDINARY_READ_OPERATIONS]
+    read_keys={(scope.value,operation.value) for scope,operation in _ORDINARY_READ_OPERATIONS}
+    exact=[row for row in policies if (row.get('scope'),row.get('operation')) in read_keys and row.get('selector')]
+    effective=decisions+[PolicyDecision(row['decision']) for row in exact]
+    state=('allow' if effective and all(value==PolicyDecision.ALLOW for value in effective) else
+           'deny' if all(value==PolicyDecision.DENY for value in effective) else 'partial')
+    return {'state':state,'allow_count':sum(value==PolicyDecision.ALLOW for value in decisions),
+            'total_count':len(decisions),'exact_rule_count':len(exact)}
+
+def _client_configuration_current(row,registry):
+    if row.get('client_type') in {'workbuddy','opencode','zcode','kimi'}:
+        # No managed config adapter exists for these clients. A saved pairing or
+        # local conversation database is not evidence of a current MCP config.
+        from .client_installation import state as installation_state
+        return False if installation_state(row['client_type'])=='absent' else None
+    if row.get('client_type')=='claude':
+        from .claude_extension import inspect_bundle
+        bundle=inspect_bundle()
+        return bool(bundle and bundle['client_id']==row['claimed_id'] and
+                    registry.configured_secret_matches(row['internal_id'],bundle['secret']))
+    if row.get('client_type') not in {'codex','hermes','dsh','cursor'}:return None
+    from .client_config import ADAPTERS, _entry_identity, _valid_entry
+    try:
+        entry=ADAPTERS[row['client_type']].detect().get('entry')
+        env=entry.get('env') if isinstance(entry,dict) else None
+        secret=env.get('KNOWLEDGE_BRIDGE_CLIENT_SECRET') if isinstance(env,dict) else None
+        return bool(_entry_identity(entry)==row['claimed_id'] and
+                    _valid_entry(entry,row['claimed_id']) and
+                    registry.configured_secret_matches(row['internal_id'],secret))
+    except (OSError,ValueError):return False
+
+def _cursor_configuration_detail(row):
+    if row.get('client_type')!='cursor':return {'present':None,'modified_at':None}
+    from .client_config import ADAPTERS, NAME
+    path=ADAPTERS['cursor'].path
+    try:
+        file_stat=path.stat()
+    except FileNotFoundError:return {'present':False,'modified_at':None}
+    except OSError:return {'present':None,'modified_at':None}
+    try:
+        data=json.loads(path.read_text('utf-8'))
+    except FileNotFoundError:return {'present':False,'modified_at':None}
+    except OSError:return {'present':None,'modified_at':None}
+    except ValueError:data=None
+    servers=data.get('mcpServers') if isinstance(data,dict) else None
+    present=(not isinstance(data,dict) or
+             (servers is not None and not isinstance(servers,dict)) or
+             (isinstance(servers,dict) and NAME in servers))
+    try:
+        modified=datetime.fromtimestamp(file_stat.st_mtime,timezone.utc).isoformat() if present else None
+        return {'present':present,'modified_at':modified}
+    except (OverflowError,ValueError):return {'present':None,'modified_at':None}
+
 @app.get("/api/client-access/status")
 def api_client_access_status(request:Request):
+    from .client_visibility import hidden_client_types
     from .source_connections import SourceConnections
+    from .claude_source_adapter import profile_paths as claude_profile_paths
     from .doubao_session_adapter import status as doubao_adapter_status
     from .source_adapters import (matrix as source_adapter_matrix, for_client as source_adapter_for_client,
                                   connection_status as source_connection_status, generator_status, legacy_client_view)
@@ -1005,6 +1129,10 @@ def api_client_access_status(request:Request):
     adapter_matrix=source_adapter_matrix()
     registered=[]
     for row in registry.list_clients():
+        configuration_current=_client_configuration_current(row,registry)
+        from .client_installation import state as installation_state
+        installation=installation_state(row.get('client_type'))
+        configuration_detail=_cursor_configuration_detail(row)
         archive_status=SourceConnections(registry.context).status(row['internal_id'])
         client_adapter=source_adapter_for_client(row.get("client_type"),adapter_matrix)
         if client_adapter.get("adapter_id") == "generic_mcp_push" and archive_status.get("bound"):
@@ -1012,6 +1140,11 @@ def api_client_access_status(request:Request):
         client_policies=permissions.policies(row["internal_id"])
         client_adapter=client_adapter|{"connection":source_connection_status(row,archive_status,client_policies,client_adapter)}
         registered.append(row|{"archive":archive_status,"policies":client_policies,
+            "read_verification_current":_client_read_verification_current(row,client_policies,permissions,configuration_current,configuration_detail['modified_at']),
+            "configuration_current":configuration_current,
+            "installation_state":installation,
+            "configuration_present":configuration_detail['present'],
+            "ordinary_read_policy":_client_ordinary_read_policy(row['internal_id'],client_policies,permissions),
             "source_adapter":client_adapter,
             'session_read_scopes': permissions.session_read_scopes(row['internal_id'],_protection_manager(request).protection_session_id) if row['status']!='revoked' else []})
     legacy=[];local_collectors=[]
@@ -1026,12 +1159,38 @@ def api_client_access_status(request:Request):
         local_collectors.append({"display_name":"豆包工作版","status":doubao_status.get("status"),
                                  "archive_preserved":True,"details":doubao_status})
     return {"workspace_id":registry.context.workspace_id,"registered":registered,"legacy":legacy,"local_collectors":local_collectors,
+            "hidden_client_types":sorted(hidden_client_types(registry.context)),
+            "default_policies":permissions.default_policies(),
             "adapter_matrix":adapter_matrix,"adapter_generator":generator_status(),
             "pairing_presets":_pairing_service(request).presets(),
+            "claude_profiles":[{"id":key,"label":label} for key,(label,database,_) in claude_profile_paths().items() if database.parent.parent.is_dir()],
             "pending_confirmations":len(permissions.pending()),
             "confirmed_waiting_consumption":len(permissions.confirmed()),
             "public_boundary":"公开文件权限只约束经界渡的访问，不能阻止同权限程序直接读取普通文件。",
             "protected_default":"deny"}
+
+
+class ClientVisibilityRequest(BaseModel):
+    client_type: Literal['kimi']
+    hidden: bool = Field(strict=True)
+
+
+@app.get('/api/client-access/visibility')
+def api_client_visibility(request:Request):
+    _owner_read(request)
+    from .client_visibility import hidden_client_types
+    registry,_=_client_services(request)
+    return {'workspace_id':registry.context.workspace_id,
+            'hidden_client_types':sorted(hidden_client_types(registry.context))}
+
+
+@app.post('/api/client-access/visibility')
+def api_client_visibility_update(request:Request,payload:ClientVisibilityRequest):
+    _same_origin(request);_owner(request,refresh=True)
+    from .client_visibility import set_client_hidden
+    registry,_=_client_services(request)
+    try:return set_client_hidden(registry.context,payload.client_type,payload.hidden)
+    except ValueError as exc:raise HTTPException(400,str(exc)) from exc
 
 @app.post("/api/client-access/clients")
 def api_client_access_create(request:Request,payload:ClientPairRequest):
@@ -1040,10 +1199,49 @@ def api_client_access_create(request:Request,payload:ClientPairRequest):
         payload.claimed_id,payload.display_name,payload.client_type,payload.transport,payload.read_policies,payload.product_family)
     except ValueError as exc:raise HTTPException(400,str(exc))
 
+class QuickConnectRequest(BaseModel):
+    profile_id: str | None = None
+
 @app.post('/api/client-access/quick-connect/{client_type}')
-def api_client_quick_connect(client_type:str,request:Request):
+def api_client_quick_connect(client_type:str,request:Request,payload:QuickConnectRequest | None = None):
     _same_origin(request);_owner(request,refresh=True)
-    try:return _pairing_service(request).quick_connect(client_type)
+    try:return _pairing_service(request).quick_connect(client_type,payload.profile_id if payload else None)
+    except (ValueError,OSError) as exc:raise HTTPException(409,str(exc))
+
+@app.post('/api/client-access/claude-extension/download')
+def api_claude_extension_download(request:Request):
+    _same_origin(request);_owner(request,refresh=True)
+    from .claude_extension import BUNDLE, inspect_bundle
+    row=inspect_bundle()
+    if not row or not BUNDLE.is_file():raise HTTPException(404,'Claude 扩展包尚未准备')
+    registry=_pairing_service(request).registry
+    if not any(client['claimed_id']==row['client_id'] and
+               registry.configured_secret_matches(client['internal_id'],row['secret'])
+               for client in registry.list_clients() if client.get('client_type')=='claude' and client.get('status')!='revoked'):
+        raise HTTPException(409,'Claude 扩展包身份无法核对')
+    return FileResponse(BUNDLE,filename='jiedu-claude.mcpb',media_type='application/octet-stream',
+                        headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
+
+@app.post('/api/client-access/handoff/{client_type}')
+def api_client_handoff_issue(client_type:str,request:Request):
+    _same_origin(request);_owner(request,refresh=True)
+    from .package_layout import python_executable
+    import sys
+    try:result=_pairing_service(request).issue_handoff(client_type)
+    except ValueError as exc:raise HTTPException(400,str(exc))
+    executable=python_executable(ROOT)
+    return result|{'python_executable':str(executable if executable.is_file() else Path(sys.executable).resolve()),
+                   'program_root':str(ROOT),'console_pid':os.getpid()}
+
+@app.post('/api/client-access/handoff/{client_type}/redeem')
+def api_client_handoff_redeem(client_type:str,request:Request,payload:ClientHandoffRequest):
+    _same_origin(request)
+    if request.headers.get('forwarded') or request.headers.get('x-forwarded-for'):
+        raise HTTPException(403,'只接受本机直接连接')
+    from .windows_trust import verify_current_user_peer
+    try:verify_current_user_peer(request.scope.get('client'),request.scope.get('server'))
+    except OSError:raise HTTPException(403,'本机 Windows 身份未通过核验')
+    try:return _pairing_service(request).redeem_handoff(payload.token,client_type,payload.workspace_id)
     except (ValueError,OSError) as exc:raise HTTPException(409,str(exc))
 
 @app.post("/api/client-access/pairings/{pairing_id}/commit")
@@ -1872,8 +2070,94 @@ def api_original_archive_state(session_id:str,payload:OriginalArchiveStateReques
 @app.get('/api/local-sources/status')
 def api_local_sources_status(request:Request):
     _owner_read(request)
+    from .client_visibility import hidden_client_types
     from .local_source_status import status
-    return status()
+    registry,_=_client_services(request)
+    result=status()
+    result['hidden_client_types']=sorted(hidden_client_types(registry.context))
+    return result
+
+
+def _local_chat_collector(source: str, profile_id: str | None = None):
+    if source in {"workbuddy", "opencode", "zcode", "kimi"}:
+        from .four_local_collectors import LocalCompletedCollector
+        return LocalCompletedCollector(source)
+    if source == "cursor":
+        from .cursor_source_adapter import CursorSourceAdapter
+        return CursorSourceAdapter()
+    if source == "dsh":
+        from .dsh_source_adapter import DSHSourceAdapter
+        return DSHSourceAdapter()
+    if source == "claude":
+        from .claude_source_adapter import ClaudeSourceAdapter
+        return ClaudeSourceAdapter(profile_id=profile_id)
+    raise HTTPException(404, "未知本机聊天来源")
+
+
+class LocalChatCollectorConfig(BaseModel):
+    policy: Literal["paused", "all", "selected"]
+    selected_session_ids: list[str] = Field(default_factory=list)
+    profile_id: str | None = None
+    owner_confirmed: bool = Field(default=False, strict=True)
+
+
+@app.get('/api/local-chat-collectors/{source}/status')
+def api_local_chat_collector_status(source: str, request: Request):
+    _owner_read(request)
+    try:
+        return _local_chat_collector(source).status()
+    except (OSError, ValueError) as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.get('/api/local-chat-collectors/{source}/discover')
+def api_local_chat_collector_discover(source: str, request: Request, profile_id: str | None = None):
+    _owner_read(request)
+    try:
+        adapter = _local_chat_collector(source, profile_id)
+        result = adapter.discover()
+        return result if isinstance(result, dict) else {"sessions": result}
+    except (OSError, ValueError) as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.get('/api/local-chat-collectors/{source}/conversations')
+def api_local_chat_conversations(source: str, request: Request):
+    _owner_read(request)
+    from .visible_conversations import list_conversations
+    try:return list_conversations(source)
+    except ValueError as exc:raise HTTPException(404, str(exc)) from exc
+
+
+@app.get('/api/local-chat-collectors/{source}/conversations/{session_id}')
+def api_local_chat_conversation(source: str, session_id: str, request: Request):
+    _owner_read(request)
+    from .visible_conversations import conversation
+    try:return conversation(source, session_id)
+    except ValueError as exc:raise HTTPException(404, str(exc)) from exc
+
+
+@app.post('/api/local-chat-collectors/{source}/configure')
+def api_local_chat_collector_configure(source: str, payload: LocalChatCollectorConfig, request: Request):
+    _same_origin(request); _owner(request, refresh=True)
+    try:
+        return _local_chat_collector(source, payload.profile_id).configure(
+            payload.policy, payload.selected_session_ids, owner_confirmed=payload.owner_confirmed)
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    except (OSError, ValueError) as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post('/api/local-chat-collectors/{source}/sync')
+def api_local_chat_collector_sync(source: str, payload: OwnerConfirmRequest, request: Request):
+    _same_origin(request); _owner(request, refresh=True)
+    if not payload.owner_confirmed:
+        raise HTTPException(403, "立即同步需要 Owner 确认")
+    try:
+        return _local_chat_collector(source).sync()
+    except (OSError, ValueError) as exc:
+        raise HTTPException(409, str(exc)) from exc
 
 @app.get('/api/prompt-workflow/distillation')
 def api_distillation_status(request:Request):
@@ -1948,6 +2232,12 @@ def api_codex_archive_summary(request:Request):
     _owner_read(request)
     from .codex_source_adapter import status_summary
     return status_summary()
+
+@app.get('/api/codex-archive/issues')
+def api_codex_archive_issues(request:Request, offset:int=0, limit:int=30):
+    _owner_read(request)
+    from .codex_source_adapter import status_issues
+    return status_issues(offset=offset,limit=limit)
 
 @app.post("/api/codex-archive/configure")
 def api_codex_archive_configure(request:CodexArchiveConfigRequest):
@@ -2127,7 +2417,7 @@ def api_reorganization_instructions(request:Request,payload:dict):
             note=''
             try:
                 resolved=resolve_document_target(active_workspace(),source)
-                if client and not app.state.client_permissions._ordinary_reads_are_open() and app.state.client_permissions._policy(client,resolved.scope,ClientOperation.READ,resolved.selector)!=PolicyDecision.ALLOW:
+                if client and app.state.client_permissions._policy(client,resolved.scope,ClientOperation.READ,resolved.selector)!=PolicyDecision.ALLOW:
                     note='（原提交客户端当前未获读取许可；应报告权限问题，不能绕过）'
             except (ValueError,OSError):note='（来源缺失或不在普通读取范围；先核实，不得使用旧引用替代）'
             if note:warnings.append(f'{cid}：{source}{note}')
@@ -2188,6 +2478,10 @@ def api_continuous_client(action:str,request:Request,payload:dict):
                 if operation=='read':
                     allow(details['source_path'])
                     return service.project_batch(project,client,details['source_path'],details['session_id'],details['section'],details.get('limit',4),details.get('work_offset',0))
+                if operation=='read_shared':
+                    if 'work_offset' in details:raise ValueError('共享批次使用稳定游标 work_cursor，不能使用整数位置')
+                    return service.shared_project_batch(project,client,details['section'],allow,
+                                                        details.get('limit',4),details.get('work_cursor'))
                 if operation in {'submit','ack'}:
                     refs=details['spec']['sources'] if operation=='submit' else details['messages']
                     ledger=service.load_project(project);scopes=set()
@@ -2483,11 +2777,10 @@ def _validate_external_candidate_authorization(c):
     registry=app.state.client_registry;permissions=app.state.client_permissions
     row=next((r for r in registry.list_clients() if r['internal_id']==client),None)
     if not row or row['status']=='revoked':raise _candidate_authorization_error('client_revoked')
-    if not permissions._ordinary_reads_are_open():
-        for evidence in c.get('evidence') or []:
-            target=resolve_document_target(active_workspace(),evidence.get('source_path',''))
-            if permissions._policy(client,target.scope,ClientOperation.READ,target.selector)!=PolicyDecision.ALLOW:
-                raise _candidate_authorization_error('source_read_not_allowed')
+    for evidence in c.get('evidence') or []:
+        target=resolve_document_target(active_workspace(),evidence.get('source_path',''))
+        if permissions._policy(client,target.scope,ClientOperation.READ,target.selector)!=PolicyDecision.ALLOW:
+            raise _candidate_authorization_error('source_read_not_allowed')
     try:current=_organization_auth_revision(client,receipt.get('scopes',[]))
     except PermissionError:raise _candidate_authorization_error('client_revoked')
     if receipt.get('revision')!=current:raise _candidate_authorization_error('authorization_revision_expired')
@@ -2505,7 +2798,7 @@ def _validate_candidate_evidence(c):
         raise PermissionError('管家候选授权已变更或撤销，请重新读取来源并提交；原候选保留')
     # Existing message-only candidates remain reviewable, but must be re-read and
     # resubmitted with a versioned quote before any formal write.
-    return evidence_checked(active_workspace(),c.get('evidence'))
+    return evidence_checked(active_workspace(),c.get('evidence'),allow_frozen_prefix=p.get('append_stable_window') is True)
 
 def _candidate_readiness(c,metadata_cache=None):
     """Read-only preflight: policy and stat metadata, never source bodies/Diff.
@@ -2530,6 +2823,7 @@ def _candidate_readiness(c,metadata_cache=None):
         _candidate_write_target(c)
         evidence=c.get('evidence') or []
         if not evidence or any(not e.get('source_path') or not e.get('version') or not isinstance(e.get('quote'),str) or not isinstance(e.get('byte_end'),int) for e in evidence):return result('needs_reorganization','versioned_evidence_missing','旧建议缺少可核对的来源版本，需要重新读取原文。')
+        appended_bytes=0
         for ev in evidence:
             source=ev['source_path']
             if source not in cache:
@@ -2543,13 +2837,17 @@ def _candidate_readiness(c,metadata_cache=None):
                 try:
                     store=WikiSnapshots(active_workspace());row,_=store.evidence_row(ev)
                 except (ValueError,OSError,KeyError):return result('needs_reorganization','snapshot_unavailable','旧建议的来源快照暂不可核对；请核实来源后准备更新指令。')
-                try:store.verify_current(row)
+                try:
+                    if p.get('append_stable_window') is True:appended_bytes+=store.verify_frozen_prefix(row)['appended_bytes']
+                    else:store.verify_current(row)
                 except ValueError as exc:
                     if str(exc).startswith('快照之后来源已更新'):return result('needs_reorganization','source_version_changed','旧建议快照保留，但快照之后来源已更新；请依据最新来源重新整理。')
                     return result('needs_reorganization','source_current_unavailable','旧建议快照保留，但当前来源暂不可核对；请核实来源后准备更新指令。')
                 except (OSError,KeyError):return result('needs_reorganization','source_current_unavailable','旧建议快照保留，但当前来源暂不可读取；请核实来源后准备更新指令。')
             elif not ev.get('archive_message_id') and cache[source]!=ev['version']:return result('needs_reorganization','source_version_changed','原始来源已更新，需要依据最新内容重新整理。')
-        return result('reviewable','preflight_passed','可继续核对正文；来源全文、目标版本与冲突仍将在保存前检查。')
+        ready=result('reviewable','preflight_passed','原始资料另有新增内容，旧建议仅覆盖已冻结引用；新增内容留待下一轮增量核对。保存前仍会复核引用、权限和目标。' if appended_bytes else '可继续核对正文；来源全文、目标版本与冲突仍将在保存前检查。')
+        if appended_bytes:ready['append_pending_bytes']=appended_bytes
+        return ready
     except (ValueError,PermissionError,OSError,KeyError,TypeError,AttributeError):
         return result('unknown','preflight_unavailable','暂时无法确认这条建议是否可继续核对，请刷新状态或重新读取来源。')
 
