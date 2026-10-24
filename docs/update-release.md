@@ -1,6 +1,6 @@
 # 准备更新渠道与发布产物
 
-发布归属为 `xiesjdyka/jiedu`；历史版本已有公开发布，当前 1.1.10 候选尚未发布。固定更新清单为 `https://github.com/xiesjdyka/jiedu/releases/latest/download/update.json`，下载页为 `https://github.com/xiesjdyka/jiedu/releases/latest`。地址已确定不代表 1.1.10 产物或更新清单可用；404、网络失败和校验失败都不能显示为“已是最新版”。发布工具只生成本地材料，不代替 Owner 发布。
+发布归属为 `xiesjdyka/jiedu`；历史版本已有公开发布，当前 1.2.1 候选尚未发布。固定更新清单为 `https://github.com/xiesjdyka/jiedu/releases/latest/download/update.json`，下载页为 `https://github.com/xiesjdyka/jiedu/releases/latest`。地址已确定不代表 1.2.1 产物或更新清单可用；404、网络失败和校验失败都不能显示为“已是最新版”。发布工具只生成本地材料，不代替 Owner 发布。
 
 ## 两种不同产物
 
@@ -98,4 +98,4 @@ SHA256 必须来自独立审阅清单，不能只把被检查文件的摘要再�
 
 安装失败保留上一版及事务记录；新实例未健康或仍有进程时不强杀回滚，展示恢复入口。恢复同样要等任务和占用安全结束。健康成功事务的回退材料有界保留，失败、待恢复或无法核验归属的材料不能混入自动清理。
 
-1.1.10 候选须让安装器、源码、原生版本和签名清单一致，再核对旧版升级的资料、权限与同步进度保全。`releases/latest` 不应被当作预发布 rc 的固定入口；本地候选和离线核验不代表 1.1.10 已公开。
+1.2.1 候选须让安装器、源码、原生版本和签名清单一致，再核对旧版升级的资料、权限与同步进度保全。`releases/latest` 不应被当作预发布 rc 的固定入口；本地候选和离线核验不代表 1.2.1 已公开。

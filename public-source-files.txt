@@ -34,6 +34,7 @@ docs/api.md
 docs/architecture.md
 docs/archive-recovery.md
 docs/changes-1.1.10.md
+docs/changes-1.2.1.md
 docs/changes-20261024.md
 docs/dependencies.json
 docs/development.md
@@ -48,6 +49,7 @@ docs/update-release.md
 docs/user-guide.md
 docs/validation.json
 docs/whats-new-1.1.10.md
+docs/whats-new-1.2.1.md
 examples/authenticated_inbox_search.py
 importers/__init__.py
 importers/migrate_raw_chat_metadata.py

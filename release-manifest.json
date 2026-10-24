@@ -38,13 +38,13 @@
     },
     {
       "path": "README.md",
-      "bytes": 8531,
-      "sha256": "64a97cbfeaa50a5b5b8e4277f5a32893c0cdf37f3b5cba94cbef51ba8d4aa47a"
+      "bytes": 8565,
+      "sha256": "17bf659ea36a7f674707d957b15f76b611bf40c0ab1f2207fe0f1230157bb132"
     },
     {
       "path": "RELEASE_NOTES.md",
-      "bytes": 10900,
-      "sha256": "ee60a0bd2c9a29d99f551745ed871d4b7f80f5bbf60ef1568ab973701be9a524"
+      "bytes": 11506,
+      "sha256": "d5e7919d96b3bd1c4a52e48a86a19189c4aa15803fd1f2fddfe2969d94de247e"
     },
     {
       "path": "SECURITY.md",
@@ -58,8 +58,8 @@
     },
     {
       "path": "VERSION",
-      "bytes": 7,
-      "sha256": "aeccfaffeec636e89d972edfb0faf337cd0ac748c67ef0ad538d10eb97896120"
+      "bytes": 6,
+      "sha256": "6cf4e084b47f33c9b02ef79279d157833868f8f70514169a768be353ee328fea"
     },
     {
       "path": "butler-resources.lock.json",
@@ -78,13 +78,13 @@
     },
     {
       "path": "desktop/Cargo.lock",
-      "bytes": 118885,
-      "sha256": "1ccd36fd7d9d8af5da363fcd47c2cd43cf08ba8c64e8415e4ff59f96878c90f2"
+      "bytes": 118884,
+      "sha256": "78de2871976bb1a91f0592b14d7ecb8cea2d1fcf14b853e74314861c10e53c6e"
     },
     {
       "path": "desktop/Cargo.toml",
-      "bytes": 499,
-      "sha256": "215b2aa1144c7408e42352fee27aeab1c3946e933a282174a7f39cd50e92d261"
+      "bytes": 498,
+      "sha256": "5f8094a820b17fd25d431f4f41b77a947acf815c3b84250e1bb2f6507f149392"
     },
     {
       "path": "desktop/build.rs",
@@ -143,8 +143,8 @@
     },
     {
       "path": "desktop/tauri.conf.json",
-      "bytes": 395,
-      "sha256": "62e2bf9dec89db42682d22bb310ab741b1eeb6e300dad758b87da8b2cd285db9"
+      "bytes": 394,
+      "sha256": "70553bcca7267c43a068b5f5a40e1897f5fe339a3c299a3221215546fa6dc6e2"
     },
     {
       "path": "desktop/ui/index.html",
@@ -182,6 +182,11 @@
       "sha256": "e595db9882bfed1eb7f4b123aa476ec178744bf5d471d48f50e9b0077569197b"
     },
     {
+      "path": "docs/changes-1.2.1.md",
+      "bytes": 1381,
+      "sha256": "f12b026174758b776a87410270623002580a0974417e97a3dae6f6acc2248651"
+    },
+    {
       "path": "docs/changes-20261024.md",
       "bytes": 4063,
       "sha256": "2173cd4185c0787a3da3d3d0e0f376b5955e648c2111e104482e3c02b01c8d7f"
@@ -213,18 +218,18 @@
     },
     {
       "path": "docs/publishing.md",
-      "bytes": 2467,
-      "sha256": "2dc15f020309a7120fcc0985ab652e30d0262b47f6111c9b98fd1a90f441fc0e"
+      "bytes": 2462,
+      "sha256": "34a762d5513217cbd9e75e7ce1355601219790abd7c209b2ecf9da9caac3c04c"
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 10013,
-      "sha256": "7d714b66714c3634fc5ae78bdbffaace0ec8005ada7b8a332d8e43caccb6b69b"
+      "bytes": 10557,
+      "sha256": "aec3e5f62629758c095875e6fd98a73b7843e81842f340e0773b38676ea4d31f"
     },
     {
       "path": "docs/release-version.md",
-      "bytes": 3258,
-      "sha256": "af1acfd2f6fa4c098f9a28f62bec20007d7bf3f9b19f67803d62bf3c99e4ed98"
+      "bytes": 3454,
+      "sha256": "b6ab5075e90f6adce08471dae4d9f115f1880ac7f50d769f6433f3d19735d155"
     },
     {
       "path": "docs/source-install.md",
@@ -233,8 +238,8 @@
     },
     {
       "path": "docs/update-release.md",
-      "bytes": 12320,
-      "sha256": "fb9ff00746ba20ddc1394279334c655e5734b060ec73174021f39cc358f6eb7c"
+      "bytes": 12316,
+      "sha256": "537304ef74f76195a740c8535f6688dd6be1f0ba50b10deb12d34fe7f011f909"
     },
     {
       "path": "docs/user-guide.md",
@@ -250,6 +255,11 @@
       "path": "docs/whats-new-1.1.10.md",
       "bytes": 4159,
       "sha256": "7f0212e6c41ae5d6a4523179cbd7b98e1664b296ca466543fbada378e0935fa1"
+    },
+    {
+      "path": "docs/whats-new-1.2.1.md",
+      "bytes": 4324,
+      "sha256": "799248f519738b3a3a2df527b724350ad164099be251190723d18263e9535e58"
     },
     {
       "path": "examples/authenticated_inbox_search.py",
@@ -273,8 +283,8 @@
     },
     {
       "path": "knowledge_bridge/__init__.py",
-      "bytes": 23,
-      "sha256": "fa36277c2b71df16c44b60e8bd4568bc16d0aa33258d73106b7c40567a141508"
+      "bytes": 22,
+      "sha256": "3259b81af99bffac90c7051bbf62ac73e0491572cf83d1f556dda257bc17ac0e"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -973,13 +983,13 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 12502,
-      "sha256": "3d7c19be0a43944a9008c909c1b789d27990d487093d15d714d65401e96ff874"
+      "bytes": 12548,
+      "sha256": "53085ad2108c7cab247db5d94b079c4b6192431c49bbf3b9ff0a217b1be9dd68"
     },
     {
       "path": "pyproject.toml",
-      "bytes": 1109,
-      "sha256": "0af72adbad127cac4d746d8d476cdd656d759e0879bf49b583248908e6f07d76"
+      "bytes": 1108,
+      "sha256": "ae13caeb8a8bee2ace7117cfce6eb83338afe2edb5d312d4d1a0b75bdc3d1ef0"
     },
     {
       "path": "requirements.lock.txt",
