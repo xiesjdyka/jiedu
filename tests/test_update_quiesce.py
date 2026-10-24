@@ -103,6 +103,8 @@ class CooperativeUpdateTests(unittest.TestCase):
             '_workspace_workers':lambda app:[('synthetic-collector',worker,(),stop)],
             '_adapter_stop':stop, '_codex_adapter_stop':threading.Event(),
             '_doubao_adapter_stop':threading.Event(), '_governance_stop':threading.Event(),
+            '_dsh_adapter_stop':threading.Event(), '_claude_adapter_stop':threading.Event(),
+            '_cursor_adapter_stop':threading.Event(), '_four_adapter_stop':threading.Event(),
             '_evidence_stop':threading.Event()}
         exec(compile(ast.fix_missing_locations(ast.Module(body=functions,type_ignores=[])),str(path),'exec'),namespace)
         start,halt=namespace['_start_workspace_workers'],namespace['_stop_workspace_workers']

@@ -1,19 +1,19 @@
 # 统一发布版本
 
-根目录 `VERSION` 是程序发布版本的来源。当前候选程序、原生外壳和在线安装器均为 `1.1.7`；安装器沿用已固定的运行资源来源与哈希。
+根目录 `VERSION` 是程序发布版本的来源。当前源码候选统一为 `1.1.9`；这表示待构建的目标版本，不表示 1.1.9 安装器已生成、发布或验收。
 
-## 1.1.7 的字段对应
+## 1.1.9 的字段对应
 
 | 位置 | 当前候选的值 |
 | --- | --- |
-| VERSION、关于与托盘的程序版本、设置页 | `1.1.7` |
-| pyproject.toml、Python 包版本 | `1.1.7` |
-| 安装器文件名、ProductVersion 文本 | `Jiedu-1.1.7-windows-x64-setup.exe`、`1.1.7` |
-| 安装器数字 FileVersion / ProductVersion | `1.1.7.0` |
-| Cargo、Tauri、关于另列的外壳构建版本 | `1.1.7` |
-| 重新编译原生 EXE 的数字 FileVersion / ProductVersion | `1.1.7.0` |
+| VERSION、关于与托盘的目标程序版本、设置页 | `1.1.9` |
+| pyproject.toml、Python 包版本 | `1.1.9` |
+| 待构建安装器文件名、ProductVersion 文本 | `Jiedu-1.1.9-windows-x64-setup.exe`、`1.1.9` |
+| 待构建安装器数字 FileVersion / ProductVersion | `1.1.9.0` |
+| Cargo、Tauri、关于另列的目标外壳构建版本 | `1.1.9` |
+| 待重新编译原生 EXE 的数字 FileVersion / ProductVersion | `1.1.9.0` |
 
-本候选同步程序与原生外壳版本，并重建在线安装器。Python 运行时、向量模型和 OCR 资源的固定 URL、大小与 SHA256 沿用 1.1.6 资源锁；实际安装与升级的资料保全以安装器及验收回执为准。
+本候选已同步程序与原生外壳的版本元数据；在线安装器、原生 EXE 与运行资源仍需构建并独立核验。实际安装与升级的资料、权限及进度保全以对应安装器和验收回执为准。旧版自包含布局或安装归属不明时不得整体覆盖。
 
 Windows 数字字段使用四段数字，第四段对应候选序号；稳定版的第四段为零。[Inno Setup 数字产品版本](https://jrsoftware.org/ishelp/topic_setup_versioninfoproductversion.htm)与[文本产品版本](https://jrsoftware.org/ishelp/topic_setup_versioninfoproducttextversion.htm)是不同字段。安装器从 payload 的 VERSION 派生文件名和版本资源，不另写硬编码候选号。
 
@@ -28,7 +28,7 @@ python desktop/release_version.py check --scope program
 
 此模式更新 Python 版本字段，保留 Cargo、Tauri 与本包 Cargo.lock 的外壳构建版本；它们仍须互相一致。同步工具不构建、上传或发布。发布工具还必须核验原生指纹、前后外壳 EXE 的字节与 SHA256、前后运行时清单，不能靠选择参数放行变化。
 
-关于和托盘读取已安装的 VERSION 与 pyproject.toml 并校验程序版本。关于另列外壳构建版本；Windows 文件属性记录该二进制自身的构建版本。原生窗口保持打开时会在版本文件变化后刷新托盘；元数据不一致时明确显示未确认。rc6 安装器可包含 rc4 外壳，上表分别说明两者身份；其实际显示以对应安装器回执为准。
+关于和托盘读取已安装的 VERSION 与 pyproject.toml 并校验程序版本。关于另列外壳构建版本；Windows 文件属性记录该二进制自身的构建版本。原生窗口保持打开时会在版本文件变化后刷新托盘；元数据不一致时明确显示未确认。旧候选曾存在程序和外壳版本不同的情形，那些回执只证明对应历史产物，不替代 1.1.9 验收。
 
 ## 原生或运行时发生变化时
 

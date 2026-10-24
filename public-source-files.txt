@@ -321,6 +321,7 @@ tests/test_history_tool_audit.py
 tests/test_import_retrieval_archive.py
 tests/test_index_consistency.py
 tests/test_index_retention.py
+tests/test_installer_destination.py
 tests/test_knowledge_objects.py
 tests/test_knowledge_wiki.py
 tests/test_launcher_preflight.py

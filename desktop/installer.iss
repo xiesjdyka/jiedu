@@ -172,15 +172,20 @@ begin
 end;
 
 function ValidateDestination: String;
-var Target, Marker: String; Contents: AnsiString; Files: TFindRec; NonEmpty: Boolean;
+var Target, Marker: String; Files: TFindRec; NonEmpty: Boolean;
 begin
   Result := '';
   Target := ExpandConstant('{app}');
   if Length(Target) <= 3 then begin Result := '请选择专用安装文件夹，不能选择磁盘根目录。'; Exit; end;
   Marker := AddBackslash(Target) + 'jiedu-install.txt';
-  if FileExists(Marker) then begin
-    if not LoadStringFromFile(Marker, Contents) or (Trim(Contents) <> InstallIdentity) then
-      Result := '此目录不是可识别的界渡安装目录，请选择一个空文件夹。';
+  { A manual installer must never overwrite a live or partially installed tree.
+    The verified full-update helper moves the previous tree to its rollback
+    directory before invoking Setup, so its destination is empty. }
+  if FileExists(Marker) or
+     FileExists(AddBackslash(Target) + '.jiedu\program\VERSION') or
+     FileExists(AddBackslash(Target) + '.jiedu\package.json') or
+     FileExists(AddBackslash(Target) + '界渡.exe') then begin
+    Result := '此目录已有界渡，不能直接覆盖。请打开原来的界渡，在设置中检查更新。若旧版无法更新，请安装到新的空文件夹，再连接原工作区；保留旧目录，连接和权限需在新版中核对。';
     Exit;
   end;
   NonEmpty := False;
