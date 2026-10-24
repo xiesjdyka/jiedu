@@ -9,7 +9,6 @@ jobs:
     env:
       PYTHONNOUSERSITE: '1'
       PYTHONUTF8: '1'
-      PYTHONUTF8: '1'
       HF_HUB_OFFLINE: '1'
       TRANSFORMERS_OFFLINE: '1'
     steps:
