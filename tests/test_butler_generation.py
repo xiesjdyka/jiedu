@@ -28,9 +28,11 @@ class GenerationTests(unittest.TestCase):
         request=requested_settings(True,'max');self.assertEqual(input_limit(request),7680)
         self.assertEqual(effective_settings(request,2000)['max_output_tokens'],6192)
         self.assertEqual(effective_settings(requested_settings(False,8192),8000)['max_output_tokens'],192)
-        sid=self.service.create_session()['id']
         for value in [True,0,-1,8193,'512','unlimited',1.5]:
-            with self.assertRaises(ValueError):self.service.submit(sid,'invalid',output_limit=value)
+            # The retired parameter is ignored even for older direct callers.
+            self.assertEqual(effective_settings(requested_settings(False,value),2000)['max_output_tokens'],6192)
+        sid=self.service.create_session()['id']
+        with self.assertRaises(ValueError):self.service.submit(sid,'invalid',thinking='yes')
         self.assertEqual(self.service.conversation(sid)['messages'],[])
 
     def test_real_transport_contract_and_reasoning_only_limit(self):
@@ -53,7 +55,7 @@ class GenerationTests(unittest.TestCase):
                 self.assertEqual(completion['max_tokens'],6192);self.assertEqual(completion['reasoning_format'],'deepseek')
                 conversation=self.service.conversation(sid);answer=conversation['messages'][-1]
                 self.assertEqual(conversation['jobs'][0]['state'],'completed')
-                self.assertEqual(answer['requested']['output_limit'],'max')
+                self.assertNotIn('output_limit',answer['requested'])
                 if thinking:
                     self.assertEqual(answer['content'],'');self.assertEqual(answer['reasoning'],'思考😀');self.assertIn('尚未形成回答',answer['output_notice'])
                 else:self.assertEqual(answer['content'],'答案');self.assertEqual(answer['reasoning'],'')

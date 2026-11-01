@@ -1,8 +1,9 @@
 """Owner-selected collection of locally available Claude conversation trees.
 
 Chromium's current IndexedDB records are read from a temporary consistent
-snapshot.  The snapshot is deleted before returning and is never written into
-the workspace.  Only human text and completed assistant final text are saved.
+snapshot in the workspace's private cache. It is automatically deleted before
+returning and is never archived. Only human text and completed assistant final
+text are saved as messages.
 """
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ from .durable_state import read_object, write_object, StateCorruptError
 from .workspace import WorkspaceContext, require_active_workspace
 
 
-PARSER_VERSION = "claude-local-final-visible-v1"
+PARSER_VERSION = "claude-local-final-visible-v2"
 MAX_TEXT_BYTES = 512 * 1024
 _stop = threading.Event()
 
@@ -60,7 +61,7 @@ def _text(parts, *, assistant):
     start = 0
     if assistant:
         for index, block in enumerate(parts):
-            if isinstance(block, dict) and block.get("type") in {"tool_use", "tool_result"}:
+            if isinstance(block, dict) and block.get("type") in ("tool_use", "tool_result"):
                 start = index + 1
     text = "\n".join(block["text"] for block in parts[start:]
                      if isinstance(block, dict) and block.get("type") == "text"
@@ -91,7 +92,7 @@ def _references(row):
     return tuple(result)
 
 
-def _messages(tree):
+def _messages(tree, *, diagnostics=None):
     if not isinstance(tree, dict) or not isinstance(tree.get("messages"), list):
         raise ValueError("Claude 会话树结构未知")
     messages = tree["messages"]
@@ -99,23 +100,46 @@ def _messages(tree):
         raise ValueError("Claude 会话消息数量超过上限")
     result = []
     for index, row in enumerate(messages):
+        def issue(reason, *, excluded=False):
+            if diagnostics is not None:
+                diagnostics.append({'tree_index':index,
+                    'message_id':_safe_string(row.get('uuid')) if isinstance(row,dict) else '',
+                    'reason':reason, 'status':'excluded' if excluded else 'needs_review'})
         if not isinstance(row, dict):
-            raise ValueError("Claude 消息结构未知")
+            issue('unknown_message_structure');continue
         sender = row.get("sender")
+        if not isinstance(sender,str):
+            issue('unknown_sender');continue
         if sender not in {"human", "assistant"}:
             continue
         if sender == "assistant" and row.get("stop_reason") != "end_turn":
+            issue('non_final_assistant', excluded=True)
             continue
         if not isinstance(row.get("content"), list):
-            raise ValueError("Claude 可见消息正文结构未知")
+            issue('unknown_content_structure');continue
         identity = _safe_string(row.get("uuid"))
         if not identity:
-            raise ValueError("Claude 可见消息缺少稳定身份")
-        content = _text(row.get("content"), assistant=sender == "assistant")
+            issue('missing_message_identity');continue
+        known_blocks={'text','thinking','redacted_thinking','tool_use','tool_result','image','document'}
+        visible_blocks=row['content']
+        if sender=='assistant':
+            last_tool=max((i for i,block in enumerate(visible_blocks) if isinstance(block,dict) and block.get('type') in ('tool_use','tool_result')),default=-1)
+            visible_blocks=visible_blocks[last_tool+1:]
+        if any(not isinstance(block,dict) or not isinstance(block.get('type'),str) or block.get('type') not in known_blocks or
+               (block.get('type')=='text' and not isinstance(block.get('text'),str)) for block in visible_blocks):
+            issue('unknown_content_block')
+            # Do not publish a partial guess under a stable message ID. When
+            # the structure becomes understood, the complete row can be retried.
+            continue
+        try:
+            content = _text(row.get("content"), assistant=sender == "assistant")
+        except ValueError:
+            issue('text_exceeds_limit');continue
         attachments = _references(row) if sender == "human" else ()
         if sender == "assistant" and not content:
-            raise ValueError("Claude 已完成答复缺少可确认的最终正文")
+            issue('empty_final_answer');continue
         if not content and not attachments:
+            issue('empty_user_message')
             continue
         result.append(NormalizedMessage(message_id=identity,
             role="user" if sender == "human" else "assistant", content=content,
@@ -127,7 +151,7 @@ def _messages(tree):
     return result
 
 
-def _read_current_trees(leveldb: Path, blob: Path):
+def _read_current_trees(leveldb: Path, blob: Path, *, diagnostics=None):
     """Return effective live tree records; report unavailable current blobs."""
     from ccl_chromium_reader import ccl_chromium_indexeddb
     from .doubao_indexeddb_source import _latest_records
@@ -143,7 +167,7 @@ def _read_current_trees(leveldb: Path, blob: Path):
             if "trees" not in database.object_store_names:
                 continue
             found_store = True
-            records, bad, _, verified = _latest_records(database["trees"])
+            records, bad, _, verified = _latest_records(database["trees"], diagnostics=diagnostics)
             current_errors += bad
             current_verified &= verified
             for record in records:
@@ -152,14 +176,17 @@ def _read_current_trees(leveldb: Path, blob: Path):
                 value = record.value
                 if not isinstance(value, dict) or not isinstance(value.get("tree"), dict):
                     current_errors += 1
+                    if diagnostics is not None:diagnostics.append({'kind':'tree_schema','sequence':int(record.ldb_seq_no),'reason':'unknown_tree_structure','status':'unreadable'})
                     continue
                 if (value.get("product") != "hub" or value.get("v") != "2.2.hub" or
                         value["tree"].get("kind") != "hub_transcript"):
                     current_errors += 1
+                    if diagnostics is not None:diagnostics.append({'kind':'tree_schema','sequence':int(record.ldb_seq_no),'reason':'unsupported_tree_schema','status':'unreadable'})
                     continue
                 conversation = _safe_string(value.get("conversationUuid"))
                 if not conversation or value["tree"].get("conversationUuid") != conversation:
                     current_errors += 1
+                    if diagnostics is not None:diagnostics.append({'kind':'tree_schema','sequence':int(record.ldb_seq_no),'reason':'conversation_identity_mismatch','status':'unreadable'})
                     continue
                 old = trees.get(conversation)
                 if old is None or int(record.ldb_seq_no) > old[0]:
@@ -197,6 +224,7 @@ class ClaudeSourceAdapter:
             self.leveldb = profiles[chosen][1].expanduser().resolve() if chosen else None
             self.blob = profiles[chosen][2].expanduser().resolve() if chosen else None
         self.reader = reader
+        self.read_diagnostics = []
         self.lock = FileLock(str(self.context.sync / "claude-source-adapter.lock"))
 
     def _load(self):
@@ -210,11 +238,15 @@ class ClaudeSourceAdapter:
                 "selected_session_ids": value.get("selected_session_ids", []),
                 "sessions": value.get("sessions", {}), "last_sync_at": value.get("last_sync_at"),
                 "last_error": value.get("last_error"), "current_decode_errors": value.get("current_decode_errors", 0),
+                "decode_diagnostics": value.get("decode_diagnostics", []),
+                "historical_decode_errors": value.get("historical_decode_errors", 0),
+                "recovered_current_records": value.get("recovered_current_records", 0),
                 "current_session_ids": value.get("current_session_ids", []),
                 "current_state_verified": value.get("current_state_verified", False),
                 "current_checked_at": value.get("current_checked_at")}
 
     def _trees(self):
+        self.read_diagnostics = []
         if self.reader is not None:
             return self.reader()
         if self.leveldb is None or self.blob is None:
@@ -222,17 +254,19 @@ class ClaudeSourceAdapter:
         if not (self.leveldb / "CURRENT").is_file():
             return {}, 0, False
         from .doubao_indexeddb_source import consistent_snapshot
-        # No complete cache, thinking, or tool body is ever persisted in the workspace.
-        with tempfile.TemporaryDirectory(prefix="jiedu-claude-read-") as temporary:
+        # Keep the complete source copy only briefly in the private cache;
+        # TemporaryDirectory removes it before return, including on failure.
+        with tempfile.TemporaryDirectory(prefix="jiedu-claude-read-", dir=self.context.cache) as temporary:
             destination = Path(temporary) / "snapshot"
             consistent_snapshot(self.leveldb, self.blob, destination)
-            return _read_current_trees(destination / "leveldb", destination / "blob")
+            return _read_current_trees(destination / "leveldb", destination / "blob", diagnostics=self.read_diagnostics)
 
     def discover(self):
         trees, errors, verified = self._trees()
         rows = [{"session_id": identity, "available_messages": len(tree.get("messages", []))}
                 for identity, tree in sorted(trees.items())]
         return {"sessions": rows, "current_decode_errors": errors,
+                "decode_diagnostics": self.read_diagnostics,
                 "selected_profile": self.profile_id, "available_profiles": self.available_profiles,
                 "current_state_verified": verified,
                 "history_coverage": "仅本机当前 IndexedDB 缓存；云端和已清理历史总量未知"}
@@ -256,11 +290,14 @@ class ClaudeSourceAdapter:
                             "archived_messages": sum(int(row.get("saved_messages") or 0)
                                                      for row in state["sessions"].values()),
                             "current_decode_errors": state["current_decode_errors"],
+                            "historical_decode_errors": state["historical_decode_errors"],
+                            "recovered_current_records": state["recovered_current_records"],
                             "total_is_dynamic": True, "cloud_total_known": False},
                 "sessions": {key: {field: row.get(field) for field in
-                                   ("checked_messages", "saved_messages", "last_error")}
+                                   ("checked_messages", "saved_messages", "last_error", "message_issues")}
                              for key, row in state["sessions"].items()},
                 "last_sync_at": state["last_sync_at"], "last_error": state["last_error"],
+                "decode_diagnostics": state["decode_diagnostics"],
                 "history_coverage": "仅本机当前缓存可读范围；不能证明云端历史已全部保存"}
 
     def configure(self, policy: str, selected_session_ids=(), *, owner_confirmed=False,
@@ -307,6 +344,9 @@ class ClaudeSourceAdapter:
                 write_object(self.state_path, state, backup=True)
                 return self.status()
             state["current_decode_errors"] = errors
+            state["decode_diagnostics"] = list(self.read_diagnostics)
+            state["historical_decode_errors"] = sum(item.get('decode_errors',0) for item in self.read_diagnostics if item.get('kind')=='historical_decode_summary')
+            state["recovered_current_records"] = sum(item.get('status')=='recovered' for item in self.read_diagnostics)
             state["current_session_ids"] = sorted(trees)
             state["current_state_verified"] = bool(verified)
             state["current_checked_at"] = _now()
@@ -323,17 +363,29 @@ class ClaudeSourceAdapter:
                     continue
                 row = state["sessions"].setdefault(sid, {"saved_messages": 0})
                 try:
-                    normalized = _messages(tree)
+                    message_issues = []
+                    normalized = _messages(tree, diagnostics=message_issues)
+                    row['message_issues'] = message_issues
                     session = store.ensure_session(source_key="claude", source_session_id=sid,
                         source_instance="claude:" + hashlib.sha256(str(self.leveldb).encode()).hexdigest()[:16],
                         title="Claude " + sid[:8], acquisition_method="claude_local_cache_readonly")
                     for message in normalized:
-                        result = store.append_normalized_message(session["session_key"], message)
+                        try:
+                            result = store.append_normalized_message(session["session_key"], message)
+                        except (OSError, ValueError) as exc:
+                            message_issues.append({'tree_index':message.provenance['tree_index'],
+                                'message_id':message.message_id, 'status':'needs_review',
+                                'reason':'archive_message_conflict' if isinstance(exc,ValueError) and str(exc)=='同一原始消息ID出现冲突内容' else 'archive_message_write_error',
+                                'exception_type':type(exc).__name__})
+                            continue
                         row["saved_messages"] = max(int(row.get("saved_messages") or 0),
                                                     int(result["session"]["message_count"]))
                         saved += int(result["saved"])
-                    row.update(checked_messages=len(tree["messages"]), last_error=None,
+                    needs_review = any(item['status']=='needs_review' for item in message_issues)
+                    store.update_session(session['session_key'], sync_status='needs_review' if needs_review else 'synced')
+                    row.update(checked_messages=len(tree["messages"]), last_error="部分源消息需核对；其余正常消息已保留" if needs_review else None,
                                last_checked_at=_now())
+                    if needs_review:state['last_error']='有 Claude 源消息需核对；其余正常消息已保留'
                 except (OSError, ValueError) as exc:
                     row["last_error"] = type(exc).__name__ + ": " + str(exc)[:240]
                     state["last_error"] = "有 Claude 会话未完成归档；原记录保留"

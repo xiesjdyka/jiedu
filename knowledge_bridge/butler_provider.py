@@ -30,11 +30,29 @@ def documented_capabilities(config):
         parsed.path.rstrip('/') in {'','/v1'} and not parsed.username and not parsed.password and
         not parsed.query and not parsed.fragment)
     if official and value.get('model') in {'deepseek-flash','deepseek-v4-pro'}:
+        # Official Chat Completions capability, verified 2026-10-25:
+        # https://api-docs.deepseek.com/api/create-chat-completion/
+        # Do not retain an old UI quota or fall back to the smaller API default.
+        value['max_output_tokens']=393216
+        value['output_capacity_source']='official_docs'
         # https://api-docs.deepseek.com/guides/thinking_mode/
         if value.get('thinking_mode') in {None,'unverified'}:
             value['thinking_mode']='switchable'
         if value.get('thinking_mode') in {'switchable','required'}:value['thinking']=True
+    elif value.get('dialect')!='llama_cpp' and value.get('output_capacity_source')!='service_metadata':
+        # Legacy values came from a user quota input, not verified capability.
+        value['max_output_tokens']=None
+        value['output_capacity_source']='service_default'
     return value
+
+
+def model_output_capacity(config):
+    """A model/service capability, never inferred from its context window."""
+    capacity=documented_capabilities(config).get('max_output_tokens')
+    if capacity is None:return None
+    if type(capacity) is not int or capacity<1:
+        raise ProviderError('服务返回的单次输出能力无效')
+    return capacity
 
 
 def supports_images(config):
@@ -158,7 +176,7 @@ class ButlerProviders:
             if value["selected"] not in {"local", "external", "hermes"}: raise ValueError()
             external=value.get('external')
             if external:
-                if not isinstance(external,dict) or set(external)-{'base_url','model','dialect','context_tokens','max_output_tokens','thinking_mode','tools','thinking','native_search','data_scopes','credential_target','probe'}:raise ValueError()
+                if not isinstance(external,dict) or set(external)-{'base_url','model','dialect','context_tokens','max_output_tokens','output_capacity_source','thinking_mode','tools','thinking','native_search','data_scopes','credential_target','probe'}:raise ValueError()
                 target=external.get('credential_target','')
                 if not isinstance(target,str) or not target.startswith(self.target_prefix) or len(target)!=len(self.target_prefix)+32:raise ValueError()
             if value['selected']=='external' and not external:raise ValueError()
@@ -216,7 +234,7 @@ class ButlerProviders:
         finally: temporary.unlink(missing_ok=True)
 
     def configure(self, *, selected, base_url="", model="", dialect="generic", api_key=None,
-                  context_tokens=8192, max_output_tokens=8192, thinking_mode=None, tools=False, thinking=False, native_search=False, data_scopes=()):
+                  context_tokens=8192, max_output_tokens=None, output_capacity_source=None, thinking_mode=None, tools=False, thinking=False, native_search=False, data_scopes=()):
         if selected not in {"local", "external"}: raise ProviderError("请选择本机或外部模型")
         if dialect not in {"generic", "deepseek","qwen_template","dashscope"}: raise ProviderError("不支持的模型协议")
         if type(tools) is not bool or type(thinking) is not bool: raise ProviderError("能力开关必须是布尔值")
@@ -226,7 +244,7 @@ class ButlerProviders:
             raise ProviderError("不支持的外发资料范围")
         if type(context_tokens) is not int or not 1024 <= context_tokens <= 8388608:
             raise ProviderError("模型上下文容量须在1024至8388608词元之间")
-        if type(max_output_tokens) is not int or not 1 <= max_output_tokens <= min(context_tokens,1048576):raise ProviderError('单次输出上限须在1至模型上下文容量之间，最高1048576词元')
+        if output_capacity_source not in {None,'service_metadata'}:raise ProviderError('模型输出能力来源无效')
         thinking_mode=thinking_mode or ('switchable' if thinking else 'unverified')
         if thinking_mode not in {'switchable','required','unsupported','unverified'}:raise ProviderError('思考能力类型无效')
         if thinking_mode=='required':thinking=True
@@ -244,13 +262,19 @@ class ButlerProviders:
                         raise ProviderError("请填写供应商当前模型标识")
                     if external and external.get("base_url") != url and api_key is None:
                         raise ProviderError("模型端点已变更，请为新端点重新填写密钥")
+                    same_model=external and all(external.get(k)==v for k,v in
+                        (('base_url',url),('model',model.strip()),('dialect',dialect)))
+                    capability_config=documented_capabilities({'base_url':url,'model':model.strip(),'dialect':dialect,
+                        'max_output_tokens':max_output_tokens if output_capacity_source=='service_metadata' else external.get('max_output_tokens') if same_model else None,
+                        'output_capacity_source':output_capacity_source or (external.get('output_capacity_source') if same_model else None)})
+                    capability=model_output_capacity(capability_config)
                     target = (external or {}).get("credential_target")
                     if api_key is not None:
                         target = fresh_target = self.target_prefix + revision
                         self.secrets.put(target, api_key)
                     if not target or not self.secrets.get(target): raise ProviderError("请单独配置管家模型密钥")
                     external = {"base_url": url, "model": model.strip(), "dialect": dialect,
-                        "context_tokens": context_tokens, "max_output_tokens":max_output_tokens,"thinking_mode":thinking_mode,"tools": tools, "thinking": thinking,
+                        "context_tokens": context_tokens, "max_output_tokens":capability,"output_capacity_source":capability_config['output_capacity_source'],"thinking_mode":thinking_mode,"tools": tools, "thinking": thinking,
                         "native_search":native_search,"data_scopes": scopes, "credential_target": target,
                         "probe": {"state": "untested"}}
                     external=documented_capabilities(external)
@@ -403,8 +427,8 @@ class CompatibleTransport:
             if self.response: self.response.close()
             if self.client: self.client.close()
 
-    def complete(self, messages, *, max_tokens=512, thinking=False, tools=None):
-        config = self.snapshot["external"]
+    def complete(self, messages, *, max_tokens=None, thinking=False, tools=None):
+        config = documented_capabilities(self.snapshot["external"])
         if tools and not config["tools"]: raise ProviderError("该模型尚未声明工具调用能力，请先探测并配置")
         mode=config.get('thinking_mode')
         if mode=='required':thinking=True
@@ -419,17 +443,22 @@ class CompatibleTransport:
         request_bytes=message_input_estimate(messages)
         if tools:request_bytes+=len(json.dumps(tools,ensure_ascii=False).encode('utf-8'))
         input_tokens=count if type(count) is int else request_bytes
-        if type(max_tokens) is not int or max_tokens<1 or input_tokens>=config['context_tokens']:
+        if (max_tokens is not None and (type(max_tokens) is not int or max_tokens<1)) or input_tokens>=config['context_tokens']:
             raise ProviderError("本轮请求和工具记录超出已配置的模型上下文额度")
-        max_tokens=min(max_tokens,config['context_tokens']-input_tokens,config.get('max_output_tokens',8192))
+        capacity=model_output_capacity(config)
+        managed=capacity is None and max_tokens is None and config['dialect']!='llama_cpp'
+        max_tokens=None if managed else min([config['context_tokens']-input_tokens]+([capacity] if capacity is not None else [])+
+                                           ([max_tokens] if max_tokens is not None else []))
         self.last_budget={'input_tokens':input_tokens,'context_tokens':config['context_tokens'],'max_output_tokens':max_tokens,
+            'output_limit_source':'service_default' if managed else 'model_capacity' if capacity is not None else 'runtime_context',
             'count_kind':'local_tokenizer' if type(count) is int else 'conservative_utf8_bytes_plus_1024_per_image' if has_images else 'conservative_utf8_byte_estimate'}
         url, key = self.providers.connection(self.snapshot)
         parsed = urlsplit(url)
         host = parsed.hostname
         request_headers = {"Authorization": "Bearer " + key}
         extensions = {}
-        payload = {"model": config["model"], "messages": messages, "max_tokens": max_tokens, "stream": True}
+        payload = {"model": config["model"], "messages": messages, "stream": True}
+        if max_tokens is not None:payload['max_tokens']=max_tokens
         if config["dialect"] == "deepseek": payload["thinking"] = {"type": "enabled" if thinking else "disabled"}
         if config['dialect']=='llama_cpp':
             payload['chat_template_kwargs']={'enable_thinking':thinking};payload['reasoning_format']='deepseek'
@@ -521,7 +550,7 @@ class CompatibleTransport:
         finally:
             with self.lock: self.response = None; self.client = None;self.loop=None;self.task=None
 
-    def run(self, messages, *, dispatch, tools, max_tokens=512, thinking=False, rounds=8, receipt=lambda item: None):
+    def run(self, messages, *, dispatch, tools, max_tokens=None, thinking=False, rounds=8, receipt=lambda item: None):
         messages = [dict(message) for message in messages]
         search_sources=[]
         for round_index in range(rounds):
@@ -552,7 +581,7 @@ class RuntimeConnection:
     def __init__(self,runtime,context_tokens):
         self.runtime=runtime
         self.snapshot={'selected':'local','external':{'model':'jiedu-local-butler','dialect':'llama_cpp',
-            'context_tokens':context_tokens,'max_output_tokens':runtime.config().get('output_capacity',context_tokens),'tools':True,'thinking':True}}
+            'context_tokens':context_tokens,'max_output_tokens':runtime.config().get('output_capacity'),'tools':True,'thinking':True}}
     def connection(self,snapshot):
         if self.runtime.status().get('state')!='ready':raise ProviderError('本机模型尚未就绪')
         authorization=self.runtime.headers().get('Authorization','')

@@ -1,3 +1,9 @@
+# 1.2.2 发布状态
+
+1.2.2 修复管家输出容量、Claude 本地采集和客户端状态刷新，通过程序更新包交付，保留 1.2.1 原生外壳及运行资源。新用户先安装 [1.2.1 基础包](https://github.com/xiesjdyka/jiedu/releases/download/1.2.1/Jiedu-1.2.1-windows-x64-setup.exe)，再在应用内检查更新至 1.2.2。实际源码、签名清单和发布状态以 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.2) 为准。详见[本次变化](changes-1.2.2.md)。
+
+以下为历史版本记录。
+
 # 1.2.1 发布状态
 
 本批更新统一使用 1.2.1 编号，功能沿用已发布的 1.1.10；本次未新增采集或整理规则。版本号、安装器及更新清单须重新构建并校验。实际源码、安装包与签名清单以 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.1) 为准，本文本身不表示发布或本机更新已经完成。旧版升级继续保留资料、权限和同步进度，正式知识仍由用户确认。详见[更新说明](changes-1.2.1.md)。

@@ -35,6 +35,7 @@ docs/architecture.md
 docs/archive-recovery.md
 docs/changes-1.1.10.md
 docs/changes-1.2.1.md
+docs/changes-1.2.2.md
 docs/changes-20261024.md
 docs/dependencies.json
 docs/development.md
@@ -268,6 +269,7 @@ tests/test_butler_generation.py
 tests/test_butler_identity_scope.py
 tests/test_butler_model_manager.py
 tests/test_butler_network.py
+tests/test_butler_output_controls.py
 tests/test_butler_permissions.py
 tests/test_butler_product_repair.py
 tests/test_butler_product_status.py
@@ -280,10 +282,13 @@ tests/test_candidate_reorganization.py
 tests/test_candidate_writer_authorization.py
 tests/test_chatgpt_adapter.py
 tests/test_chunk_tail_termination.py
+tests/test_claude_source_recovery.py
 tests/test_client_access.py
 tests/test_client_config.py
 tests/test_client_pairing.py
 tests/test_client_permissions.py
+tests/test_client_status.py
+tests/test_client_status_frontend.js
 tests/test_codex_format_repair.py
 tests/test_codex_history.py
 tests/test_codex_large_records.py

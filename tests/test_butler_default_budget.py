@@ -1,89 +1,146 @@
-"""Product auto budget differs from explicit Owner length; all traffic is mocked."""
+"""No user length quotas; synthetic requests captured before any model service."""
 import copy
 import json
 import unittest
 import httpx
 from . import test_butler_request_context as fixture
+from knowledge_bridge.butler_generation import effective_settings, requested_settings, settings_for
 from unittest.mock import patch
 
 
 class DefaultBudgetTests(unittest.TestCase):
     setUp=fixture.ButlerRequestContextTests.setUp
     service=fixture.ButlerRequestContextTests.service
+
     def respond(self,request):
-        if not getattr(self,'limited_response',False):return fixture.ButlerRequestContextTests.respond(self,request)
+        if not getattr(self,'limited_response',False) and not getattr(self,'long_response',False):
+            return fixture.ButlerRequestContextTests.respond(self,request)
         payload=json.loads(request.content);self.captured.append(payload)
-        event={'choices':[{'delta':{'reasoning_content':'合成思考原文。','content':getattr(self,'answer_text','   ')},'finish_reason':'length'}]}
+        answer=('合成的完整长回答。'*6000) if getattr(self,'long_response',False) else getattr(self,'answer_text','   ')
+        event={'choices':[{'delta':{'reasoning_content':'合成思考原文。','content':answer},'finish_reason':'stop' if getattr(self,'long_response',False) else 'length'}]}
         return httpx.Response(200,headers={'content-type':'text/event-stream'},content=('data: '+json.dumps(event,ensure_ascii=False)+'\n\ndata: [DONE]\n\n').encode())
+
     def value(self,**changes):
-        value=fixture.provider();value['external']['max_output_tokens']=20000;value['external'].update(changes);return value
-    def turn(self,service,*,thinking=False,output_limit='auto',sid=None,text='本轮合成问题。'):
+        value=fixture.provider();value['external'].update(context_tokens=1048576,max_output_tokens=512)
+        value['external'].update(changes);return value
+
+    def turn(self,service,*,thinking=False,output_limit='auto',sid=None,text='本轮合成问题。',legacy=False):
         sid=sid or service.create_session()['id']
         jid=service.submit(sid,text,thinking=thinking,output_limit=output_limit)['id'];service._update(jid,state='running')
-        with service.db() as db:job=dict(db.execute('SELECT * FROM jobs WHERE id=?',(jid,)).fetchone())
+        with service.db() as db:
+            if legacy:
+                requested=json.loads(db.execute('SELECT requested FROM jobs WHERE id=?',(jid,)).fetchone()[0])
+                requested.update(output_limit=output_limit,default_output_target=8192 if thinking else 4096,output_limit_source='owner_explicit')
+                db.execute('UPDATE jobs SET requested=? WHERE id=?',(json.dumps(requested),jid))
+            job=dict(db.execute('SELECT * FROM jobs WHERE id=?',(jid,)).fetchone())
         service._execute_external(job,service.providers.snapshot())
         with service.db() as db:finished=dict(db.execute('SELECT * FROM jobs WHERE id=?',(jid,)).fetchone())
         return sid,finished,service.conversation(sid)
-    def test_new_external_auto_uses_4096_without_changing_service_cap(self):
-        value=self.value();before=copy.deepcopy(value);service=self.service(value)
-        _,job,_=self.turn(service);requested=json.loads(job['requested'])
-        self.assertEqual(self.captured[-1]['max_tokens'],4096)
-        self.assertEqual(requested['output_limit'],'auto');self.assertEqual(requested['default_output_target'],4096)
-        self.assertEqual(requested['output_limit_source'],'product_default');self.assertEqual(service.providers.value,before)
-    def test_thinking_auto_gets_8192_and_required_mode_is_normalized_first(self):
-        for mode in ('switchable','required'):
-            with self.subTest(mode=mode):
-                service=self.service(self.value(thinking_mode=mode))
-                _,job,_=self.turn(service,thinking=mode!='required');requested=json.loads(job['requested'])
-                self.assertTrue(requested['thinking']);self.assertEqual(requested['default_output_target'],8192)
-                self.assertEqual(self.captured[-1]['max_tokens'],8192);self.assertEqual(self.captured[-1]['thinking'],{'type':'enabled'})
-    def test_explicit_512_and_max_are_preserved_as_owner_choices(self):
-        for limit,expected in ((512,512),('max',20000)):
-            with self.subTest(limit=limit):
-                service=self.service(self.value());_,job,_=self.turn(service,thinking=True,output_limit=limit)
-                requested=json.loads(job['requested']);self.assertEqual(requested['output_limit'],limit)
-                self.assertEqual(requested['output_limit_source'],'owner_explicit');self.assertEqual(self.captured[-1]['max_tokens'],expected)
-    def test_auto_is_clamped_by_owner_service_cap_and_actual_context(self):
-        for changes,reason in (({'max_output_tokens':1024},'service_limit'),({'context_tokens':10000},'context_limit')):
-            with self.subTest(reason=reason):
-                value=self.value(**changes);before=copy.deepcopy(value);service=self.service(value)
-                _,job,_=self.turn(service,thinking=True);effective=json.loads(job['effective'])
-                self.assertGreater(effective['max_output_tokens'],0);self.assertLess(effective['max_output_tokens'],8192)
-                self.assertIn(reason,effective['output_limit_reasons']);self.assertEqual(service.providers.value,before)
-                self.assertLessEqual(effective['max_output_tokens'],effective['available_output_tokens'])
-    def test_reasoning_only_length_keeps_no_answer_and_real_budget_notice(self):
-        self.limited_response=True;service=self.service(self.value(max_output_tokens=1024))
+
+    def test_deepseek_auto_and_old_short_choices_use_actual_capability_in_both_modes(self):
+        for thinking in (False,True):
+            for limit in ('auto',128,512,'max'):
+                with self.subTest(thinking=thinking,limit=limit):
+                    value=self.value();before=copy.deepcopy(value);service=self.service(value)
+                    _,job,_=self.turn(service,thinking=thinking,output_limit=limit,legacy=True)
+                    payload=self.captured[-1];effective=json.loads(job['effective'])
+                    self.assertEqual(payload['max_tokens'],393216)
+                    self.assertEqual(payload['thinking'],{'type':'enabled' if thinking else 'disabled'})
+                    self.assertEqual(effective['output_limit_source'],'model_capacity')
+                    self.assertEqual(service.providers.value,before)
+
+    def test_required_thinking_is_normalized_before_budget(self):
+        service=self.service(self.value(thinking_mode='required'))
+        _,job,_=self.turn(service)
+        self.assertTrue(json.loads(job['requested'])['thinking'])
+        self.assertEqual(self.captured[-1]['max_tokens'],393216)
+        self.assertEqual(self.captured[-1]['thinking'],{'type':'enabled'})
+
+    def test_deepseek_remaining_context_clamps_both_thinking_modes(self):
+        for thinking in (False,True):
+            with self.subTest(thinking=thinking):
+                service=self.service(self.value());_,job,_=self.turn(service,thinking=thinking,text='x'*750000)
+                effective=json.loads(job['effective'])
+                self.assertEqual(self.captured[-1]['max_tokens'],1048576-effective['input_tokens'])
+                self.assertGreater(self.captured[-1]['max_tokens'],8192)
+                self.assertLess(self.captured[-1]['max_tokens'],393216)
+                self.assertIn('context_limit',effective['output_limit_reasons'])
+
+    def test_known_generic_capability_is_separate_from_context(self):
+        service=self.service(self.value(model='synthetic-known',dialect='generic',thinking=False,
+            max_output_tokens=6000,output_capacity_source='service_metadata'))
+        _,job,_=self.turn(service,output_limit=128)
+        self.assertEqual(self.captured[-1]['max_tokens'],6000)
+        self.assertEqual(json.loads(job['effective'])['output_target'],6000)
+
+    def test_unknown_generic_ignores_old_config_quota_and_defers_to_service(self):
+        for old_cap in (1,512,8192,None):
+            with self.subTest(old_cap=old_cap):
+                value=self.value(model='synthetic-unknown',dialect='generic',thinking=False,max_output_tokens=old_cap)
+                service=self.service(value);_,job,_=self.turn(service,output_limit=128,legacy=True)
+                self.assertNotIn('max_tokens',self.captured[-1])
+                effective=json.loads(job['effective'])
+                self.assertIsNone(effective['max_output_tokens'])
+                self.assertEqual(effective['output_limit_source'],'service_default')
+                self.assertGreater(effective['available_output_tokens'],900000)
+
+    def test_unknown_length_notice_does_not_claim_maximum_capability(self):
+        self.limited_response=True
+        service=self.service(self.value(model='unknown',dialect='generic',thinking=False))
+        _,job,_=self.turn(service)
+        self.assertIn('输出长度由服务决定',job['output_notice'])
+        self.assertNotIn('提高',job['output_notice'])
+
+    def test_reasoning_only_length_preserves_recovery_and_actual_notice(self):
+        self.limited_response=True;service=self.service(self.value())
         _,job,conversation=self.turn(service,thinking=True)
         answer=conversation['messages'][-1]
         self.assertEqual(answer['content'],'   ');self.assertEqual(answer['reasoning'],'合成思考原文。')
-        self.assertEqual(job['finish_reason'],'length');self.assertIn('尚未形成回答',job['stage'])
         self.assertEqual(json.loads(job['effective'])['answer_status'],'no_answer')
-        self.assertIn('尚未形成回答',job['output_notice']);self.assertIn('模型设置中的输出上限',job['output_notice'])
-        self.assertNotEqual(job['stage'],'已完成')
-    def test_partial_length_is_incomplete_and_not_labeled_finished_answer(self):
-        self.limited_response=True;self.answer_text='合成回答的未完成部分';service=self.service(self.value())
-        _,job,_=self.turn(service,thinking=True)
-        self.assertEqual(json.loads(job['effective'])['answer_status'],'incomplete')
-        self.assertEqual(job['stage'],'回答达到额度上限');self.assertIn('达到本轮生成上限',job['output_notice'])
-    def test_auto_reserves_thinking_budget_by_omitting_old_pair_visibly(self):
+        self.assertIn('尚未形成回答',job['output_notice']);self.assertIn('模型的单次输出能力',job['output_notice'])
+        self.assertNotIn('提高',job['output_notice']);self.assertNotEqual(job['stage'],'已完成')
+
+    def test_complete_long_answer_is_not_cut_by_old_limit(self):
+        self.long_response=True;service=self.service(self.value())
+        _,job,conversation=self.turn(service,output_limit=128)
+        answer=conversation['messages'][-1]['content']
+        self.assertEqual(answer,'合成的完整长回答。'*6000)
+        self.assertEqual(self.captured[-1]['max_tokens'],393216)
+        self.assertEqual(job['finish_reason'],'stop');self.assertIsNone(job['output_notice'])
+
+    def test_maximum_output_does_not_reserve_away_normal_history(self):
         service=self.service(self.value(context_tokens=25000));sid=service.create_session()['id']
         self.turn(service,sid=sid,text='OLD-LONG-INPUT '+('x'*16000),output_limit=512)
         _,job,_=self.turn(service,sid=sid,thinking=True)
-        self.assertEqual(self.captured[-1]['max_tokens'],8192)
-        self.assertFalse('OLD-LONG-INPUT' in json.dumps(self.captured[-1]));self.assertIn('较早问答',job['output_notice'])
-        self.assertEqual(json.loads(job['context'])['budget']['history_messages'],0)
-    def test_auto_choice_and_target_remain_distinct_during_direct_recovery(self):
+        self.assertIn('OLD-LONG-INPUT',json.dumps(self.captured[-1]))
+        budget=json.loads(job['context'])['budget']
+        self.assertEqual(budget['history_messages'],2);self.assertFalse(budget['history_omitted'])
+        self.assertEqual(self.captured[-1]['max_tokens'],25000-budget['input_tokens'])
+        self.assertGreater(self.captured[-1]['max_tokens'],512)
+
+    def test_direct_recovery_drops_legacy_choice_and_keeps_provider(self):
         service=self.service(self.value());sid=service.create_session()['id']
-        parent=service.submit(sid,'合成恢复问题。',thinking=True)['id']
-        with service.db() as db:db.execute("UPDATE jobs SET state='failed',finish_reason='length',reasoning='synthetic' WHERE id=?",(parent,))
+        parent=service.submit(sid,'合成恢复问题。',thinking=True,output_limit=128)['id']
+        with service.db() as db:
+            request=json.loads(db.execute('SELECT requested FROM jobs WHERE id=?',(parent,)).fetchone()[0])
+            request.update(output_limit=128,default_output_target=8192)
+            db.execute("UPDATE jobs SET state='failed',requested=?,finish_reason='length',reasoning='synthetic' WHERE id=?",(json.dumps(request),parent))
         child=service.answer_directly(parent)['id']
         with service.db() as db:requested=json.loads(db.execute('SELECT requested FROM jobs WHERE id=?',(child,)).fetchone()[0])
-        self.assertEqual(requested['output_limit'],'auto');self.assertEqual(requested['output_limit_source'],'product_default')
-        self.assertFalse(requested['thinking']);self.assertEqual(requested['default_output_target'],4096)
+        self.assertNotIn('output_limit',requested);self.assertNotIn('default_output_target',requested)
+        self.assertFalse(requested['thinking']);self.assertEqual(requested['max_output_tokens'],393216)
+        self.assertEqual(requested['provider_snapshot'],request['provider_snapshot'])
+
+    def test_local_capability_and_context_never_use_old_short_choice(self):
+        for limit in ('auto',128,512,'max'):
+            request=requested_settings(True,limit,65536,32768)
+            self.assertEqual(effective_settings(request,2000)['max_output_tokens'],32768)
+            self.assertEqual(effective_settings(request,64000)['max_output_tokens'],1536)
+            self.assertEqual(effective_settings(requested_settings(False,limit,8192),2000)['max_output_tokens'],6192)
+
     def test_service_close_releases_attachment_store_and_is_repeatable(self):
         service=self.service(self.value());actual=service.attachments.close
-        with patch.object(service.attachments,'close',wraps=actual) as close:
-            service.close();close.assert_called_once()
+        with patch.object(service.attachments,'close',wraps=actual) as close:service.close();close.assert_called_once()
         service.close()
 
 

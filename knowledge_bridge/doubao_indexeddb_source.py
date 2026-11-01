@@ -8,6 +8,7 @@ the last confirmed cursor and archive state.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import os
 import shutil
@@ -418,13 +419,13 @@ def _active_file_numbers(raw_leveldb: Any) -> tuple[set[int], set[int]]:
     return active_tables, logs
 
 
-def _current_raw_for_store(store: Any) -> dict[bytes, Any] | None:
+def _current_raw_for_store(store: Any, *, index_id: int = 1) -> dict[bytes, Any] | None:
     raw_db = getattr(store, "_raw_db", None)
     raw_leveldb = getattr(raw_db, "_db", None)
     if raw_db is None or raw_leveldb is None or not hasattr(raw_db, "_fetched_records"):
         return None
     active_tables, active_logs = _active_file_numbers(raw_leveldb)
-    prefix = raw_db.make_prefix(store._dbid_no, store._obj_store_id, 1)
+    prefix = raw_db.make_prefix(store._dbid_no, store._obj_store_id, index_id)
     latest: dict[bytes, Any] = {}
     for record in raw_db._fetched_records:
         origin = Path(record.origin_file)
@@ -442,10 +443,95 @@ def _current_raw_for_store(store: Any) -> dict[bytes, Any] | None:
     return latest
 
 
-def _latest_records(store: Any) -> tuple[list[Any], int, int, bool]:
+class _CurrentBlobReader:
+    """Use current external-object metadata, never the library's unordered cache.
+
+    Blob metadata can follow the value record within a committed transaction.
+    Both are selected from the effective CURRENT state, not by a <= value-seq
+    cutoff. This object only reads snapshot files; the installed parser is intact.
+    """
+    def __init__(self, store, metadata, diagnostic):
+        self.raw = store._raw_db
+        self.store = store
+        self.metadata = metadata
+        self.diagnostic = diagnostic
+        self._blob_dir = self.raw._blob_dir
+
+    def get_blob_info(self, db_id, store_id, raw_key, file_index):
+        from ccl_chromium_reader import ccl_chromium_indexeddb as ccl
+        prefix = self.raw.make_prefix(db_id, store_id, 3)
+        record = self.metadata.get(prefix + raw_key)
+        if record is None or getattr(record.state, 'name', '').casefold() == 'deleted':
+            self.diagnostic['reason'] = 'blob_metadata_missing'
+            raise KeyError('current external-object metadata unavailable')
+        self.diagnostic['blob_metadata_sequence'] = int(record.seq)
+        stream = io.BytesIO(record.value)
+        for index in range(file_index + 1):
+            if stream.tell() >= len(record.value):
+                self.diagnostic['reason'] = 'blob_metadata_missing'
+                raise KeyError('current external-object index unavailable')
+            info = ccl.IndexedDBExternalObject.from_stream(stream)
+        self.diagnostic['blob_number'] = info.blob_number
+        return info
+
+    def get_blob(self, db_id, store_id, raw_key, file_index):
+        info = self.get_blob_info(db_id, store_id, raw_key, file_index)
+        path = Path(self._blob_dir) / f'{db_id:x}' / f'{info.blob_number >> 8:02x}' / f'{info.blob_number:x}'
+        self.diagnostic['blob_bytes'] = info.size
+        if not path.is_file():
+            self.diagnostic['reason'] = 'missing_blob'
+            raise FileNotFoundError('current snapshot blob unavailable')
+        if path.stat().st_size != info.size:
+            self.diagnostic['reason'] = 'blob_size_mismatch'
+            raise ValueError('current snapshot blob size mismatch')
+        return path.open('rb')
+
+    def read_record_precursor(self, key, db_id, store_id, buffer, handler, external_data_path=None):
+        from ccl_chromium_reader import ccl_chromium_indexeddb as ccl
+        # The external serialization envelope also declares the exact blob size.
+        # Reject inconsistent current metadata rather than substituting old data.
+        if buffer[:1] == b'\xff':
+            version, encoded = ccl._le_varint_from_bytes(buffer[1:])
+            offset = 1 + len(encoded)
+            if version == 0x11 and buffer[offset:offset+1] == b'\x01':
+                size, encoded = ccl._le_varint_from_bytes(buffer[offset+1:])
+                index, _ = ccl._le_varint_from_bytes(buffer[offset+1+len(encoded):])
+                info = self.get_blob_info(db_id, store_id, key.raw_key, index)
+                if info.size != size:
+                    self.diagnostic['reason'] = 'blob_size_mismatch'
+                    raise ValueError('external envelope and current blob metadata disagree')
+        return ccl.IndexedDb.read_record_precursor(self, key, db_id, store_id, buffer, handler, external_data_path)
+
+
+def _decode_current_record(store, record, raw_key, metadata, diagnostic):
+    from ccl_chromium_reader import ccl_chromium_indexeddb as ccl
+    key = ccl.IdbKey(raw_key)
+    if not record.value:
+        value = None; external_path = None
+    else:
+        _, encoded = ccl._le_varint_from_bytes(record.value)
+        reader = _CurrentBlobReader(store, metadata, diagnostic)
+        precursor = reader.read_record_precursor(key, store._dbid_no, store._obj_store_id, record.value[len(encoded):], None)
+        if precursor is None:
+            raise ValueError('current record envelope unavailable')
+        _, stream, _, external_path = precursor
+        value = ccl.ccl_v8_value_deserializer.Deserializer(stream,
+            host_object_delegate=ccl.ccl_blink_value_deserializer.BlinkV8Deserializer().read).read()
+    return ccl.IndexedDbRecord(store._raw_db, store._dbid_no, store._obj_store_id, key,
+        value, True, record.seq, record.origin_file, external_path)
+
+
+def _latest_records(store: Any, *, diagnostics: list | None = None) -> tuple[list[Any], int, int, bool]:
     """Return only the effective latest record for each IndexedDB raw key."""
     bad = []
-    decoded = list(store.iterate_records(bad_deserializer_data_handler=lambda *_: bad.append(1)))
+    decoded = []
+    scan_complete = True
+    try:
+        decoded.extend(store.iterate_records(bad_deserializer_data_handler=lambda *_: bad.append(1)))
+    except Exception:
+        # An unsupported precursor must not prevent other current records from
+        # being decoded individually. Never expose arbitrary source exception text.
+        scan_complete = False
     raw_latest = _current_raw_for_store(store)
     if raw_latest is None:
         latest = {}
@@ -453,20 +539,40 @@ def _latest_records(store: Any) -> tuple[list[Any], int, int, bool]:
             key = _key_identity(record)
             if key not in latest or int(record.ldb_seq_no) > int(latest[key].ldb_seq_no):
                 latest[key] = record
-        return list(latest.values()), len(bad), 0, False
+        return list(latest.values()), len(bad) + int(not scan_complete), 0, False
     decoded_by_version = {(_key_identity(record), int(record.ldb_seq_no)): record for record in decoded}
-    current = []; current_errors = 0
+    current = []; current_errors = 0; originally_missing = 0
+    direct = callable(getattr(store._raw_db, 'read_record_precursor', None))
+    metadata = _current_raw_for_store(store, index_id=3) if direct else None
     for raw_user_key, raw_record in raw_latest.items():
         # Strip the database/store/index prefix to match IdbKey.raw_key.
         raw_key = raw_user_key[len(store._raw_db.make_prefix(store._dbid_no, store._obj_store_id, 1)):]
         if getattr(raw_record.state, "name", "").casefold() == "deleted":
             continue
         record = decoded_by_version.get((raw_key, int(raw_record.seq)))
+        originally_missing += int(record is None)
+        if direct:
+            diagnostic = {'kind':'current_record', 'key_sha256':hashlib.sha256(raw_key).hexdigest(),
+                          'sequence':int(raw_record.seq), 'source_file':Path(raw_record.origin_file).name}
+            try:
+                record = _decode_current_record(store, raw_record, raw_key, metadata, diagnostic)
+                if (raw_key, int(raw_record.seq)) not in decoded_by_version:
+                    diagnostic.update(status='recovered', reason='current_blob_metadata_selected')
+                    if diagnostics is not None:diagnostics.append(diagnostic)
+            except Exception as exc:
+                record = None
+                diagnostic.update(status='unreadable', exception_type=type(exc).__name__)
+                diagnostic.setdefault('reason', 'unsupported_serialization' if isinstance(exc, NotImplementedError) else 'decode_error')
+                if diagnostics is not None:diagnostics.append(diagnostic)
         if record is None:
             current_errors += 1
         else:
             current.append(record)
-    return current, current_errors, max(0, len(bad) - current_errors), True
+    historical = max(0, len(bad) - originally_missing)
+    if diagnostics is not None:
+        diagnostics.append({'kind':'historical_decode_summary', 'decode_errors':historical,
+                            'legacy_scan_complete':scan_complete})
+    return current, current_errors, historical, True
 
 
 def read_snapshot(snapshot: Path, *, wrapper_factory: Callable | None = None) -> CacheReadResult:

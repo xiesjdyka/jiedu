@@ -200,6 +200,63 @@ class ProviderTests(unittest.TestCase):
             with self.subTest(url=url), self.assertRaises(ProviderError): endpoint(url, isolated=True)
         with self.assertRaises(ProviderError): endpoint("https://127.0.0.1")
 
+    def test_metadata_capability_survives_save_without_output_field_and_key(self):
+        self.configure(context_tokens=65536,max_output_tokens=16000,output_capacity_source='service_metadata')
+        original=self.provider._load()['external'];keys=dict(self.secrets.values)
+        saved=self.configure(context_tokens=70000,api_key=None)['external']
+        self.assertEqual(saved['max_output_tokens'],16000)
+        self.assertEqual(saved['output_capacity_source'],'service_metadata')
+        self.assertEqual(self.provider._load()['external']['credential_target'],original['credential_target'])
+        self.assertEqual(self.secrets.values,keys)
+
+    def test_legacy_user_quota_is_not_capability_and_unknown_service_stays_usable(self):
+        self.configure(max_output_tokens=128)
+        self.assertIsNone(self.provider.status()['external']['max_output_tokens'])
+        old=self.provider._load();old['external'].pop('output_capacity_source')
+        old['external']['max_output_tokens']=512;self.provider._save(old)
+        self.fragments=[({'content':'合成未知型号回答'},'stop')]
+        transport=self.transport();answer,finish=transport.complete([{'role':'user','content':'fixture'}])
+        self.assertEqual(answer['content'],'合成未知型号回答');self.assertEqual(finish,'stop')
+        self.assertNotIn('max_tokens',self.requests[-1])
+        self.assertEqual(transport.last_budget['output_limit_source'],'service_default')
+        self.assertEqual(self.provider._load()['external']['max_output_tokens'],512)
+
+    def test_known_service_cap_and_context_are_rechecked_on_every_tool_round(self):
+        self.configure(context_tokens=20000,max_output_tokens=16000,output_capacity_source='service_metadata')
+        def fragments(request):
+            if len(request['messages'])==1:
+                return [({'tool_calls':[{'index':0,'id':'cap-call','function':{'name':'lookup','arguments':'{}'}}]},'tool_calls')]
+            return [({'content':'合成回答'},'stop')]
+        self.fragments=fragments;transport=self.transport()
+        transport.run([{'role':'user','content':'fixture'}],tools=[{'type':'function','function':{'name':'lookup','parameters':{'type':'object'}}}],
+            dispatch=lambda *_:{'content':'x'*6000})
+        self.assertEqual(self.requests[0]['max_tokens'],16000)
+        self.assertLess(self.requests[1]['max_tokens'],16000)
+        self.assertEqual(self.requests[1]['max_tokens'],20000-transport.last_budget['input_tokens'])
+
+    def test_long_stream_can_cancel_after_more_than_old_answer_quotas(self):
+        self.configure(context_tokens=65536,max_output_tokens=32768,output_capacity_source='service_metadata')
+        release=threading.Event();self.addCleanup(release.set)
+        def fragments(request):
+            for _ in range(32):yield {'content':'synthetic long answer '*64},None
+            release.wait(3)
+            yield {'content':'LATE_OUTPUT_MUST_NOT_APPEAR'},'stop'
+        self.fragments=fragments;progress=threading.Event();parts=[];errors=[]
+        def emit(channel,piece):
+            parts.append(piece)
+            if sum(map(len,parts))>10000:progress.set()
+        transport=CompatibleTransport(self.provider,self.provider.snapshot(),cancel=threading.Event(),emit=emit)
+        def execute():
+            try:transport.complete([{'role':'user','content':'fixture'}])
+            except BaseException as error:errors.append(error)
+        worker=threading.Thread(target=execute,daemon=True);worker.start()
+        self.assertTrue(progress.wait(2));started=time.monotonic()
+        transport.cancel.set();transport.close();worker.join(1);release.set()
+        self.assertFalse(worker.is_alive());self.assertLess(time.monotonic()-started,1)
+        self.assertTrue(any(isinstance(error,InterruptedError) for error in errors))
+        self.assertNotIn('LATE_OUTPUT_MUST_NOT_APPEAR',''.join(parts))
+        self.assertEqual(self.requests[0]['max_tokens'],32768)
+
 
 class CoreEvidenceTests(unittest.TestCase):
     def test_missing_core_returns_unknown_and_verified_core_returns_fixture_only(self):

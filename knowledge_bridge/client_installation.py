@@ -79,7 +79,7 @@ def state(kind: str) -> str:
     if kind not in _NAMES:
         return 'unknown'
     cached = _CACHE.get(kind)
-    if cached and time.monotonic() - cached[0] < 30:
+    if cached and time.monotonic() - cached[0] < 5:
         return cached[1]
     title, command = _NAMES[kind]
     home = Path.home()

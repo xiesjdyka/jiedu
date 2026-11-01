@@ -12,8 +12,8 @@ from pathlib import Path
 from contextlib import contextmanager
 import httpx
 from .butler_runtime import LocalButlerRuntime,thinking_mode as local_thinking_mode
-from .butler_generation import requested_settings,settings_for,input_limit,effective_settings,output_target
-from .butler_provider import ButlerProviders,CompatibleTransport,RuntimeConnection,message_input_estimate,supports_images,MAX_REQUEST_BODY_BYTES
+from .butler_generation import requested_settings,settings_for,input_limit,effective_settings
+from .butler_provider import ButlerProviders,CompatibleTransport,RuntimeConnection,message_input_estimate,supports_images,model_output_capacity,MAX_REQUEST_BODY_BYTES
 
 
 def now():return datetime.now(timezone.utc).isoformat()
@@ -75,14 +75,13 @@ def repeated_reasoning(text):
 
 
 def output_notice(requested,effective,finish,has_answer):
-    if has_answer:return '已达到本轮生成上限，可继续追问。' if finish=='length' else None
+    if effective.get('output_limit_source')=='service_default' and finish=='length':
+        return ('本次输出尚未完整结束，可继续追问。' if has_answer else '本次输出结束，尚未形成回答。')+'输出长度由服务决定。'+('可选择跳过思考并回答，仅影响本轮。' if requested['thinking'] and not has_answer else '')
+    if has_answer:return '已达到模型单次输出能力或剩余上下文边界，可继续追问。' if finish=='length' else None
     if finish!='length':return '模型结束了思考，但未给出回答。可选择跳过思考并回答。' if requested['thinking'] else '模型未给出回答，请重试。'
     available=effective.get('available_output_tokens');effective_limit=effective.get('max_output_tokens')
-    target=output_target(requested);service_limit=requested.get('max_output_tokens',requested['context_tokens'])
-    if service_limit<target and effective_limit is not None and effective_limit>=service_limit:advice='当前受模型设置中的输出上限限制，可核对该上限后重试。'
-    elif available is not None and effective_limit is not None and effective_limit>=available:advice='当前已使用输入之后的全部可用额度，可减少输入或较早内容后重试。'
-    elif requested['output_limit']=='max':advice='当前已使用所配置的最大输出额度。'
-    else:advice='可选择更高生成上限后重试。'
+    if available is not None and effective_limit is not None and effective_limit>=available:advice='当前已使用输入之后的全部可用上下文，可减少输入或较早内容后重试。'
+    else:advice='当前已达到模型的单次输出能力。'
     return '生成额度已用完，尚未形成回答。'+advice+('可选择跳过思考并回答，仅影响本轮。' if requested['thinking'] else '')
 
 
@@ -242,9 +241,9 @@ class LocalButler:
         mode=model_config.get('thinking_mode','switchable' if model_config.get('thinking') else 'unverified') if provider['selected']=='external' else local_thinking_mode(model_config)
         if mode=='required':thinking=True
         elif mode=='unsupported' and thinking:raise ValueError('该模型不支持思考模式')
-        output_capacity=model_config.get('max_output_tokens',8192) if provider['selected']=='external' else model_config.get('output_capacity',capacity)
-        default_target=(8192 if thinking else 4096) if provider['selected']=='external' else 512
-        requested=requested_settings(thinking,output_limit,capacity,output_capacity,default_output_target=default_target)
+        output_capacity=model_output_capacity(model_config) if provider['selected']=='external' else model_config.get('output_capacity')
+        requested=requested_settings(thinking,context_tokens=capacity,max_output_tokens=output_capacity,
+            output_policy='service_default' if provider['selected']=='external' and output_capacity is None else None)
         requested['thinking_mode']=mode
         requested['provider_snapshot']=provider
         if type(tools_enabled) is not bool:raise ValueError('工具选项必须是开启或关闭')
@@ -290,7 +289,6 @@ class LocalButler:
             if others:raise ValueError('当前对话还有其他请求处理中')
             if db.execute("SELECT count(*) FROM jobs WHERE id!=? AND state IN ('queued','running')",(parent_id,)).fetchone()[0]>=8:raise ValueError('等待中的请求已满')
             requested=settings_for(parent).copy();requested['thinking']=False;requested['operation']='direct_answer'
-            if requested.get('output_limit')=='auto':requested['default_output_target']=4096 if requested.get('provider_snapshot',{}).get('selected')=='external' else 512
             original=json.loads(parent['context'])
             # Commit cancellation separately before reserving recovery; the RLock keeps
             # submit/trash from racing. The worker joins the owned close before dequeue.
@@ -310,7 +308,7 @@ class LocalButler:
             if cached:return dict(cached)
             if db.execute("SELECT id FROM jobs WHERE session=? AND state IN ('queued','running')",(source['session'],)).fetchone():raise ValueError('当前对话还有请求处理中，请先等待或取消')
             if db.execute("SELECT count(*) FROM jobs WHERE state IN ('queued','running')").fetchone()[0]>=8:raise ValueError('等待中的请求已满，请稍后再试')
-            jid=uuid.uuid4().hex;stamp=now();requested=requested_settings(False,384,int(self.runtime.config().get('context_tokens',8192)));requested['translation_format_version']=3;requested['operation']='reasoning_summary'
+            jid=uuid.uuid4().hex;stamp=now();requested=requested_settings(False,context_tokens=int(self.runtime.config().get('context_tokens',8192)),max_output_tokens=384);requested['translation_format_version']=3;requested['operation']='reasoning_summary'
             source_provider=settings_for(dict(source)).get('provider_snapshot')
             if source_provider and source_provider.get('selected')=='external':
                 requested['provider_snapshot']=source_provider

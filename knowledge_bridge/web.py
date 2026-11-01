@@ -291,7 +291,8 @@ class ButlerProviderConfig(BaseModel):
     dialect:str='generic'
     api_key:str|None=None
     context_tokens:StrictInt=8192
-    max_output_tokens:StrictInt=8192
+    max_output_tokens:StrictInt|None=None
+    output_capacity_source:str|None=None
     thinking_mode:str|None=None
     tools:bool=Field(default=False,strict=True)
     thinking:bool=Field(default=False,strict=True)
@@ -1074,26 +1075,49 @@ def _client_ordinary_read_policy(internal_id,policies,permissions):
             'total_count':len(decisions),'exact_rule_count':len(exact)}
 
 def _client_configuration_current(row,registry):
+    return _client_configuration_evidence(row,registry)['current']
+
+def _client_configuration_evidence(row,registry):
+    """Read-only evidence; no installation/process/old read implies a live link."""
+    unknown={'current':None,'present':None,'state':'unknown'}
     if row.get('client_type') in {'workbuddy','opencode','zcode','kimi'}:
         # No managed config adapter exists for these clients. A saved pairing or
         # local conversation database is not evidence of a current MCP config.
         from .client_installation import state as installation_state
-        return False if installation_state(row['client_type'])=='absent' else None
+        return unknown|{'current':False if installation_state(row['client_type'])=='absent' else None}
     if row.get('client_type')=='claude':
         from .claude_extension import inspect_bundle
-        bundle=inspect_bundle()
-        return bool(bundle and bundle['client_id']==row['claimed_id'] and
-                    registry.configured_secret_matches(row['internal_id'],bundle['secret']))
-    if row.get('client_type') not in {'codex','hermes','dsh','cursor'}:return None
+        try:bundle=inspect_bundle()
+        except (OSError,ValueError):return unknown|{'state':'unreadable'}
+        matches=bool(bundle and bundle['client_id']==row['claimed_id'] and
+                     registry.configured_secret_matches(row['internal_id'],bundle['secret']))
+        # This verifies the prepared bundle, not whether Claude enabled it.
+        return {'current':matches,'present':bool(bundle),'state':'bundle_prepared' if matches else 'unknown'}
+    if row.get('client_type') not in {'codex','hermes','dsh','cursor'}:return unknown
     from .client_config import ADAPTERS, _entry_identity, _valid_entry
     try:
-        entry=ADAPTERS[row['client_type']].detect().get('entry')
+        adapter=ADAPTERS[row['client_type']]
+        path=getattr(adapter,'path',None)
+        if isinstance(path,Path) and path.is_file():adapter.validate(path.read_text('utf-8'))
+        detected=adapter.detect();entry=detected.get('entry')
+        if detected.get('config_exists') is False or entry is None:
+            return {'current':False,'present':False,'state':'missing'}
+        if isinstance(entry,dict) and entry.get('invalid_existing'):
+            return {'current':False,'present':True,'state':'invalid'}
+        if isinstance(entry,dict) and entry.get('enabled') is False:
+            return {'current':False,'present':True,'state':'disabled'}
         env=entry.get('env') if isinstance(entry,dict) else None
         secret=env.get('KNOWLEDGE_BRIDGE_CLIENT_SECRET') if isinstance(env,dict) else None
-        return bool(_entry_identity(entry)==row['claimed_id'] and
-                    _valid_entry(entry,row['claimed_id']) and
-                    registry.configured_secret_matches(row['internal_id'],secret))
-    except (OSError,ValueError):return False
+        try:
+            matches=bool(_entry_identity(entry)==row['claimed_id'] and _valid_entry(entry,row['claimed_id']) and
+                         registry.configured_secret_matches(row['internal_id'],secret))
+        except Exception:return unknown|{'present':True,'state':'unreadable'}
+        return {'current':matches,'present':True,'state':'valid' if matches else 'mismatch'}
+    except FileNotFoundError:return {'current':False,'present':False,'state':'missing'}
+    except OSError:return unknown|{'state':'unreadable'}
+    except Exception as exc:
+        import yaml
+        return {'current':False,'present':None,'state':'invalid'} if isinstance(exc,(ValueError,TypeError,AttributeError,yaml.YAMLError)) else unknown
 
 def _cursor_configuration_detail(row):
     if row.get('client_type')!='cursor':return {'present':None,'modified_at':None}
@@ -1129,7 +1153,8 @@ def api_client_access_status(request:Request):
     adapter_matrix=source_adapter_matrix()
     registered=[]
     for row in registry.list_clients():
-        configuration_current=_client_configuration_current(row,registry)
+        configuration_evidence=_client_configuration_evidence(row,registry)
+        configuration_current=configuration_evidence['current']
         from .client_installation import state as installation_state
         installation=installation_state(row.get('client_type'))
         configuration_detail=_cursor_configuration_detail(row)
@@ -1143,7 +1168,8 @@ def api_client_access_status(request:Request):
             "read_verification_current":_client_read_verification_current(row,client_policies,permissions,configuration_current,configuration_detail['modified_at']),
             "configuration_current":configuration_current,
             "installation_state":installation,
-            "configuration_present":configuration_detail['present'],
+            "configuration_present":configuration_detail['present'] if row.get('client_type')=='cursor' else configuration_evidence['present'],
+            "configuration_state":configuration_evidence['state'],
             "ordinary_read_policy":_client_ordinary_read_policy(row['internal_id'],client_policies,permissions),
             "source_adapter":client_adapter,
             'session_read_scopes': permissions.session_read_scopes(row['internal_id'],_protection_manager(request).protection_session_id) if row['status']!='revoked' else []})

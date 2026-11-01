@@ -32,7 +32,7 @@ class ProductRepairTests(unittest.TestCase):
         self.assertEqual(rows['messages'],before);self.assertEqual(len(rows['jobs']),2)
         parent=next(r for r in rows['jobs'] if r['id']==jid);new=next(r for r in rows['jobs'] if r['id']==result['id'])
         self.assertEqual(parent['reasoning'],'原始😀思考');self.assertTrue(parent['requested']['thinking']);self.assertEqual(parent['state'],'canceled')
-        self.assertFalse(new['requested']['thinking']);self.assertEqual(new['requested']['output_limit'],'max');self.assertEqual(new['parent_job'],jid)
+        self.assertFalse(new['requested']['thinking']);self.assertNotIn('output_limit',new['requested']);self.assertEqual(new['parent_job'],jid)
     def test_deletion_blocks_recovery_and_late_completion(self):
         sid,jid,job=self.job();new=self.service.answer_directly(jid)['id'];self.service.trash(sid)
         with self.assertRaises(ValueError):self.service.answer_directly(jid)
@@ -106,7 +106,7 @@ class ProductRepairTests(unittest.TestCase):
         for limit in ('max',8192):
             notice=output_notice({'thinking':True,'output_limit':limit},{'max_output_tokens':4000,'available_output_tokens':4000},'length',False)
             self.assertNotIn('提高',notice);self.assertIn('跳过思考',notice)
-        self.assertIn('提高',output_notice({'thinking':True,'output_limit':512},{'max_output_tokens':512,'available_output_tokens':4000},'length',False))
+        self.assertNotIn('提高',output_notice({'thinking':True,'output_limit':512},{'max_output_tokens':512,'available_output_tokens':4000},'length',False))
     def test_repeat_warning_is_conservative_and_not_a_setting_change(self):
         a='Wait, I need to check the System Prompt regarding Citations.'
         b='Wait, I need to check the System Prompt regarding Reference Materials.'
@@ -134,7 +134,7 @@ class ProductRepairTests(unittest.TestCase):
         client=httpx.Client(transport=httpx.MockTransport(handle));context={'user':{},'project':{},'state':{},'related_knowledge':[],'permissions':{'read_only':True}}
         with patch.object(self.service,'_context',return_value=(context,{})),patch('knowledge_bridge.local_butler.httpx.Client',return_value=client):self.service._execute(job)
         result=self.service.conversation(sid)['jobs'][0];self.assertIn('重复',result['reasoning_notice']);self.assertEqual(result['reasoning'],raw)
-        self.assertTrue(result['requested']['thinking']);self.assertTrue(result['effective']['thinking']);self.assertEqual(result['requested']['output_limit'],'max')
+        self.assertTrue(result['requested']['thinking']);self.assertTrue(result['effective']['thinking']);self.assertNotIn('output_limit',result['requested'])
         self.assertNotIn('提高',result['output_notice']);self.assertEqual(result['state'],'completed')
 
     def test_new_endpoints_preserve_owner_gate(self):

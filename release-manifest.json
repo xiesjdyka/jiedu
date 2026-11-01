@@ -13,8 +13,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 2453,
-      "sha256": "db8a6f876bc5f7ca69ca21350de278733246097739334a9de20ad73a4533119d"
+      "bytes": 2896,
+      "sha256": "a52a6eb0077d88893dae1086447a374be0ba3194e5f62886a2cca7f6b95f68b6"
     },
     {
       "path": ".gitignore",
@@ -38,13 +38,13 @@
     },
     {
       "path": "README.md",
-      "bytes": 8565,
-      "sha256": "17bf659ea36a7f674707d957b15f76b611bf40c0ab1f2207fe0f1230157bb132"
+      "bytes": 8601,
+      "sha256": "00897f522bdc9a1ccade7625676ac6ed1914de2546489dfe483d055ed7d36c10"
     },
     {
       "path": "RELEASE_NOTES.md",
-      "bytes": 11506,
-      "sha256": "d5e7919d96b3bd1c4a52e48a86a19189c4aa15803fd1f2fddfe2969d94de247e"
+      "bytes": 12699,
+      "sha256": "e811022e010287304993e96be8acda4321da606213ad950f74c8e37fb0b3b130"
     },
     {
       "path": "SECURITY.md",
@@ -59,7 +59,7 @@
     {
       "path": "VERSION",
       "bytes": 6,
-      "sha256": "6cf4e084b47f33c9b02ef79279d157833868f8f70514169a768be353ee328fea"
+      "sha256": "c62a5cc61ac4525935753f5ec284c0a052a4b1da4b3a3580dce2b7d77a2154ae"
     },
     {
       "path": "butler-resources.lock.json",
@@ -187,6 +187,11 @@
       "sha256": "f12b026174758b776a87410270623002580a0974417e97a3dae6f6acc2248651"
     },
     {
+      "path": "docs/changes-1.2.2.md",
+      "bytes": 1160,
+      "sha256": "3e32cfda173d23a8e3bc7e23efd41a067d32cd59cbe985744e20ba9d7a157329"
+    },
+    {
       "path": "docs/changes-20261024.md",
       "bytes": 4063,
       "sha256": "2173cd4185c0787a3da3d3d0e0f376b5955e648c2111e104482e3c02b01c8d7f"
@@ -223,8 +228,8 @@
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 10557,
-      "sha256": "aec3e5f62629758c095875e6fd98a73b7843e81842f340e0773b38676ea4d31f"
+      "bytes": 11105,
+      "sha256": "32a67ce39360b7151a66bd1f597a647adf28e6cc5c1ef32011dbb22ba1d1ebbf"
     },
     {
       "path": "docs/release-version.md",
@@ -284,7 +289,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 22,
-      "sha256": "3259b81af99bffac90c7051bbf62ac73e0491572cf83d1f556dda257bc17ac0e"
+      "sha256": "bae7f854db53340f777cc86802eafd61a7f368a2459dccd8f87d524824ae4554"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -353,8 +358,8 @@
     },
     {
       "path": "knowledge_bridge/butler_generation.py",
-      "bytes": 3279,
-      "sha256": "458d3509480469a37734bb1c89da21fb96f2c7eae7aadc0d52441db95e635edd"
+      "bytes": 3622,
+      "sha256": "25ca397dd74c5e38c7577140b924595df881ee842c58de6a56e751c5484ef707"
     },
     {
       "path": "knowledge_bridge/butler_import.py",
@@ -378,8 +383,8 @@
     },
     {
       "path": "knowledge_bridge/butler_provider.py",
-      "bytes": 37371,
-      "sha256": "faa647b44442aa3b3c071af693b6c64cb8aebdd589713bdfdeacf78842c2d577"
+      "bytes": 39496,
+      "sha256": "f40bcb0fc9884487e509c27c832a90923cf3659b68922eabdbfb4311282828fb"
     },
     {
       "path": "knowledge_bridge/butler_runtime.py",
@@ -408,8 +413,8 @@
     },
     {
       "path": "knowledge_bridge/claude_source_adapter.py",
-      "bytes": 18212,
-      "sha256": "8e422a44a9cdff4028456de34aa782d08f328ac3ad53d2c8f3333744d3bb5df9"
+      "bytes": 22496,
+      "sha256": "3f34ca7cf0d2c07f3d3a4aa5040ee083788c49e4455b3e1df56416088a79713b"
     },
     {
       "path": "knowledge_bridge/cli.py",
@@ -428,8 +433,8 @@
     },
     {
       "path": "knowledge_bridge/client_installation.py",
-      "bytes": 5256,
-      "sha256": "94587f5f13d89bc8f8ac79bbed92bc18f54452233c4ca171552445dfb6e839d5"
+      "bytes": 5255,
+      "sha256": "7c5c5a265fc52658c7908f555d0a5512252fcd9fffd4b3b297da972f350ce8d9"
     },
     {
       "path": "knowledge_bridge/client_pairing.py",
@@ -523,8 +528,8 @@
     },
     {
       "path": "knowledge_bridge/doubao_indexeddb_source.py",
-      "bytes": 24745,
-      "sha256": "b335910c8f4d5ca8aa09870d2756156737c59bc4ef5e69c8bb110be4d17975dc"
+      "bytes": 30820,
+      "sha256": "4bed16dbe2618567b3882696cb77ebb359b377863fff866af6e8b01758bdb331"
     },
     {
       "path": "knowledge_bridge/doubao_session_adapter.py",
@@ -663,8 +668,8 @@
     },
     {
       "path": "knowledge_bridge/local_butler.py",
-      "bytes": 92904,
-      "sha256": "bc81ba781dd48317a3616a2e88f53c0f944b6cb7c73b6d14df31bf3d659eaee8"
+      "bytes": 92765,
+      "sha256": "cdf474378e6cae8a666a62489f13dd8be4c8e4ea3b7f76d88346ce6ec31422b0"
     },
     {
       "path": "knowledge_bridge/local_ocr.py",
@@ -903,8 +908,8 @@
     },
     {
       "path": "knowledge_bridge/web.py",
-      "bytes": 189409,
-      "sha256": "dfe9cbde7bfcd63a5fb41af3da66c76f3e44a31909271fbd38d2ae4a92e586d0"
+      "bytes": 191286,
+      "sha256": "2b0df89f259b2f0b361ac40cf01a1f03339478b3ff0cea7171f9001071acce3a"
     },
     {
       "path": "knowledge_bridge/wiki_daily_runs.py",
@@ -983,13 +988,13 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 12548,
-      "sha256": "53085ad2108c7cab247db5d94b079c4b6192431c49bbf3b9ff0a217b1be9dd68"
+      "bytes": 12709,
+      "sha256": "321d015286e23a43c318a50cf3d95227f863c6965e78ab7f829b0ba15a700d19"
     },
     {
       "path": "pyproject.toml",
       "bytes": 1108,
-      "sha256": "ae13caeb8a8bee2ace7117cfce6eb83338afe2edb5d312d4d1a0b75bdc3d1ef0"
+      "sha256": "1ee06c08d7294d4d5dea1a4ba686265f2772635d3c873078b92af24a7b275a9f"
     },
     {
       "path": "requirements.lock.txt",
@@ -1043,8 +1048,8 @@
     },
     {
       "path": "static/app.js",
-      "bytes": 398199,
-      "sha256": "8bf170df7caff05d6a4636655e7c65fc95ae727e3957ad342553fb17890eb8a1"
+      "bytes": 402367,
+      "sha256": "fa3dab6914f0c15ab074daaa9f39a05d0ccbcbde52a9229ffbf9006ef26f25c0"
     },
     {
       "path": "static/brand/jiedu-256.png",
@@ -1058,8 +1063,8 @@
     },
     {
       "path": "static/butler-controls.js",
-      "bytes": 74477,
-      "sha256": "b7e6901c39ae7704acc6f9082d9b4443127b21260e57ea1075b5c5d58de10467"
+      "bytes": 74521,
+      "sha256": "6355f2fa59653bff79fc81dd431f775900c7ac102854f21d54ab215c6398c66c"
     },
     {
       "path": "static/butler.css",
@@ -1068,8 +1073,8 @@
     },
     {
       "path": "static/butler.js",
-      "bytes": 70928,
-      "sha256": "5a360f59c828e9ebe302d284ca3aae8eac11307cbc3c29d42052c1c866f3dd68"
+      "bytes": 69141,
+      "sha256": "be944efd078fb3e46a04501f7f0dd8e984ffaa2f0490b295a1574ef36b7b6e3e"
     },
     {
       "path": "static/codex-archive.js",
@@ -1083,8 +1088,8 @@
     },
     {
       "path": "static/index.html",
-      "bytes": 57864,
-      "sha256": "959cab722ef5bb99698a7621682bb06f78b7e7c2cbdcd540b71edb50e1f37312"
+      "bytes": 56903,
+      "sha256": "77117c3e703d804775db9b43a638f94874d032efb7e8d5dfed07a19548811313"
     },
     {
       "path": "static/local-chat-collectors.js",
@@ -1323,8 +1328,8 @@
     },
     {
       "path": "tests/test_butler_default_budget.py",
-      "bytes": 7120,
-      "sha256": "1512efb9bc9d84494dd33ac0fbc32e0e4424e0d3cd1d4d4965d17885e32c3b3d"
+      "bytes": 9631,
+      "sha256": "d5d1ca6ff99e282b98cd8994c28748699edf02c5bb7301fcf97465cad2061ab2"
     },
     {
       "path": "tests/test_butler_external_history.py",
@@ -1333,8 +1338,8 @@
     },
     {
       "path": "tests/test_butler_generation.py",
-      "bytes": 15578,
-      "sha256": "d5da53c062f684f2e9e0ac4dc03c84806ac135e745e34e47f5b0452623e18ee8"
+      "bytes": 15754,
+      "sha256": "f7d87e0be068f8d85de8f8b40dabd734d722279f8f1cbb5aa28b6bedcded9851"
     },
     {
       "path": "tests/test_butler_identity_scope.py",
@@ -1352,14 +1357,19 @@
       "sha256": "29f7ba865883c87282b16c812c8984da66a1c810dd172adc51dc86b95f613f5b"
     },
     {
+      "path": "tests/test_butler_output_controls.py",
+      "bytes": 7300,
+      "sha256": "396ae7ff8ecdf76c993a806e0cd74af642408c30aa7e2e0dca02e9a227c5253c"
+    },
+    {
       "path": "tests/test_butler_permissions.py",
       "bytes": 4296,
       "sha256": "b028dfba3e81ab27ca8e58196b0aa70eed1a8e814f495720cf040c97103f6ff1"
     },
     {
       "path": "tests/test_butler_product_repair.py",
-      "bytes": 12929,
-      "sha256": "e7d9da82a3056f613a0bfdff00de5bfa408a1713ed4b9cd3f40bd2966d5135e5"
+      "bytes": 12918,
+      "sha256": "963a8578459b1bd84e201f032220cb4221d8b1910653b359b776263be3b59855"
     },
     {
       "path": "tests/test_butler_product_status.py",
@@ -1368,8 +1378,8 @@
     },
     {
       "path": "tests/test_butler_provider.py",
-      "bytes": 14489,
-      "sha256": "5ba6693e022c57de395d684f78a414afb68b3f25cab7a48a8cf9469519376bd2"
+      "bytes": 18436,
+      "sha256": "bbd5a8c51412b9bc0846c17e3c1d912265a7d7d10828c7056cd592bb7b5b0691"
     },
     {
       "path": "tests/test_butler_request_context.py",
@@ -1412,6 +1422,11 @@
       "sha256": "ab61fb05d985de7a24ac7d77643dee2b91cfd353811775230235d03648cc2fe9"
     },
     {
+      "path": "tests/test_claude_source_recovery.py",
+      "bytes": 12698,
+      "sha256": "fabfa5445c953ad39b7ecc72a5d7ef1ba9854eb419de89c8ec6b0e40988c2e7a"
+    },
+    {
       "path": "tests/test_client_access.py",
       "bytes": 22803,
       "sha256": "fff9dcc323ac22f63b53d609fb4ee3bbfe5395946648eb5ed3a494b7a3beb493"
@@ -1430,6 +1445,16 @@
       "path": "tests/test_client_permissions.py",
       "bytes": 1518,
       "sha256": "907b91f634f71c1328728e157b58b1312581375419a769e5f3a798e7855a49cc"
+    },
+    {
+      "path": "tests/test_client_status.py",
+      "bytes": 8082,
+      "sha256": "9c35f110f2e986b8506313c9ee6d693adb804aaa7dda42a517d0c5c3934ad514"
+    },
+    {
+      "path": "tests/test_client_status_frontend.js",
+      "bytes": 17673,
+      "sha256": "38682451d0dec7d743a148296bd15c6dc75b5ecdf72c19a385193c6f67271724"
     },
     {
       "path": "tests/test_codex_format_repair.py",
