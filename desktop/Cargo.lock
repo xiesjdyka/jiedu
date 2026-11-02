@@ -1736,7 +1736,7 @@ dependencies = [
 
 [[package]]
 name = "jiedu-desktop"
-version = "1.2.1"
+version = "1.2.3"
 dependencies = [
  "serde_json",
  "tauri",

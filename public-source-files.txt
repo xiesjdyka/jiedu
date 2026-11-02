@@ -36,6 +36,7 @@ docs/archive-recovery.md
 docs/changes-1.1.10.md
 docs/changes-1.2.1.md
 docs/changes-1.2.2.md
+docs/changes-1.2.3.md
 docs/changes-20261024.md
 docs/dependencies.json
 docs/development.md
@@ -375,6 +376,7 @@ tests/test_retrieval_contention.py
 tests/test_review_display.py
 tests/test_session_manager.py
 tests/test_session_protection.py
+tests/test_service_creation.py
 tests/test_source_adapter_selection.py
 tests/test_source_adapters.py
 tests/test_source_channel_semantics.py

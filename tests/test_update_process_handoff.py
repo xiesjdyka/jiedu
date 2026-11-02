@@ -67,15 +67,19 @@ class BytecodeFreeServiceTests(unittest.TestCase):
             self.assertFalse(process_runtime.matches(changed,{**changed,'role':'console','launch_id':TOKEN},{'synthetic-python.exe'}))
 
     def test_broker_command_disables_bytecode_without_starting_process(self):
-        result=MagicMock(returncode=0,stdout=b'{"ReturnValue":0,"ProcessId":12345}')
-        with patch.object(process_runtime.subprocess,'run',return_value=result) as run,patch.dict(os.environ,{'SystemRoot':'C:/Windows'},clear=True):
-            self.assertEqual(12345,process_runtime.spawn_service('synthetic-python.exe','synthetic-program','console',TOKEN,'synthetic-workspace','synthetic-control'))
+        result=MagicMock(returncode=0,stdout=b'{"ReturnValue":0,"ProcessId":12345,"Created":100}')
+        record={'pid':12345,'created':100,'executable':os.path.normcase(os.path.realpath('synthetic-python.exe')),
+                'argv':['synthetic-python.exe','-B','-m','knowledge_bridge.cli','console','--launch-id',TOKEN,
+                        '--vault','synthetic-workspace','--local-data','synthetic-control']}
+        with patch.object(process_runtime.subprocess,'run',return_value=result) as run,patch.object(process_runtime,'identity',return_value=record),patch.dict(os.environ,{'SystemRoot':'C:/Windows'},clear=True):
+            self.assertEqual(record|{'creation_method':'wmi-breakaway','creation_flags':16777224},process_runtime.spawn_service('synthetic-python.exe','synthetic-program','console',TOKEN,'synthetic-workspace','synthetic-control'))
         self.assertIn('synthetic-python.exe -B -m knowledge_bridge.cli console',run.call_args.args[0][-1])
 
 
 class LauncherUpdateTests(unittest.TestCase):
     def setUp(self):
-        root=Path(tempfile.mkdtemp(prefix='cooperative-update-'))
+        temporary=tempfile.TemporaryDirectory(prefix='cooperative-update-');self.addCleanup(temporary.cleanup)
+        root=Path(temporary.name)
         self.launcher=object.__new__(Launcher)
         self.launcher.bridge_dir=root/'app/.jiedu/program'
         self.launcher.bridge_dir.mkdir(parents=True)

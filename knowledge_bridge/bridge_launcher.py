@@ -10,7 +10,7 @@ import time
 import urllib.request
 import uuid
 from filelock import FileLock, Timeout
-from .process_runtime import atomic_json, identity, matches, terminate_owned, launch_processes, spawn_service, in_job, image_processes, wait_identity_exit
+from .process_runtime import atomic_json, identity, matches, terminate_owned, launch_processes, spawn_service, image_processes, wait_identity_exit
 from datetime import datetime, timezone
 from pathlib import Path
 from .workspace import resolve_workspace_root
@@ -135,13 +135,18 @@ class Launcher:
 
     def _spawn(self, role, token, log_handle):
         executable = self.pythonw if self.pythonw.exists() else self.python
-        pid = spawn_service(executable,self.bridge_dir,role,token,self.vault,self.local_data,
+        record = spawn_service(executable,self.bridge_dir,role,token,self.vault,self.local_data,
                             model_precision=self.runtime_profile['model_precision'],
                             embedding_batch_size=self.runtime_profile['embedding_batch_size'],
                             embedding_duty_cycle=self.runtime_profile['embedding_duty_cycle'])
-        if in_job(pid):
-            raise OSError("独立启动核验失败：启动壳仍位于Windows Job中；已拒绝交付附属服务")
-        return pid
+        record = record | {"role": role, "launch_id": token}
+        if not matches(record, record, self.allowed_images):
+            raise OSError("独立启动身份不属于本次服务；已拒绝交付")
+        # Win32_Process.Create with BREAKAWAY is the independent broker boundary.
+        # A different system/provider Job is not evidence of caller attachment.
+        # Keep the broker-verified birth identity through persistence and cleanup;
+        # service readiness is still checked by _observe below.
+        return record
 
     def _port_open(self):
         with socket.socket() as probe:
@@ -186,11 +191,8 @@ class Launcher:
             self.save(state)
             with self.log_path.open("a", encoding="utf-8") as log_handle:
                 for role in ("console", "watch"):
-                    pid = self._spawn(role, state["launch_id"], log_handle)
-                    record = identity(pid)
-                    if record:
-                        record.update(role=role, launch_id=state["launch_id"])
-                        state["wrappers"].append(record)
+                    record = self._spawn(role, state["launch_id"], log_handle)
+                    state["wrappers"].append(record)
                     self.save(state)
                 deadline = time.monotonic() + wait
                 while time.monotonic() < deadline:

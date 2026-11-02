@@ -193,12 +193,17 @@ def image_processes(executable):
     return sorted(result, key=lambda record: (record['pid'], record['created']))
 
 
-def in_job(pid):
+def in_job(pid, job_handle=None):
+    """Query a specific Job, or any Job when no handle is supplied.
+
+    Any-Job membership alone does not identify a process's lifetime owner.
+    WMI and system-managed Jobs can be independent of the initiating desktop.
+    """
     k = _kernel(); handle = k.OpenProcess(0x1000, False, int(pid))
     if not handle: raise ctypes.WinError(ctypes.get_last_error())
     try:
         member = w.BOOL()
-        if not k.IsProcessInJob(handle, None, ctypes.byref(member)):
+        if not k.IsProcessInJob(handle, job_handle, ctypes.byref(member)):
             raise ctypes.WinError(ctypes.get_last_error())
         return bool(member.value)
     finally:
@@ -233,6 +238,9 @@ def spawn_service(executable, bridge_dir, role, token, vault, local_data, *, mod
     CREATE_BREAKAWAY_FROM_JOB alone can leave a process in an outer nested Job.
     No scheduled task, service installation, credentials or persistent OS settings.
     Pass only paths and a non-secret launch token; the child opens its own logs.
+    Return the verified creation identity, not a PID to re-open later. The broker
+    captures the Windows birth time; executable and exact arguments must also
+    match. A successful Create is not application readiness (Launcher checks it).
     """
     arguments = [str(executable), "-B", "-m", "knowledge_bridge.cli", role,
                                       "--launch-id", token, "--vault", str(vault),
@@ -252,17 +260,35 @@ def spawn_service(executable, bridge_dir, role, token, vault, local_data, *, mod
               "$taskResult=Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments "
               "@{CommandLine=" + quote(command) + ";CurrentDirectory=" + quote(bridge_dir) +
               ";ProcessStartupInformation=$taskStartup}; "
-              "$taskResult | Select-Object ReturnValue,ProcessId | ConvertTo-Json -Compress")
+              "$taskCreated=$null; if($taskResult.ReturnValue -eq 0){ "
+              "$taskProcess=[System.Diagnostics.Process]::GetProcessById([int]$taskResult.ProcessId); "
+              "try { $taskCreated=$taskProcess.StartTime.ToUniversalTime().ToFileTimeUtc() } "
+              "finally { $taskProcess.Dispose() } }; "
+              "[pscustomobject]@{ReturnValue=$taskResult.ReturnValue;ProcessId=$taskResult.ProcessId;"
+              "Created=$taskCreated} | ConvertTo-Json -Compress")
     powershell = Path(os.environ["SystemRoot"]) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
     result = subprocess.run([str(powershell), "-NoProfile", "-NonInteractive", "-Command", script],
                             stdin=subprocess.DEVNULL, capture_output=True, timeout=30,
                             creationflags=subprocess.CREATE_NO_WINDOW)
     if result.returncode:
         raise OSError("Windows独立进程创建接口失败；请查看WMI/CIM可用性，未回退到宿主附属启动")
-    response = json.loads(result.stdout)
+    try:
+        response = json.loads(result.stdout)
+    except (ValueError, TypeError) as exc:
+        raise OSError("Windows独立启动回执无效；未接受未经核验的进程") from exc
+    if not isinstance(response, dict) or type(response.get("ReturnValue")) is not int:
+        raise OSError("Windows独立启动回执不完整；未接受未经核验的进程")
     if response.get("ReturnValue") != 0:
         raise OSError(f"Windows独立启动失败，返回码 {response.get('ReturnValue')}；未回退到宿主附属启动")
-    return int(response["ProcessId"])
+    pid, created = response.get("ProcessId"), response.get("Created")
+    if type(pid) is not int or pid <= 0 or type(created) is not int or created <= 0:
+        raise OSError("Windows独立启动缺少有效出生身份；未接受未经核验的进程")
+    record = identity(pid)
+    if (not record or record.get("created") != created
+            or record.get("executable") != os.path.normcase(os.path.realpath(executable))
+            or record.get("argv") != arguments):
+        raise OSError("Windows独立启动身份不一致或进程已退出；未按返回PID接管进程")
+    return record | {"creation_method": "wmi-breakaway", "creation_flags": 16777224}
 
 
 def terminate_owned(expected, allowed_images):

@@ -1,3 +1,9 @@
+# 1.2.3 发布状态
+
+1.2.3 修复部分 Windows 环境中独立后台启动被错误拒绝的问题，准备通过完整 Windows 安装器交付，新用户无需先安装旧版。启动仍须通过进程身份及控制台、Watcher 就绪检查；窗口出现或安装文件完整都不能替代实际可用性验收。实际源码、安装器、签名清单及发布状态以 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.3) 为准，本文本身不表示已经发布。详见[本次变化](changes-1.2.3.md)。
+
+以下为历史版本记录。
+
 # 1.2.2 发布状态
 
 1.2.2 修复管家输出容量、Claude 本地采集和客户端状态刷新，通过程序更新包交付，保留 1.2.1 原生外壳及运行资源。新用户先安装 [1.2.1 基础包](https://github.com/xiesjdyka/jiedu/releases/download/1.2.1/Jiedu-1.2.1-windows-x64-setup.exe)，再在应用内检查更新至 1.2.2。实际源码、签名清单和发布状态以 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.2) 为准。详见[本次变化](changes-1.2.2.md)。
