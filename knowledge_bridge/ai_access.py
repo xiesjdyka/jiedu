@@ -10,8 +10,6 @@ import hashlib
 import json
 import os
 import re
-import urllib.error
-import urllib.request
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,6 +23,7 @@ from .knowledge_base import load as load_knowledge_base, markdown_files
 REQUESTS = active_workspace().queues / "change-requests.jsonl"
 FORMAL_PREFIXES = ("00_系统/", "01_当前状态/", "02_项目/", "03_知识/")
 RAW_PREFIX = "90_原始档案/"
+CONSOLE_SEARCH_TIMEOUT_SECONDS = 60.0
 
 
 def _now() -> str:
@@ -39,29 +38,24 @@ def _console_search(context, query: str, *, mode: str, scope: str, limit: int,
     sent only to the configured loopback listener and never placed in the URL.
     """
     from .bridge_settings import load_settings
+    from .mcp_console import ConsoleHTTPError, post_console
     client_id=os.environ.get('KNOWLEDGE_BRIDGE_CLIENT_ID') or ''
     secret=os.environ.get('KNOWLEDGE_BRIDGE_CLIENT_SECRET') or ''
     if not client_id or not secret:raise PermissionError('Console 语义检索需要已认证客户端')
     settings=load_settings();host=settings['console']['host'];port=int(settings['console']['port'])
     if host!='127.0.0.1':raise ConnectionError('Console 不是本机回环地址')
-    body=json.dumps({'query':query,'mode':mode,'scope':scope,'limit':limit,'source_type':source_type,'folder':folder,
-                     'project':project,'candidate_budget':candidate_budget,
-                     'excerpt_budget':excerpt_budget},ensure_ascii=False).encode('utf-8')
-    request=urllib.request.Request(f'http://127.0.0.1:{port}/api/internal/mcp-search',data=body,
-        method='POST',headers={'Content-Type':'application/json','Authorization':f'JieduClient {client_id}:{secret}',
-                               'X-Jiedu-Workspace-ID':context.workspace_id})
+    body={'query':query,'mode':mode,'scope':scope,'limit':limit,'source_type':source_type,'folder':folder,
+          'project':project,'candidate_budget':candidate_budget,'excerpt_budget':excerpt_budget}
     try:
-        # Evidence freshness may require one bounded incremental generation
-        # before the query can run.  At the production 50% duty cycle this can
-        # legitimately exceed the old 20-second transport timeout.
-        with urllib.request.urlopen(request,timeout=60) as response:
-            return json.loads(response.read(65537).decode('utf-8'))
-    except urllib.error.HTTPError as exc:
-        if exc.code in {401,403}:raise PermissionError('Console 拒绝客户端身份或检索权限') from None
-        if exc.code==409:raise ValueError('Console 工作区不匹配或尚未就绪') from None
-        raise ConnectionError(f'Console 检索返回 HTTP {exc.code}') from None
-    except (OSError,ValueError,json.JSONDecodeError) as exc:
-        raise ConnectionError('Console 单实例当前不可用') from exc
+        # At the production duty cycle, evidence freshness can take more than
+        # 20 seconds. Keep the tool budget and enforce it as a total deadline.
+        return post_console(port, '/api/internal/mcp-search', body,
+            authorization=f'JieduClient {client_id}:{secret}', workspace_id=context.workspace_id,
+            timeout=CONSOLE_SEARCH_TIMEOUT_SECONDS, max_bytes=65536)
+    except ConsoleHTTPError as exc:
+        if exc.status in {401,403}:raise PermissionError('Console 拒绝客户端身份或检索权限') from None
+        if exc.status==409:raise ValueError('Console 工作区不匹配或尚未就绪') from None
+        raise ConnectionError(f'Console 检索返回 HTTP {exc.status}') from None
 
 
 def _excerpt(text: str, positions: list[int], radius: int = 180) -> str:
@@ -90,7 +84,9 @@ def knowledge_search(query: str, limit: int = 10, include_raw: bool = False, sco
             result=_console_search(context,query,mode=mode,scope=scope,limit=limit,source_type=source_type,folder=folder,
                                    project=project,candidate_budget=candidate_budget,excerpt_budget=excerpt_budget)
             result['retrieval_process']='console_single_instance'
-        except ConnectionError as exc:
+        except (ConnectionError, TimeoutError) as exc:
+            if mode == 'vector':
+                raise
             service.vector_backend_reason=f'{exc}；本次使用有界段落检索。'
             result=service.search(query,mode=mode,scope=scope,limit=limit,include_context=False,
                                   source_type=source_type,folder=folder,project=project,candidate_budget=candidate_budget,excerpt_budget=excerpt_budget)

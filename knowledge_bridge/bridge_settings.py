@@ -5,7 +5,6 @@ import os
 import socket
 from pathlib import Path
 
-from .core import ROOT
 from .workspace import local_path
 
 

@@ -19,13 +19,17 @@ from .workspace import local_path
 
 
 BUNDLE = local_path("client-config") / "jiedu-claude.mcpb"
-VERSION = "1.1.9"
+VERSION = "1.1.10"
 ENTRY_POINT = "server/index.js"
 MAX_BUNDLE_BYTES = 512 * 1024
 _SHIM = r'''"use strict";
 const { spawn } = require("node:child_process");
-function fail(message) {
+const { StringDecoder } = require("node:string_decoder");
+function diagnostic(message) {
   process.stderr.write("Jiedu MCP: " + message + "\n");
+}
+function fail(message) {
+  diagnostic(message);
   process.exitCode = 1;
 }
 function validString(value) {
@@ -34,6 +38,48 @@ function validString(value) {
 function readJson(value, name) {
   try { return JSON.parse(value); }
   catch { throw new Error(name + " must contain valid JSON."); }
+}
+function observeInitialize() {
+  let initializeId;
+  function observe(match) {
+    const decoder = new StringDecoder("utf8");
+    let pending = "";
+    let active = true;
+    return chunk => {
+      if (!active) return;
+      pending += decoder.write(chunk);
+      let newline;
+      while ((newline = pending.indexOf("\n")) !== -1) {
+        const line = pending.slice(0, newline);
+        pending = pending.slice(newline + 1);
+        try {
+          if (match(JSON.parse(line))) {
+            active = false;
+            pending = "";
+            return;
+          }
+        } catch { /* The MCP server owns protocol parsing. */ }
+      }
+      if (pending.length > 65536) {
+        active = false;
+        pending = "";
+      }
+    };
+  }
+  return {
+    request: observe(frame => {
+      if (frame?.method !== "initialize" || !Object.hasOwn(frame, "id")) return false;
+      initializeId = frame.id;
+      diagnostic("initialize received.");
+      return true;
+    }),
+    response: observe(frame => {
+      if (initializeId === undefined || frame?.id !== initializeId ||
+          (!Object.hasOwn(frame, "result") && !Object.hasOwn(frame, "error"))) return false;
+      diagnostic("initialize response written.");
+      return true;
+    }),
+  };
 }
 function launch() {
   const { JIEDU_COMMAND: command, JIEDU_ARGS_JSON: argsJson,
@@ -60,11 +106,12 @@ function launch() {
     fail("could not start because " + reason + " (" + code + ").");
   }
   let child;
+  diagnostic("starting Python stdio server.");
   try {
     child = spawn(command, args, {
       cwd: cwd || undefined,
       env: { ...parentEnv, ...extra },
-      stdio: "inherit",
+      stdio: ["pipe", "pipe", "pipe"],
       shell: false,
       windowsHide: true,
     });
@@ -72,13 +119,48 @@ function launch() {
     launchError(error);
     return;
   }
+  const initialize = observeInitialize();
+  // Claude's utility process virtualizes process.stdin/stdout in JavaScript.
+  // Inheriting OS handles bypasses that message channel entirely.
+  child.once("spawn", () => diagnostic("Python stdio pipes connected."));
   child.once("error", launchError);
-  child.once("exit", (code, signal) => {
+  process.stdin.on("data", initialize.request);
+  process.stdin.pipe(child.stdin);
+  child.stderr.pipe(process.stderr, { end: false });
+  child.stdin.on("error", error => {
+    if (!["EPIPE", "ERR_STREAM_DESTROYED"].includes(error.code)) {
+      fail("could not write to Python stdin.");
+      child.kill();
+    }
+  });
+  child.stdout.on("data", chunk => {
+    child.stdout.pause();
+    process.stdout.write(chunk, error => {
+      if (error) {
+        child.kill();
+        return;
+      }
+      initialize.response(chunk);
+      child.stdout.resume();
+    });
+  });
+  process.stdout.on("error", () => child.kill());
+  process.stdin.on("error", () => child.kill());
+  process.once("exit", () => child.kill());
+  process.once("SIGTERM", () => child.kill());
+  process.once("SIGINT", () => child.kill());
+  child.once("close", (code, signal) => {
+    process.stdin.unpipe(child.stdin);
+    process.stdin.removeListener("data", initialize.request);
+    process.stdin.pause();
     if (signal) fail("the child was terminated by " + signal + ".");
-    else if (code !== 0) {
+    else if (Number.isInteger(code) && code !== 0) {
       fail("the child exited with code " + code + ".");
       if (Number.isInteger(code) && code > 0) process.exitCode = code;
     }
+    // Utility processes keep Claude's message port referenced even after the
+    // child exits. Wait for queued stdout writes before closing that host.
+    if (process.parentPort) process.stdout.write("", () => process.exit(process.exitCode || 0));
   });
 }
 launch();
@@ -87,9 +169,10 @@ launch();
 
 def _manifest(client_id: str, secret: str) -> dict:
     launch = _command(client_id, secret)
+    launch_env = {**launch["env"], "KNOWLEDGE_BRIDGE_REQUIRE_PAIRED_CLIENT": "1"}
     env = {"JIEDU_COMMAND": launch["command"],
            "JIEDU_ARGS_JSON": json.dumps(launch["args"]),
-           "JIEDU_ENV_JSON": json.dumps(launch["env"]),
+           "JIEDU_ENV_JSON": json.dumps(launch_env),
            "JIEDU_CWD": launch.get("cwd") or ""}
     return {"manifest_version": "0.3", "name": "jiedu-knowledge-bridge",
             "display_name": "界渡知识库", "version": VERSION,
@@ -127,7 +210,7 @@ def inspect_bundle(path: Path | None = None, *, data: bytes | None = None,
             if names.count("manifest.json") != 1 or archive.getinfo("manifest.json").file_size > MAX_BUNDLE_BYTES:
                 return None
             manifest = json.loads(archive.read("manifest.json"))
-            if manifest.get("name") != "jiedu-knowledge-bridge" or manifest.get("version") not in {"1.1.8", VERSION}:
+            if manifest.get("name") != "jiedu-knowledge-bridge" or manifest.get("version") not in {"1.1.8", "1.1.9", VERSION}:
                 return None
             env = manifest["server"]["mcp_config"]["env"]
             launch_env = json.loads(env["JIEDU_ENV_JSON"])

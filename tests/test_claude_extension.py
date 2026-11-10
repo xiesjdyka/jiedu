@@ -1,5 +1,6 @@
 """Exercise private MCPB generation, renewal and its real Windows stdio entry."""
 from io import BytesIO
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -93,7 +95,7 @@ class ClaudeBundleTests(unittest.TestCase):
         self.assertEqual(before, self.permissions.policies(self.internal_id))
         current = self.bundle.read_bytes()
         with zipfile.ZipFile(BytesIO(current)) as archive:
-            self.assertEqual("1.1.9", json.loads(archive.read("manifest.json"))["version"])
+            self.assertEqual(extension.VERSION, json.loads(archive.read("manifest.json"))["version"])
             self.assertIsNone(archive.testzip())
         self.manager.quick_connect("claude")
         self.assertEqual(current, self.bundle.read_bytes())
@@ -236,6 +238,87 @@ class ClaudeBundleTests(unittest.TestCase):
                 self.assertEqual(b"", result.stdout)
                 self.assertIn(expected, result.stderr)
                 self.assertNotIn(self.secret.encode(), result.stderr)
+
+    @unittest.skipUnless(shutil.which("node"), "Node is required for the MCPB entry test")
+    def test_extracted_entry_reads_virtual_stdin_instead_of_the_os_handle(self):
+        self.prepare()
+        command, env = self.extract_launch()
+        host = r"""
+const { PassThrough } = require("node:stream");
+const input = new PassThrough();
+const output = process.stdout.write.bind(process.stdout);
+Object.defineProperty(process, "stdin", { value: input });
+let pending = "";
+process.stdout.write = (chunk, ...args) => {
+  const sent = output(chunk, ...args);
+  pending += chunk.toString();
+  if (pending.includes("\n")) input.end();
+  return sent;
+};
+require(process.argv[1]);
+input.write(JSON.stringify({
+  jsonrpc: "2.0", id: 0, method: "initialize", params: {
+    protocolVersion: "2025-11-25", capabilities: {},
+    clientInfo: { name: "virtual-stdio-fixture", version: "1" },
+  },
+}) + "\n");
+"""
+        with tempfile.TemporaryFile() as stderr, subprocess.Popen(
+            [command[0], "-e", host, command[1]], env=env, cwd=self.root,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr,
+        ) as process:
+            # Leave the OS stdin handle open and empty until after the reply.
+            try:
+                process.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
+                self.fail("The extracted MCPB did not respond over virtual stdin")
+            lines = process.stdout.read().splitlines()
+            self.assertEqual(0, process.returncode)
+            self.assertEqual(1, len(lines))
+            message = json.loads(lines[0])
+            self.assertEqual(0, message["id"])
+            self.assertEqual("2025-11-25", message["result"]["protocolVersion"])
+            stderr.seek(0)
+            diagnostics = stderr.read()
+            self.assertIn(b"initialize received", diagnostics)
+            self.assertIn(b"initialize response written", diagnostics)
+            self.assertNotIn(self.secret.encode(), diagnostics)
+
+    def test_console_deadline_expires_even_if_the_peer_keeps_sending_bytes(self):
+        from knowledge_bridge.mcp_console import post_console
+
+        stopped = threading.Event()
+
+        class SlowConsole(BaseHTTPRequestHandler):
+            def log_message(self, format, *args):
+                pass
+
+            def do_POST(self):
+                self.rfile.read(int(self.headers["Content-Length"]))
+                self.send_response(200)
+                self.end_headers()
+                try:
+                    self.wfile.write(b"{")
+                    while not stopped.wait(0.04):
+                        self.wfile.write(b" ")
+                        self.wfile.flush()
+                except OSError:
+                    pass
+
+        with ThreadingHTTPServer(("127.0.0.1", 0), SlowConsole) as console:
+            thread = threading.Thread(target=console.serve_forever, daemon=True)
+            thread.start()
+            try:
+                started = time.monotonic()
+                with self.assertRaisesRegex(TimeoutError, "请求超时"):
+                    post_console(console.server_port, "/fixture", {}, authorization="synthetic", timeout=0.5)
+                self.assertLess(time.monotonic() - started, 2)
+            finally:
+                stopped.set()
+                console.shutdown()
+                thread.join(timeout=2)
 
 
 if __name__ == "__main__":

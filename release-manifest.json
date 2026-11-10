@@ -38,8 +38,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 8558,
-      "sha256": "28683d628c4ebaedd9db55d6c8dd8426a8d528707ac52b2a668ea23afb913efb"
+      "bytes": 8674,
+      "sha256": "daef1dd65e5a77b274a1ae6844d9508a4f4be37f75fc93180499b73d2ea6077a"
     },
     {
       "path": "RELEASE_NOTES.md",
@@ -59,7 +59,7 @@
     {
       "path": "VERSION",
       "bytes": 6,
-      "sha256": "563a0b4eec3c77bbc34ac630d4fa5214f5c6726ae01468404fd704473110084e"
+      "sha256": "fe2b7c237b5a6e42818aa3e4f7fc5820f49c32289c32c96260ef89a8c8f6d3d7"
     },
     {
       "path": "butler-resources.lock.json",
@@ -202,6 +202,11 @@
       "sha256": "b379432513e5e1b1dedc30c0568fae34bab97e4067f625e39217349864772934"
     },
     {
+      "path": "docs/changes-1.2.5.md",
+      "bytes": 1490,
+      "sha256": "ca03b0f71f4a28d0ee7ef1619b6f9685364e61b57c9bdd6d7bff140d1cddf718"
+    },
+    {
       "path": "docs/changes-20261024.md",
       "bytes": 4063,
       "sha256": "2173cd4185c0787a3da3d3d0e0f376b5955e648c2111e104482e3c02b01c8d7f"
@@ -238,8 +243,8 @@
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 11982,
-      "sha256": "9d82083f92b8cdde5b6f25bd91b4994f38b862abfc4eae8c08fff5181431d87a"
+      "bytes": 12296,
+      "sha256": "6aa2cc55260efb0c395a55296fbc5f7e905403afe224fe19ae2d8f7c07856af6"
     },
     {
       "path": "docs/release-version.md",
@@ -299,12 +304,12 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 22,
-      "sha256": "5c1287f04d4b983c6fd3a537f72a8c05b5d96a93844458080840d866cfe446ca"
+      "sha256": "8c19997f71cb6e24255a2a253ac000e89e7e05bc570f66ea16a12a0c7de57eaa"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
-      "bytes": 8046,
-      "sha256": "d642c214120e60022c7a36f26bb988c22ab1df7d04ebd654633875a4f33e71c8"
+      "bytes": 7698,
+      "sha256": "5bab304b26a70cf157abe469d7463d0fa5d13500a3eefe58c80435ba36b53aa0"
     },
     {
       "path": "knowledge_bridge/ai_chat_bridge.py",
@@ -358,8 +363,8 @@
     },
     {
       "path": "knowledge_bridge/bridge_settings.py",
-      "bytes": 4836,
-      "sha256": "f95b3f20df7e5b69e74f953685b874a219cc1f042e5a245a894ac555360eb585"
+      "bytes": 4813,
+      "sha256": "a4bcfb5bbf806a0a87e622f49160acab3f8a4024fb88ac20b8f964aa4958f390"
     },
     {
       "path": "knowledge_bridge/butler_attachments.py",
@@ -418,8 +423,8 @@
     },
     {
       "path": "knowledge_bridge/claude_extension.py",
-      "bytes": 7541,
-      "sha256": "085f90ca1fb4927a3ac9219f9b53ee0abfae4005f0e7a941038a0087f348ef4a"
+      "bytes": 10530,
+      "sha256": "33a6b5a443c13a76f94ef66ded0b564cf1485033ac0a6c0bdcbbebbd5674cfb5"
     },
     {
       "path": "knowledge_bridge/claude_source_adapter.py",
@@ -428,8 +433,8 @@
     },
     {
       "path": "knowledge_bridge/cli.py",
-      "bytes": 6174,
-      "sha256": "6bfbc2a8f7e1a4180408e6b8b65d879a916235d24dc9a5c9e0e74bea2dcd4874"
+      "bytes": 6305,
+      "sha256": "71a3c73f04e813e2b8ba443b6071d22b08310b94bf1d3743e007a71241ea3e4d"
     },
     {
       "path": "knowledge_bridge/client_access.py",
@@ -702,9 +707,19 @@
       "sha256": "4023d5c7b8e7049880b8d212c9ec27b5e9f1d6f51ba321c53923b32fe806b05f"
     },
     {
+      "path": "knowledge_bridge/mcp_console.py",
+      "bytes": 3124,
+      "sha256": "1a5822255fa0183cba7b8f3ea65df6085208f5dd4fcaf3a69095e525faae5b6e"
+    },
+    {
+      "path": "knowledge_bridge/mcp_protocol.py",
+      "bytes": 992,
+      "sha256": "4c62924625242ebc377dade05cc847a2d99cadbdc5437967983185ae4074ac8e"
+    },
+    {
       "path": "knowledge_bridge/mcp_server.py",
-      "bytes": 33918,
-      "sha256": "a2fa92305d7026374ba4ea963d9dc75370fc91622bbaffe77cfc5372f23877ac"
+      "bytes": 33418,
+      "sha256": "4461ff7885ae181dc5dffd90ef1f2a40bff6683499a569a82e3fba1628a560ba"
     },
     {
       "path": "knowledge_bridge/memory_control.py",
@@ -998,13 +1013,13 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 12815,
-      "sha256": "e7e05a820905eab6e10fe2e27a87f58b2976e4ef3c5b8e71f24237736db731b1"
+      "bytes": 12902,
+      "sha256": "799e5b7315fbe691d994d2dc5c3473192ff8bfb015d6e546fa803a36d3682a75"
     },
     {
       "path": "pyproject.toml",
       "bytes": 1108,
-      "sha256": "040bc7ba092aa89f938ff09a7e85f3f508ec0c6ae9c373859856f4994ac224ad"
+      "sha256": "5c60de74a5ee2122c8012a0d7f22033435c98cf0e94aafa129beee2cda808fad"
     },
     {
       "path": "requirements.lock.txt",
@@ -1433,8 +1448,8 @@
     },
     {
       "path": "tests/test_claude_extension.py",
-      "bytes": 12930,
-      "sha256": "e8b5408e5e29eaa6e135444ad5e8d03d22a03da1346098572aa6f3f6ac7723dd"
+      "bytes": 16444,
+      "sha256": "88963c3431cf19c53b44a57af2272090f22a45b04d6c2cc334757a2aa97fe884"
     },
     {
       "path": "tests/test_claude_source_recovery.py",

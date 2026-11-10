@@ -38,6 +38,7 @@ docs/changes-1.2.1.md
 docs/changes-1.2.2.md
 docs/changes-1.2.3.md
 docs/changes-1.2.4.md
+docs/changes-1.2.5.md
 docs/changes-20261024.md
 docs/dependencies.json
 docs/development.md
@@ -138,6 +139,8 @@ knowledge_bridge/local_ocr.py
 knowledge_bridge/local_source_status.py
 knowledge_bridge/manual_extraction.py
 knowledge_bridge/mcp_audit.py
+knowledge_bridge/mcp_console.py
+knowledge_bridge/mcp_protocol.py
 knowledge_bridge/mcp_server.py
 knowledge_bridge/memory_control.py
 knowledge_bridge/memory_pipeline.py

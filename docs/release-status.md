@@ -1,3 +1,9 @@
+# 1.2.5 发布状态
+
+1.2.5 修复 Claude Desktop 扩展连接超时。升级界渡后，请重新准备并下载 1.1.10 扩展，再在 Claude Desktop 中安装。详见[更新说明](changes-1.2.5.md)和 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.5)。
+
+以下为历史版本记录。
+
 # 1.2.4 发布状态
 
 1.2.4 更新 Claude Desktop 扩展生成、下载和凭据轮换。扩展版本为 1.1.9。程序更新和实际发布状态以 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.4) 为准。详见[更新说明](changes-1.2.4.md)。

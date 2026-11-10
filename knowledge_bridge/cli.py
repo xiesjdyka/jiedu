@@ -58,7 +58,8 @@ def main():
             sys.stdout = sys.stderr = log_path.open("a", encoding="utf-8", buffering=1)
         from .process_runtime import publish_process
         publish_process(a.cmd)
-    from .core import sync, search, overview
+    if a.cmd in {"sync", "search", "status"}:
+        from .core import sync, search, overview
     if a.cmd=="sync": print(json.dumps(sync(a.force,operation="cli_rebuild" if a.force else "cli_sync"),ensure_ascii=False,indent=2))
     elif a.cmd=="search": print(json.dumps(search(a.query,a.mode),ensure_ascii=False,indent=2))
     elif a.cmd=="status": print(json.dumps(overview(),ensure_ascii=False,indent=2))
@@ -92,7 +93,10 @@ def main():
         finally:done.set();monitor.join(timeout=1)
         if accepted:acknowledge_shutdown(LOCAL_DATA_ROOT,accepted[0],'watch')
     else:
-        from .mcp_server import server
+        from .mcp_protocol import server
+        if a.transport == "stdio":
+            server.run()
+            return
         from .bridge_settings import load_settings,validate_settings
         settings=load_settings(); validate_settings(settings)
         if (a.transport or settings["mcp"]["mode"])=="stdio": server.run()
