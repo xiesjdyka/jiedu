@@ -195,7 +195,7 @@ class PairingTransactionManager:
 
     def _quick_connect_claude_extension(self, profile_id: str | None = None) -> dict:
         """Prepare an MCPB; only Claude's own install and a real read finish connection."""
-        from .claude_extension import BUNDLE, inspect_bundle, prepare_bundle
+        from .claude_extension import BUNDLE, build_bundle, inspect_bundle, prepare_bundle, read_bundle, replace_bundle
         from .claude_source_adapter import profile_paths
         with self._lock:
             profiles=[key for key, (_, database, _) in profile_paths().items()
@@ -209,17 +209,22 @@ class PairingTransactionManager:
             chosen=profile_id or profiles[0]
             matches=[row for row in self.registry.list_clients()
                      if row.get('client_type')=='claude' and row.get('status')!='revoked']
-            bundle=inspect_bundle()
+            previous=read_bundle()
+            bundle=inspect_bundle(data=previous, identity_only=True) if previous is not None else None
             if bundle:
                 matched=next((row for row in matches if row['claimed_id']==bundle['client_id'] and
                               self.registry.configured_secret_matches(row['internal_id'],bundle['secret'])),None)
                 if matched:
+                    if not inspect_bundle(data=previous):
+                        replace_bundle(build_bundle(bundle['client_id'], bundle['secret']), previous)
                     return {'outcome':'reused','client':matched,'restart_required':False,
                             'auto_archive':self._ensure_existing_collection('claude',chosen),
                             'extension_ready':True,'extension_download':'/api/client-access/claude-extension/download'}
                 raise ValueError('已存在待安装的 Claude 扩展包，当前身份无法确认；原包保留等待核对')
             if matches:
-                raise ValueError('已有 Claude 身份但扩展包缺失；请先核对原连接，界渡不会重建身份或权限')
+                raise ValueError('已有 Claude 身份，但无法核对旧扩展包；可在该连接中重新生成凭据并下载新包')
+            if previous is not None:
+                raise ValueError('现有 Claude 扩展包无法核对；已保留原包')
             preset=next(row for row in self.presets() if row['id']=='claude')
             prepared=self.registry.prepare(preset['suggested_claimed_id'],preset['display_name'],'claude','stdio')
             prepared['archive_source']=SourceConnections.descriptor('claude')
@@ -320,6 +325,25 @@ class PairingTransactionManager:
         with self._lock:
             self._expire();prepared=self.registry.prepare_rotation(internal_id)
             adapter=self._adapter(prepared["client_type"],prepared["transport"])
+            if adapter == 'claude':
+                from .claude_extension import inspect_bundle, read_bundle
+                previous = read_bundle()
+                bundle = inspect_bundle(data=previous, identity_only=True) if previous is not None else None
+                if bundle and bundle['client_id'] != prepared['claimed_id']:
+                    raise ValueError('现有 Claude 扩展包属于其他连接')
+                if previous is not None and not bundle:
+                    active = [row for row in self.registry.list_clients()
+                              if row['client_type'] == 'claude' and row['status'] != 'revoked']
+                    if len(active) != 1 or active[0]['internal_id'] != internal_id:
+                        raise ValueError('无法确定旧 Claude 扩展包所属的连接')
+                rotation_id = secrets.token_urlsafe(32)
+                self._pending[rotation_id] = {'kind':'rotation', 'prepared':prepared, 'adapter':adapter,
+                                             'previous_bundle':previous, 'expires_at':time.monotonic()+self.ttl_seconds}
+                return {'rotation_id':rotation_id, 'extension_replacement':True,
+                        'client':{key:prepared[key] for key in ('internal_id','claimed_id','display_name','client_type','transport')},
+                        'config':{'target_path':'界渡本机 Claude 扩展包',
+                                  'diff':'确认后会替换之前的扩展包，旧凭据失效。'},
+                        'task_impact':'在 Claude Desktop 安装新扩展包后，再实际读取一次。'}
             if adapter in {'manual','doubao_work'}:
                 delivery=generic_stdio_config(prepared['claimed_id'],self.registry.context.root,local_path());key=secrets.token_urlsafe(32)
                 self._pending[key]={'kind':'rotation','prepared':prepared,'adapter':adapter,'config_token':None,'delivery':delivery,'expires_at':time.monotonic()+self.ttl_seconds}
@@ -343,6 +367,24 @@ class PairingTransactionManager:
             if not row or row.get("kind")!="rotation":raise ValueError("轮换预览已取消或过期")
             config_result=None
             try:
+                if row['adapter'] == 'claude':
+                    from .claude_extension import build_bundle, replace_bundle
+                    prepared = row['prepared']
+                    data = build_bundle(prepared['claimed_id'], prepared['secret'])
+                    previous = row['previous_bundle']
+                    replace_bundle(data, previous)
+                    try:
+                        client = self.registry.commit_rotation(prepared)
+                    except Exception as exc:
+                        # A write failure before the verifier change needs rollback.
+                        # If only the audit failed after persistence, keep the new
+                        # package paired with the already committed verifier.
+                        if self.registry.configured_secret_matches(prepared['internal_id'], prepared['secret']):
+                            raise ValueError('新扩展包已保存，请重新下载并核对连接状态') from exc
+                        replace_bundle(previous, data)
+                        raise
+                    return {'rotated':True, 'client':client, 'extension_ready':True,
+                            'extension_download':'/api/client-access/claude-extension/download'}
                 if row['adapter'] in {'manual','doubao_work'}:
                     client=self.registry.commit_rotation(row['prepared'])
                     return {'rotated':True,'client':client,'manual_configuration':True,'delivery':row['delivery'],'secret':row['prepared']['secret'],'secret_once':True,'restart_required':False}

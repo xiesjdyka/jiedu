@@ -1,3 +1,9 @@
+# 1.2.4 发布状态
+
+1.2.4 更新 Claude Desktop 扩展生成、下载和凭据轮换。扩展版本为 1.1.9。程序更新和实际发布状态以 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.4) 为准。详见[更新说明](changes-1.2.4.md)。
+
+以下为历史版本记录。
+
 # 1.2.3 发布状态
 
 1.2.3 修复部分 Windows 环境中独立后台启动被错误拒绝的问题，准备通过完整 Windows 安装器交付，新用户无需先安装旧版。启动仍须通过进程身份及控制台、Watcher 就绪检查；窗口出现或安装文件完整都不能替代实际可用性验收。实际源码、安装器、签名清单及发布状态以 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.3) 为准，本文本身不表示已经发布。详见[本次变化](changes-1.2.3.md)。

@@ -101,14 +101,18 @@ class BrandedConnectTests(unittest.TestCase):
                 with self.assertRaises(HTTPException) as denied:
                     web.api_claude_extension_download(SimpleNamespace())
             self.assertEqual(403,denied.exception.status_code)
-            inspect=extension.inspect_bundle
+            original=path.read_bytes()
+            def verify_snapshot(_id, secret):
+                path.write_bytes(b'changed-after-validation')
+                return secret=='fixture-secret'
+            registry.configured_secret_matches=verify_snapshot
             with patch.object(web,'_same_origin'), patch.object(web,'_owner'), \
                  patch.object(web,'_pairing_service',return_value=service), \
-                 patch.object(extension,'BUNDLE',path), \
-                 patch.object(extension,'inspect_bundle',side_effect=lambda:inspect(path)):
+                 patch.object(extension,'BUNDLE',path):
                 response=web.api_claude_extension_download(SimpleNamespace())
-            self.assertEqual(path,response.path)
+            self.assertEqual(original,response.body)
             self.assertEqual('no-store',response.headers['cache-control'])
+            self.assertIn('jiedu-claude.mcpb',response.headers['content-disposition'])
 
     def test_claude_without_chat_cache_can_prepare_extension_without_source_state(self):
         with tempfile.TemporaryDirectory() as temporary:

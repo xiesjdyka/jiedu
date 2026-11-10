@@ -37,6 +37,7 @@ docs/changes-1.1.10.md
 docs/changes-1.2.1.md
 docs/changes-1.2.2.md
 docs/changes-1.2.3.md
+docs/changes-1.2.4.md
 docs/changes-20261024.md
 docs/dependencies.json
 docs/development.md
@@ -283,6 +284,7 @@ tests/test_candidate_reorganization.py
 tests/test_candidate_writer_authorization.py
 tests/test_chatgpt_adapter.py
 tests/test_chunk_tail_termination.py
+tests/test_claude_extension.py
 tests/test_claude_source_recovery.py
 tests/test_client_access.py
 tests/test_client_config.py

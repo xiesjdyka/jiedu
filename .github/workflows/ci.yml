@@ -33,6 +33,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tests/test_client_status_frontend.js
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./.venv312/Scripts/python.exe -B -X utf8 -m unittest tests.test_claude_extension
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./.venv312/Scripts/python.exe -B -X utf8 -m unittest tests.test_service_creation tests.test_update_process_handoff tests.test_launcher_preflight tests.test_launcher_runtime
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./.venv312/Scripts/python.exe scripts/export_source.py --output "$env:RUNNER_TEMP/jiedu-source.zip"

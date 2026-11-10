@@ -9,7 +9,7 @@ import subprocess
 import threading
 from functools import wraps
 from pydantic import BaseModel, Field, SecretStr, StrictInt
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from .core import ROOT, overview, state, search, search_detailed, message_context, get_document, all_rows, MAP_PATH, build_map, graph
 from .workspace import active_workspace, local_path, workspace_runtime_status
@@ -1237,16 +1237,22 @@ def api_client_quick_connect(client_type:str,request:Request,payload:QuickConnec
 @app.post('/api/client-access/claude-extension/download')
 def api_claude_extension_download(request:Request):
     _same_origin(request);_owner(request,refresh=True)
-    from .claude_extension import BUNDLE, inspect_bundle
-    row=inspect_bundle()
-    if not row or not BUNDLE.is_file():raise HTTPException(404,'Claude 扩展包尚未准备')
+    from .claude_extension import inspect_bundle, read_bundle
+    try:
+        data = read_bundle()
+    except (OSError, ValueError) as exc:
+        raise HTTPException(409, 'Claude 扩展包无法读取，请重新准备') from exc
+    if data is None:raise HTTPException(404,'Claude 扩展包尚未准备')
+    row=inspect_bundle(data=data)
+    if not row:raise HTTPException(409,'Claude 扩展包入口无法核验，请重新准备并下载')
     registry=_pairing_service(request).registry
     if not any(client['claimed_id']==row['client_id'] and
                registry.configured_secret_matches(client['internal_id'],row['secret'])
                for client in registry.list_clients() if client.get('client_type')=='claude' and client.get('status')!='revoked'):
         raise HTTPException(409,'Claude 扩展包身份无法核对')
-    return FileResponse(BUNDLE,filename='jiedu-claude.mcpb',media_type='application/octet-stream',
-                        headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
+    return Response(data,media_type='application/octet-stream',
+                    headers={'Content-Disposition':'attachment; filename="jiedu-claude.mcpb"',
+                             'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
 
 @app.post('/api/client-access/handoff/{client_type}')
 def api_client_handoff_issue(client_type:str,request:Request):
