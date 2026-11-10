@@ -195,6 +195,14 @@ class ClaudeBundleTests(unittest.TestCase):
                 process.stdin.write(json.dumps(message).encode() + b"\n")
                 process.stdin.flush()
             try:
+                send("server/discover", {"_meta": {
+                    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                    "io.modelcontextprotocol/clientCapabilities": {},
+                }}, 0)
+                discovery = json.loads(output.get(timeout=35))
+                self.assertEqual(0, discovery["id"])
+                self.assertIn("2026-07-28", discovery["result"]["supportedVersions"])
+                self.assertIn("tools", discovery["result"]["capabilities"])
                 send("initialize", {"protocolVersion":"2024-11-05", "capabilities":{},
                                     "clientInfo":{"name":"synthetic-node-test","version":"1.0.0"}}, 1)
                 initial = json.loads(output.get(timeout=35))
@@ -214,7 +222,7 @@ class ClaudeBundleTests(unittest.TestCase):
                     process.wait(timeout=5)
                 reader.join(timeout=5)
             self.assertEqual(0, process.returncode)
-            self.assertIsNone(output.get(timeout=5), "Non-protocol bytes followed the two responses")
+            self.assertIsNone(output.get(timeout=5), "Unexpected stdout after discovery, initialize and tools/list")
             stderr.seek(0)
             self.assertNotIn(self.secret.encode(), stderr.read())
 

@@ -4,9 +4,9 @@
 
 界渡是一个装在你自己电脑上的个人知识库。它把你和 AI 的聊天记录、附件,还有你自己的文档、截图、PDF 收在一起,让你以后能找回来、能看到出处,也能交给新的 AI 接着用。
 
-当前版本:**1.2.5**　|　系统:**Windows x64**　|　许可证:**MIT**
+当前版本:**1.2.6**　|　系统:**Windows x64**　|　许可证:**MIT**
 
-> 1.2.5 修复 Claude Desktop 扩展连接超时。更新界渡后，请重新准备并下载扩展 1.1.10，再在 Claude Desktop 中安装。详见[本次变化](docs/changes-1.2.5.md)。
+> 1.2.6 修复 Claude Desktop 的 Cowork/Code MCP 协议回退。已安装 1.1.10 扩展并连接到同一界渡安装时，更新界渡后完全退出并重新打开 Claude Desktop 即可。详见[本次变化](docs/changes-1.2.6.md)。
 
 ---
 
@@ -50,12 +50,13 @@
 
 ## 下载和安装
 
-**新用户先安装 1.2.3 完整包，再在界渡内检查更新至 1.2.5。**
+**新用户先安装 1.2.3 完整包，再在界渡内检查更新至 1.2.6。**
 
 - [Windows 1.2.3 完整安装器](https://github.com/xiesjdyka/jiedu/releases/download/1.2.3/Jiedu-1.2.3-windows-x64-setup.exe)
 - [1.2.3 发布页与更新说明](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.3)
 - [1.2.4 程序更新发布页](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.4)
 - [1.2.5 程序更新发布页](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.5)
+- [1.2.6 程序更新发布页](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.6)
 
 普通用户请下载发布页里的 **setup.exe**。仓库页面上绿色按钮里的 "Download ZIP" 是源代码,不是装好就能用的软件。
 

@@ -39,6 +39,7 @@ docs/changes-1.2.2.md
 docs/changes-1.2.3.md
 docs/changes-1.2.4.md
 docs/changes-1.2.5.md
+docs/changes-1.2.6.md
 docs/changes-20261024.md
 docs/dependencies.json
 docs/development.md

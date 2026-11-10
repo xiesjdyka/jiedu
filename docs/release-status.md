@@ -1,3 +1,9 @@
+# 1.2.6 发布状态
+
+1.2.6 修复 Claude Desktop 的 Cowork/Code MCP 协议回退。已连接同一界渡安装的 1.1.10 扩展可在界渡更新后，通过完全退出并重新打开 Claude Desktop 加载修复。详见[更新说明](changes-1.2.6.md)和 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.6)。
+
+以下为历史版本记录。
+
 # 1.2.5 发布状态
 
 1.2.5 修复 Claude Desktop 扩展连接超时。升级界渡后，请重新准备并下载 1.1.10 扩展，再在 Claude Desktop 中安装。详见[更新说明](changes-1.2.5.md)和 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.5)。
