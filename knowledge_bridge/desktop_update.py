@@ -133,12 +133,22 @@ def main():
     stop=json.loads(marker.read_text('utf-8'))
     if stop.get('token')!=request['token'] or stop.get('launch_id')!=launcher.load().get('launch_id'):
         raise ValueError('缺少匹配的协作退出记录')
+    from .update_quiesce import claim_program_replacement, end_maintenance, read_maintenance
+    maintenance=read_maintenance(program)
+    if stop.get('maintenance_managed') and not maintenance:
+        raise ValueError('安装维护状态已结束，请重新开始更新')
+    if maintenance and (maintenance['phase']!='helper' or maintenance['token']!=request['token']):
+        raise ValueError('更新维护记录与已核验的交接不一致')
     history=launcher.vault/'.jiedu/history/software-updates';history.mkdir(parents=True,exist_ok=True)
     with FileLock(str(history/'update.lock'),timeout=1):
+        if maintenance:
+            claim_program_replacement(program, request['token'], os.getppid())
         transaction=None
         try:
             transaction,manifest=apply_files(a.package,program,history)
             marker.unlink()
+            if maintenance:
+                end_maintenance(program, request['token'])
             launcher.start()
             if not launcher.status().get('health_owned'):raise RuntimeError('更新后服务未通过归属及健康检查')
             record=json.loads((transaction/'journal.json').read_text('utf-8'));record['status']='healthy';(transaction/'journal.json').write_text(json.dumps(record,ensure_ascii=False,indent=2),'utf-8')
@@ -151,6 +161,8 @@ def main():
             if not running:
                 if transaction:restore(program,transaction)
                 if marker.exists() and json.loads(marker.read_text('utf-8')).get('token')==request['token']:marker.unlink()
+                if maintenance:
+                    end_maintenance(program, request['token'])
                 launcher.start()
             raise
     print('程序更新完成。资料和原有进度保留，服务已重新就绪。')

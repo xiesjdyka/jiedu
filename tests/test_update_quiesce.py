@@ -1,13 +1,16 @@
 import ast
 import json
+import os
 from pathlib import Path
 from types import SimpleNamespace
 import tempfile
 import threading
+import time
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from knowledge_bridge.update_quiesce import (UpdateAdmission, request_shutdown,
-    read_stop_request, acknowledge_shutdown, monitor_shutdown)
+    read_stop_request, acknowledge_shutdown, monitor_shutdown, begin_maintenance,
+    claim_program_replacement, end_maintenance, handoff_maintenance, maintenance_path, read_maintenance)
 from knowledge_bridge.update_web import WebUpdateCoordinator
 
 
@@ -50,6 +53,53 @@ class CooperativeUpdateTests(unittest.TestCase):
         self.assertFalse(admission.enter());admission.leave()
         self.assertTrue(admission.close());admission.reopen();self.assertTrue(admission.enter())
         admission.leave()
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows installation identity')
+    def test_install_lease_rejects_concurrent_update_reused_pid_and_expired_drain(self):
+        program = self.root / 'program'
+        me = {'pid': os.getpid(), 'created': 1, 'executable': 'fixture.exe'}
+        helper = {'pid': me['pid'] + 1, 'created': 2, 'executable': 'helper.exe'}
+        identities = {row['pid']: row for row in (me, helper)}
+        with patch.dict(os.environ, {'LOCALAPPDATA': str(self.root / 'profile')}), \
+             patch('knowledge_bridge.update_quiesce.maintenance_identity', side_effect=identities.get):
+            begin_maintenance(program, self.token)
+            self.assertEqual(self.token, read_maintenance(program)['token'])
+            self.assertIsNone(read_maintenance(self.root / 'other-program'))
+            with self.assertRaisesRegex(RuntimeError, '维护'):
+                begin_maintenance(program, self.launch)
+            with patch('knowledge_bridge.update_quiesce.time.time', return_value=time.time() + 601):
+                self.assertIsNone(read_maintenance(program))
+            handoff_maintenance(program, self.token, helper['pid'])
+            request_shutdown(self.root, self.token, self.launch, program=program)
+            self.assertIsNotNone(read_stop_request(self.root, self.launch, 'watch', program=program))
+            end_maintenance(program, self.token)
+            self.assertIsNotNone(read_maintenance(program))
+            identities[helper['pid']] = {**helper, 'created': 3}
+            self.assertIsNone(read_maintenance(program))
+            self.assertIsNone(read_stop_request(self.root, self.launch, 'watch', program=program))
+            begin_maintenance(program, self.launch)
+            end_maintenance(program, self.token, owner_pid=helper['pid'])
+            self.assertEqual(self.launch, read_maintenance(program)['token'])
+            end_maintenance(program, self.launch)
+            self.assertFalse(maintenance_path(program).exists())
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows installation identity')
+    def test_program_replacement_keeps_maintenance_if_its_helper_dies(self):
+        program = self.root / 'program'
+        me = {'pid': os.getpid(), 'created': 1, 'executable': 'fixture.exe'}
+        helper = {'pid': me['pid'] + 1, 'created': 2, 'executable': 'helper.exe'}
+        identities = {row['pid']: row for row in (me, helper)}
+        with patch.dict(os.environ, {'LOCALAPPDATA': str(self.root / 'profile')}), \
+             patch('knowledge_bridge.update_quiesce.maintenance_identity', side_effect=identities.get):
+            begin_maintenance(program, self.token)
+            handoff_maintenance(program, self.token, helper['pid'])
+            with self.assertRaisesRegex(RuntimeError, '未获得'):
+                claim_program_replacement(program, self.token, me['pid'])
+            claim_program_replacement(program, self.token, helper['pid'])
+            del identities[helper['pid']]
+            self.assertEqual(read_maintenance(program)['owner'], me)
+            end_maintenance(program, self.token)
+            self.assertFalse(maintenance_path(program).exists())
 
     def test_quiesce_waits_for_requests_then_workers_without_forcing_them(self):
         worker=Mock();worker.is_alive.return_value=True

@@ -7,7 +7,10 @@ from knowledge_bridge.bridge_launcher import Launcher
 class LauncherPreflightTests(unittest.TestCase):
     def launcher(self,observe):
         x=Launcher.__new__(Launcher);x.vault=Path('D:/fixture');x.kb=Mock();x.kb.exists.return_value=True
-        x.local_data=Path(tempfile.gettempdir())/'launcher-preflight-unconfigured'
+        root = tempfile.TemporaryDirectory()
+        self.addCleanup(root.cleanup)
+        x.local_data = Path(root.name)
+        x.bridge_dir = x.local_data / 'program'
         x.load=Mock(return_value={'vault':str(x.vault),'console_pid':123,'watcher_pid':456,'launch_id':'original'})
         x._observe=Mock(side_effect=observe);x._port_open=Mock(return_value=True);x._stop_owned=Mock();x.save=Mock();x.log=Mock()
         return x

@@ -346,6 +346,7 @@ def start_helper(request):
     """Start a fixed external helper before requesting cooperative service exit."""
     validate_handoff(request['request_path'], request['program'])
     from .bridge_launcher import Launcher
+    from .update_quiesce import handoff_maintenance, maintenance_path
     launcher = Launcher(Path(request['program']))
     check_workspace_boundary(request['target'], launcher.vault,
                              selected=launcher.config_path.exists() or (Path(request['program']) / 'config.json').exists())
@@ -373,6 +374,7 @@ def start_helper(request):
            'backup': str(target.with_name(target.name + '.previous-' + request['token'])),
            'failed': str(target.with_name(target.name + '.failed-' + request['token'])),
            'local_data': str(launcher.local_data), 'python': str(launcher.python)}
+    job['maintenance_path'] = str(maintenance_path(launcher.bridge_dir))
     job_path = work / 'job.json'
     job_path.write_text(json.dumps(job, ensure_ascii=False, indent=2), 'utf-8')
     state = Path(request['request_path']).parent
@@ -384,8 +386,10 @@ def start_helper(request):
                                    creationflags=0x08000000 if os.name == 'nt' else 0)
     finally:
         log.close()
-    (state / 'helper.json').write_text(json.dumps({'token': request['token'], 'work': str(work), 'helper_pid': process.pid}, ensure_ascii=False), 'utf-8')
     try:
+        owner = handoff_maintenance(launcher.bridge_dir, request['token'], process.pid)
+        _atomic_report(state / 'helper.json', {'token': request['token'], 'work': str(work),
+                       'helper_pid': process.pid, 'helper_identity': owner})
         launcher.request_update_stop(request['token'], proof['launch_id'])
     except Exception:
         # The helper requires the matching marker and times out without mutation.
@@ -422,12 +426,14 @@ def start_recovery(program, state):
             or version_info(previous / '.jiedu/program')['product_version'] != job.get('old_version')):
         raise ValueError('可恢复副本的归属或版本不匹配，未移动任何资料')
     from .bridge_launcher import Launcher
+    from .update_quiesce import handoff_maintenance, maintenance_path
     launcher = Launcher(program)
     check_workspace_boundary(owner['target'], launcher.vault, selected=launcher.config_path.exists())
     proof = launcher.snapshot_update_processes()
     required_acks = [dict(role=role, pid=receipt['pid']) for role in ('console','watch')
                      if (receipt := launcher._receipt(launcher.load(), role)) and launcher._owned(receipt)]
     job.update(proof=proof, python=str(launcher.python), local_data=str(launcher.local_data), required_acks=required_acks)
+    job['maintenance_path'] = str(maintenance_path(program))
     job_path.write_text(json.dumps(job, ensure_ascii=False, indent=2), 'utf-8')
     script = work / 'update-helper.ps1'
     script.write_text(HELPER_SCRIPT, 'utf-8-sig')
@@ -444,6 +450,8 @@ def start_recovery(program, state):
         _atomic_report(work / 'result.json', outcome)
         raise
     try:
+        owner = handoff_maintenance(program, token, process.pid)
+        _atomic_report(state / 'helper.json', {**pointer, 'helper_pid': process.pid, 'helper_identity': owner})
         launcher.request_update_stop(token, proof['launch_id'])
     except Exception:
         (work / 'abort.json').write_text('{"abort":true}', 'ascii')
@@ -484,6 +492,9 @@ function SafePath([string]$p) {
 }
 function Report([string]$state,[string]$message) {
   $r=@{state=$state;phase=$state;message=$message;token=$j.token;version=$j.version;backup=$backup;failed=$failed;force_stop_used=$false;helper_host=$j.helper_host;helper_pid=$PID}
+  if($null -ne (Get-Variable -Name blockers -Scope Script -ErrorAction SilentlyContinue)){
+    $r['blocking_processes']=@($script:blockers)
+  }
   foreach($entry in @(@{file='backup-files.json';field='backup_inventory_sha256'},@{file='helper-files.json';field='helper_inventory_sha256'})) { $file=Join-Path $work $entry.file;if(Test-Path -LiteralPath $file){$r[$entry.field]=(Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant()} }
   $json=$r|ConvertTo-Json -Depth 8
   $path=Join-Path $work 'result.json';$temporary=$path+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
@@ -528,6 +539,19 @@ function TargetProcesses {
   $prefix=$target+'\'
   @(Get-CimInstance Win32_Process -ErrorAction Stop | Where-Object { $_.ExecutablePath -and ($_.ExecutablePath.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)) })
 }
+function BlockingProcesses {
+  @(foreach($process in TargetProcesses) {
+    $created=if($null -ne $process.CreationDate){$process.CreationDate.ToUniversalTime()}else{$null}
+    $original=$j.proof.processes | Where-Object {
+      $null -ne $created -and $_.pid -eq $process.ProcessId -and $_.executable -eq $process.ExecutablePath -and
+      [Math]::Abs([long]$_.created-$created.ToFileTimeUtc()) -lt 10
+    } | Select-Object -First 1
+    $role=if($original){$original.role}
+      elseif($process.ExecutablePath -in @($j.python,(Join-Path (Split-Path $j.python) 'pythonw.exe'))){'installed_python'}
+      else{'untracked'}
+    @{pid=$process.ProcessId;created_utc=$(if($created){$created.ToString('o')});executable=$process.ExecutablePath;role=$role}
+  })
+}
 function WaitEmpty([int]$seconds) {
   $until=[DateTime]::UtcNow.AddSeconds($seconds)
   while([DateTime]::UtcNow -lt $until) {
@@ -536,14 +560,29 @@ function WaitEmpty([int]$seconds) {
     foreach($p in $j.proof.processes) {
       $process=Get-Process -Id $p.pid -ErrorAction SilentlyContinue
       if($process) {
-        if($process.StartTime.ToUniversalTime().ToFileTimeUtc() -ne [int64]$p.created){throw 'Process identity changed; no process was stopped'}
-        $alive=$true
+        if($process.StartTime.ToUniversalTime().ToFileTimeUtc() -eq [int64]$p.created){$alive=$true}
       }
     }
     if(-not $alive -and @(TargetProcesses).Count -eq 0){return}
     Start-Sleep -Milliseconds 500
   }
+  $script:blockers=@(BlockingProcesses)
   throw 'Programs are still using the installation. Close them and retry; no force stop was used.'
+}
+function MaintenanceOwned {
+  if($null -eq $j.PSObject.Properties['maintenance_path']){return}
+  $path=$j.maintenance_path
+  SafePath $path
+  if(Test-Path -LiteralPath $path){
+    $row=Get-Content -LiteralPath $path -Raw -Encoding UTF8|ConvertFrom-Json
+    $actual=(Get-Process -Id $PID).StartTime.ToUniversalTime().ToFileTimeUtc()
+    if($row.token -eq $j.token -and $row.program -eq $j.program -and $row.phase -eq 'helper' -and
+        $row.owner.pid -eq $PID -and [long]$row.owner.created -eq $actual){return $path}
+  }
+}
+function ClearMaintenance {
+  $path=MaintenanceOwned
+  if($path){Remove-Item -LiteralPath $path}
 }
 function ClearMarker {
   $marker=Join-Path $j.local_data 'runtime\update-stop.json'
@@ -604,6 +643,7 @@ function RestorePrevious {
   $script:restoreStage='files_restored';SaveJournal
   RestoreRegistry
   ClearMarker
+  ClearMaintenance
   Start-Process -FilePath (Join-Path $target '界渡.exe') -WorkingDirectory $target -WindowStyle Hidden|Out-Null
   $script:restoreStage='complete';SaveJournal
 }
@@ -650,6 +690,7 @@ try {
     Start-Sleep -Milliseconds 100
   }
   if(-not $accepted){throw 'No matching cooperative shutdown request'}
+  if(-not (MaintenanceOwned)){throw 'No matching maintenance owner'}
   Report 'waiting_exit' 'Waiting for owned processes to exit normally.'
   WaitEmpty 600
   NormalAcks
@@ -666,7 +707,9 @@ try {
   # This independent verifier exits before the runtime directory is moved.
   Push-Location -LiteralPath $j.program
   try {& $j.python -B -m knowledge_bridge.full_installer_update check-handoff --request $j.request_path --program $j.program;if($LASTEXITCODE -ne 0){throw 'Final signature/ownership verification failed'}}finally{Pop-Location}
-  if(@(TargetProcesses).Count -ne 0){throw 'A program reopened during final verification'}
+  $remaining=@(BlockingProcesses)
+  if($remaining.Count -ne 0){$script:blockers=$remaining;throw 'A program reopened during final verification'}
+  if(-not (MaintenanceOwned)){throw 'Maintenance ownership was lost before replacement'}
   if((Get-FileHash -LiteralPath $j.artifact -Algorithm SHA256).Hash.ToLowerInvariant() -ne $j.sha256 -or (Get-Item -LiteralPath $j.artifact).Length -ne $j.bytes){throw 'Artifact bytes changed'}
   if($j.kind -eq 'program-only') {
     Report 'applying' 'Applying verified program update.'
@@ -708,6 +751,7 @@ try {
   Push-Location -LiteralPath (Join-Path $target '.jiedu\program')
   try {$v=& $newPython -B -m knowledge_bridge.release_version;if($LASTEXITCODE -ne 0){throw 'New product version cannot be verified'};$version=$v|ConvertFrom-Json;if($version.product_version -ne $j.version){throw 'Installed product version mismatch'}}finally{Pop-Location}
   ClearMarker
+  ClearMaintenance
   Start-Process -FilePath (Join-Path $target '界渡.exe') -WorkingDirectory $target -WindowStyle Hidden|Out-Null
   Report 'installed' 'Installation completed. Previous installation retained; waiting for service health.'
   $until=[DateTime]::UtcNow.AddSeconds(120);$healthy=$false
@@ -736,11 +780,26 @@ try {
     try {
       RestorePrevious
       Report 'rolled_back' ('Update failed; previous installation restored. '+$message)
-    } catch {Report 'recovery_required' ($message+' Recovery deferred: '+$_.Exception.Message)}
+    } catch {try{ClearMaintenance}catch{};Report 'recovery_required' ($message+' Recovery deferred: '+$_.Exception.Message)}
   } else {
     try{ClearMarker}catch{}
+    try{ClearMaintenance}catch{}
     if($Recover){Report 'recovery_required' ('Recovery not completed; previous materials retained. '+$message)}else{Report 'failed' ('No installation replacement completed. '+$message)}
-    try{if(@(TargetProcesses).Count -eq 0){Start-Process -FilePath (Join-Path $target '界渡.exe') -WorkingDirectory $target -WindowStyle Hidden|Out-Null}}catch{}
+    try{
+      $shell=Join-Path $target '界渡.exe'
+      $running=@(TargetProcesses)
+      $originalServices=@($running | Where-Object {
+        $current=$_
+        $j.proof.processes | Where-Object {
+          $_.role -in @('console','watch') -and $_.pid -eq $current.ProcessId -and
+          $_.executable -eq $current.ExecutablePath -and $null -ne $current.CreationDate -and
+          [Math]::Abs([long]$_.created-$current.CreationDate.ToUniversalTime().ToFileTimeUtc()) -lt 10
+        }
+      })
+      if(-not $originalServices.Count -and -not @($running | Where-Object ExecutablePath -eq $shell).Count){
+        Start-Process -FilePath $shell -WorkingDirectory $target -WindowStyle Hidden|Out-Null
+      }
+    }catch{}
   }
   exit 1
 }

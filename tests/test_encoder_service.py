@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import threading
 import time
@@ -45,6 +46,36 @@ class EncoderServiceTests(unittest.TestCase):
         with self.assertRaises(TimeoutError):service.call(self.root,'encode',{'texts':['x'],'lock_timeout':0})
         service.stop(self.root);self.assertTrue(self.thread.is_alive())
         self.backend.release.set();t.join(3);self.thread.join(3);self.assertFalse(self.thread.is_alive())
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows installation maintenance')
+    def test_update_drains_an_authenticated_encode_and_refuses_new_work(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from knowledge_bridge.update_quiesce import begin_maintenance, end_maintenance
+        from knowledge_bridge.workspace import PROGRAM_ROOT
+
+        token = 'b' * 32
+        with patch.dict(os.environ, {'LOCALAPPDATA': str(self.root / 'profile')}):
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                admitted = pool.submit(service.call, self.root, 'encode', {'texts': ['block']}, 5)
+                self.assertTrue(self.backend.entered.wait(2))
+                begin_maintenance(PROGRAM_ROOT, token)
+                try:
+                    with self.assertRaisesRegex(TimeoutError, '释放'):
+                        service.call(self.root, 'encode', {'texts': ['new']})
+                    with patch.object(service.subprocess, 'Popen') as launch:
+                        with self.assertRaisesRegex(RuntimeError, '维护'):
+                            service.ensure(self.root)
+                        self.assertFalse(service.warmup())
+                        launch.assert_not_called()
+                    self.assertTrue(self.thread.is_alive())
+                    self.backend.release.set()
+                    self.assertEqual(admitted.result(timeout=3)['vectors'], [[5., 1.]])
+                    self.thread.join(3)
+                    self.assertFalse(self.thread.is_alive())
+                    self.assertFalse((self.root / 'service.json').exists())
+                finally:
+                    self.backend.release.set()
+                    end_maintenance(PROGRAM_ROOT, token)
     def test_bad_input_retains_server(self):
         with self.assertRaises(RuntimeError):service.call(self.root,'encode',{'texts':[3]})
         self.assertTrue(service.status(self.root)['pid'])

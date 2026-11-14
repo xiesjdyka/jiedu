@@ -105,7 +105,8 @@ class WorkflowTests(unittest.TestCase):
         self.updater.quiesce = lambda: False
         self.updater.resume = lambda: resumed.append(True)
         self.updater.handoff = lambda request: self.fail('cancelled handoff')
-        with patch.object(self.updater, 'fetch', side_effect=[self.envelope(), self.package]):
+        with patch.object(self.updater, 'fetch', side_effect=[self.envelope(), self.package]), \
+             patch('knowledge_bridge.full_installer_update.registrations', self.registry):
             self.updater.start()
             self.wait_state('waiting_idle')
             self.updater.cancel()
@@ -138,7 +139,7 @@ class WorkflowTests(unittest.TestCase):
             self.join()
         self.assertEqual(self.updater.status()['state'],'cancelled')
         self.assertFalse(request_path.exists())
-        self.assertEqual(resumed,[True])
+        self.assertEqual(resumed,[])
         self.updater.cancel_event.clear()
         self.updater._phase('verifying','synthetic precommit')
         self.assertTrue(self.updater._claim_handoff('synthetic handoff','b'*32))
@@ -253,6 +254,7 @@ class WorkflowTests(unittest.TestCase):
         other = OnlineUpdate(self.program, self.root / 'state')
         self.updater.busy = lambda: ['synthetic active task']
         with patch.object(self.updater, 'fetch', side_effect=[self.envelope(), self.package]), \
+             patch('knowledge_bridge.full_installer_update.registrations', self.registry), \
              patch.object(other, 'fetch') as second_fetch:
             first = self.updater.start()
             self.wait_state('waiting_idle')
@@ -261,6 +263,23 @@ class WorkflowTests(unittest.TestCase):
             second_fetch.assert_not_called()
             self.updater.cancel()
             self.join()
+
+    def test_interrupted_helper_before_and_during_file_replacement(self):
+        work, _ = self.helper_fixture(state='waiting_exit')
+        pointer = self.updater._read('helper.json')
+        pointer['helper_identity'] = {'pid': pointer['helper_pid'], 'created': 1, 'executable': 'helper.exe'}
+        self.updater._save('helper.json', pointer)
+        with patch('knowledge_bridge.update_quiesce.maintenance_identity', return_value=None):
+            self.assertEqual('failed', self.updater.status()['state'])
+            outcome_path = work / 'result.json'
+            outcome = json.loads(outcome_path.read_text('utf-8'))
+            outcome['state'] = 'applying'
+            outcome_path.write_text(json.dumps(outcome), 'utf-8')
+            interrupted = self.updater.status()
+            self.assertEqual('recovery_required', interrupted['state'])
+            self.assertTrue(interrupted['manual_recovery'])
+            with self.assertRaisesRegex(ValueError, '没有待恢复'):
+                self.updater.start(recovery=True)
 
     def helper_fixture(self, state='complete', *, backup=False):
         token='a'*32
@@ -338,6 +357,73 @@ foreach($state in $states) {
                 self.assertGreaterEqual(proof['major'],minimum)
                 self.assertEqual(proof['transitions'],5)
                 self.assertEqual(proof['final'],'complete')
+
+    @unittest.skipUnless(os.name == 'nt', 'Real Windows process enumeration')
+    def test_wait_empty_reports_a_live_install_blocker_without_stopping_it(self):
+        from knowledge_bridge.full_installer_update import _powershell
+        from knowledge_bridge.process_runtime import identity
+        from knowledge_bridge.update_quiesce import begin_maintenance, end_maintenance, handoff_maintenance, maintenance_path
+
+        work = self.root / 'process-wait'
+        work.mkdir()
+        target = work / 'install'
+        target.mkdir()
+        executable = target / 'ping.exe'
+        # Use a known local Windows process image that has no runtime DLL files
+        # in the install root, so a copy of its executable alone can stay alive.
+        shutil.copy2(Path(os.environ['SystemRoot']) / 'System32' / 'ping.exe', executable)
+        blocker = subprocess.Popen([str(executable), '-t', '127.0.0.1'],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        def stop_fixture():
+            if blocker.poll() is None:
+                blocker.kill()
+                blocker.wait(timeout=5)
+        self.addCleanup(stop_fixture)
+        birth = identity(blocker.pid)
+        self.assertIsNotNone(birth)
+        token = 'd' * 32
+        program = target / '.jiedu/program'
+        script = work / 'wait.ps1'
+        prefix = HELPER_SCRIPT.split("\ntry {\n  if($j.format", 1)[0]
+        script.write_text(prefix + r'''
+$until=[DateTime]::UtcNow.AddSeconds(8)
+while(-not (MaintenanceOwned)) {
+  if([DateTime]::UtcNow -ge $until){throw 'Helper never owned maintenance'}
+  Start-Sleep -Milliseconds 25
+}
+try { WaitEmpty 2 } catch { Report 'failed' $_.Exception.Message }
+if(-not @(BlockingProcesses).Count){throw 'The fixture exited unexpectedly'}
+ClearMaintenance
+''', 'utf-8-sig')
+        host = _powershell(target)
+        with patch.dict(os.environ, {'LOCALAPPDATA': str(work / 'profile')}):
+            begin_maintenance(program, token)
+            job = {'work': str(work), 'target': str(target), 'program': str(program),
+                   'backup': str(work / 'previous'), 'failed': str(work / 'failed'), 'version': '1.2.7',
+                   'token': token, 'helper_host': host, 'maintenance_path': str(maintenance_path(program)),
+                   'python': str(target / 'python.exe'),
+                   'proof': {'processes': [{**birth, 'created': birth['created'] - 10000000, 'role': 'watch'}]}}
+            job_file = work / 'job.json'
+            job_file.write_text(json.dumps(job), 'utf-8')
+            try:
+                with subprocess.Popen([host, '-NoLogo', '-NoProfile', '-NonInteractive', '-File', str(script),
+                                       '-JobFile', str(job_file)], stdout=subprocess.PIPE, stderr=subprocess.PIPE) as helper:
+                    handoff_maintenance(program, token, helper.pid)
+                    _, errors = helper.communicate(timeout=20)
+                    self.assertEqual(helper.returncode, 0, errors.decode('utf-8', 'replace'))
+                outcome = json.loads((work / 'result.json').read_text('utf-8'))
+                self.assertEqual(outcome['state'], 'failed')
+                self.assertFalse(outcome['force_stop_used'])
+                self.assertIsNone(blocker.poll())
+                self.assertEqual(len(outcome['blocking_processes']), 1)
+                row, = outcome['blocking_processes']
+                self.assertEqual(set(row), {'pid', 'created_utc', 'executable', 'role'})
+                self.assertEqual(row['pid'], blocker.pid)
+                self.assertIsNotNone(row['created_utc'])
+                self.assertEqual(row['role'], 'untracked')
+                self.assertFalse(maintenance_path(program).exists())
+            finally:
+                end_maintenance(program, token)
 
     @unittest.skipUnless(os.name=='nt','Real Windows PowerShell argument-array semantics')
     def test_real_installer_argument_array_preserves_quoted_paths_on_powershell7_and_fallback(self):

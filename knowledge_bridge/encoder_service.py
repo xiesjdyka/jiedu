@@ -55,7 +55,9 @@ def status(directory=None):
 
 def ensure(directory=None):
     from filelock import FileLock
+    from .update_quiesce import require_maintenance_open
     from .workspace import PROGRAM_ROOT
+    require_maintenance_open(PROGRAM_ROOT)
     directory=Path(directory or root());directory.mkdir(parents=True,exist_ok=True)
     with FileLock(str(directory/'start.lock'),timeout=20):
         current=status(directory)
@@ -65,6 +67,7 @@ def ensure(directory=None):
         env=os.environ.copy();env['JIEDU_ENCODER_CHILD']='1'
         from .package_layout import python_executable
         python=python_executable(PROGRAM_ROOT,windowless=os.name=='nt')
+        require_maintenance_open(PROGRAM_ROOT)
         with log.open('ab') as output:
             process=subprocess.Popen([str(python),'-m','knowledge_bridge.encoder_service','--root',str(directory)],
                 cwd=PROGRAM_ROOT,env=env,stdin=subprocess.DEVNULL,stdout=output,stderr=output,
@@ -89,6 +92,9 @@ def encode(texts,*,local_only=False,batch_size=None,lock_timeout=None):
 
 
 def warmup():
+    from .update_quiesce import read_maintenance
+    from .workspace import PROGRAM_ROOT
+    if read_maintenance(PROGRAM_ROOT):return False
     directory = root()
     key = str(directory.resolve())
     def load():
@@ -128,6 +134,10 @@ class Backend:
 
 
 def serve(directory,backend=None,idle_seconds=IDLE_SECONDS,ready=None):
+    from .update_quiesce import read_maintenance
+    from .workspace import PROGRAM_ROOT
+
+    if read_maintenance(PROGRAM_ROOT):return
     directory=Path(directory);directory.mkdir(parents=True,exist_ok=True)
     backend=backend or Backend();token=secrets.token_urlsafe(32);gate=threading.Lock()
     state={'last_used':time.monotonic(),'busy':False,'stopping':False,'last_error':None}
@@ -154,14 +164,16 @@ def serve(directory,backend=None,idle_seconds=IDLE_SECONDS,ready=None):
                     if not state['busy']:threading.Thread(target=server.shutdown,daemon=True).start()
                     return self.reply(200,{'stopped':not state['busy'],'finishing_current_request':state['busy']})
                 if self.path not in {'/encode','/warmup'}:return self.reply(404,{'error':'无此操作'})
-                if state['stopping']:return self.reply(409,{'error':'向量服务正在释放，稍后重试'})
+                if state['stopping'] or read_maintenance(PROGRAM_ROOT):
+                    return self.reply(409,{'error':'向量服务正在释放，稍后重试'})
                 if self.path=='/encode' and (not isinstance(payload.get('texts'),list) or any(not isinstance(t,str) for t in payload['texts'])):
                     return self.reply(400,{'error':'无效向量输入'})
                 wait=payload.get('lock_timeout');wait=600 if wait is None else max(0,min(600,float(wait)))
                 if not gate.acquire(timeout=wait):return self.reply(409,{'error':'共享向量模型正忙'})
                 performed_work=False
                 try:
-                    if state['stopping']:return self.reply(409,{'error':'向量服务正在释放，稍后重试'})
+                    if state['stopping'] or read_maintenance(PROGRAM_ROOT):
+                        return self.reply(409,{'error':'向量服务正在释放，稍后重试'})
                     if payload.get('require_loaded') and backend.status().get('state')!='loaded':
                         return self.reply(409,{'error':'向量模型已释放或尚未就绪，本次可使用关键词检索'})
                     state['busy']=True;state['last_used']=time.monotonic();performed_work=True
@@ -184,6 +196,12 @@ def serve(directory,backend=None,idle_seconds=IDLE_SECONDS,ready=None):
     done=threading.Event()
     def expire():
         while not done.wait(.5):
+            if read_maintenance(PROGRAM_ROOT):
+                with gate:
+                    if read_maintenance(PROGRAM_ROOT):
+                        state['stopping']=True
+                        server.shutdown()
+                        return
             if not state['busy'] and time.monotonic()-state['last_used']>=idle_seconds:
                 state['stopping']=True;server.shutdown();return
     threading.Thread(target=expire,name='encoder-idle-release',daemon=True).start()

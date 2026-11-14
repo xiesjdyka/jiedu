@@ -158,7 +158,8 @@ class Launcher:
         with self.lock: return self._start(wait)
 
     def _start(self, wait=90):
-        from .update_quiesce import read_stop_request
+        from .update_quiesce import read_stop_request, require_maintenance_open
+        require_maintenance_open(self.bridge_dir)
         if read_stop_request(self.local_data, self.load().get('launch_id'), 'console'):
             raise RuntimeError('软件更新正在安全退出，请等待安装完成后再打开界渡')
         current = self._observe(self.load())
@@ -308,8 +309,10 @@ class Launcher:
         return observed
 
     def restart(self):
+        from .update_quiesce import require_maintenance_open
         self.runtime.mkdir(parents=True, exist_ok=True)
         with self.lock:
+            require_maintenance_open(self.bridge_dir)
             self._stop()
             return self._start()
     def sync(self):

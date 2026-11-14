@@ -1,3 +1,9 @@
+# 1.2.7 发布状态
+
+1.2.7 修复软件更新时新请求和 MCP 自动重连持续占用界渡程序的问题。首次从 1.2.6 升级仍由旧版助手执行，如果旧 MCP 连接持续占用安装目录，请关闭该连接后重试。详见[更新说明](changes-1.2.7.md)和 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.7)。
+
+以下为历史版本记录。
+
 # 1.2.6 发布状态
 
 1.2.6 修复 Claude Desktop 的 Cowork/Code MCP 协议回退。已连接同一界渡安装的 1.1.10 扩展可在界渡更新后，通过完全退出并重新打开 Claude Desktop 加载修复。详见[更新说明](changes-1.2.6.md)和 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.6)。

@@ -38,8 +38,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 8809,
-      "sha256": "12d453533e1687ce356e706747f81f401232e5bd6fe56c552eafad2acd4eadd1"
+      "bytes": 8794,
+      "sha256": "d08826ddfcd9bb6c5c43a082ca0bd37efb191cad3f15c232ea3ca21fc27d8c60"
     },
     {
       "path": "RELEASE_NOTES.md",
@@ -59,7 +59,7 @@
     {
       "path": "VERSION",
       "bytes": 6,
-      "sha256": "5844ffcc346f89c07b13ba7596bfb3788ed73f4755e541182d7822d43b7c7a24"
+      "sha256": "d9e8e8429c6a7d0b965e4fac26a5efff7103f055faa98cceb5bd4731fd24603a"
     },
     {
       "path": "butler-resources.lock.json",
@@ -212,6 +212,11 @@
       "sha256": "9e896ea8a904cfc718f91fb4a890c71b943618e8ad945f65fb0f866a4223be0f"
     },
     {
+      "path": "docs/changes-1.2.7.md",
+      "bytes": 946,
+      "sha256": "cbf8a77dac27321d648b642dbdff9f161f962770f5bb22074a9778e0ee8bf874"
+    },
+    {
       "path": "docs/changes-20261024.md",
       "bytes": 4063,
       "sha256": "2173cd4185c0787a3da3d3d0e0f376b5955e648c2111e104482e3c02b01c8d7f"
@@ -248,8 +253,8 @@
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 12663,
-      "sha256": "8ef7baea4d1ba5cfed1722e236dec88725f70895bb5e8045cee473e1b0f22d95"
+      "bytes": 13053,
+      "sha256": "24661fce99482cbd30e15dfb5b1884fb04a88193e37f919b99e6c630068eeef0"
     },
     {
       "path": "docs/release-version.md",
@@ -309,7 +314,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 22,
-      "sha256": "bcc40ae7c5fcfd86462b3466d1386f3c0285b697f27a31a65270eb63d450d77c"
+      "sha256": "e3da6b08b6c4ddf1732dfc5e9b9addd9daf5895e3f2fe6cdd0de09ee3c54e720"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -363,8 +368,8 @@
     },
     {
       "path": "knowledge_bridge/bridge_launcher.py",
-      "bytes": 20443,
-      "sha256": "1bb5e12788854c89e1b5e8b2a8b878c54b9efa452b04d9a18a980fedb2b60b1a"
+      "bytes": 20634,
+      "sha256": "a11867b9ddf4b59d992357cc7b3f26b3ceff09ff81dd607ef14196e4f35f46f2"
     },
     {
       "path": "knowledge_bridge/bridge_settings.py",
@@ -438,8 +443,8 @@
     },
     {
       "path": "knowledge_bridge/cli.py",
-      "bytes": 6305,
-      "sha256": "71a3c73f04e813e2b8ba443b6071d22b08310b94bf1d3743e007a71241ea3e4d"
+      "bytes": 6600,
+      "sha256": "de16a085155592c8ffb3f6c71ecaee92cbb631f3a08df94acfde19a9cf339adf"
     },
     {
       "path": "knowledge_bridge/client_access.py",
@@ -533,8 +538,8 @@
     },
     {
       "path": "knowledge_bridge/desktop_update.py",
-      "bytes": 10380,
-      "sha256": "15a2286816dff71e602c5a7b7fd9c901c165808c0e19cf34bb31bbed92c82b67"
+      "bytes": 11116,
+      "sha256": "d539576f9959f67ca0d5b937f8d7d66ae3b132f6e4cb2232d19627e2444d1c0c"
     },
     {
       "path": "knowledge_bridge/device_keys.py",
@@ -568,8 +573,8 @@
     },
     {
       "path": "knowledge_bridge/encoder_service.py",
-      "bytes": 10342,
-      "sha256": "b07dd075f39bf8eb1bea39687c664843cb7a9030d457f05ffa0a81712302b2b6"
+      "bytes": 11127,
+      "sha256": "720ee1e637461b82b778402f9403e5f5b5d1d51329c1feacb7c679a8d7775a5f"
     },
     {
       "path": "knowledge_bridge/evidence_index.py",
@@ -598,8 +603,8 @@
     },
     {
       "path": "knowledge_bridge/full_installer_update.py",
-      "bytes": 48161,
-      "sha256": "ad3f88bf55114002277b930b3bac68d26c77a8a56757a1432ef3a3f5e63b0ecd"
+      "bytes": 51089,
+      "sha256": "1388ca89c8d46067962854eb3237d02fc5cefab779b12599a7999d16c972cb5a"
     },
     {
       "path": "knowledge_bridge/hermes_client.py",
@@ -718,8 +723,8 @@
     },
     {
       "path": "knowledge_bridge/mcp_protocol.py",
-      "bytes": 5427,
-      "sha256": "3e4b8a4cb6717109c9d57cbd0d157a8aaa5d38828c88d7d922b2e781b48afba1"
+      "bytes": 13660,
+      "sha256": "bdc2e6a8b2c3cce8c9a379da7109ed1af7e4a74d1751bcdbe230f802bb76ea2a"
     },
     {
       "path": "knowledge_bridge/mcp_server.py",
@@ -753,8 +758,8 @@
     },
     {
       "path": "knowledge_bridge/online_update.py",
-      "bytes": 29005,
-      "sha256": "0dddce53dc460fd28b505b4e3caf5693e481b3cadac11a40ed2ee61b4bea2e17"
+      "bytes": 32064,
+      "sha256": "8ccbeb9bf9a7c193d27ff701f0b3afcd85988f6da7e633496916e52e4eb96b0e"
     },
     {
       "path": "knowledge_bridge/organization_review.py",
@@ -913,8 +918,8 @@
     },
     {
       "path": "knowledge_bridge/update_quiesce.py",
-      "bytes": 3865,
-      "sha256": "0de7b4ba24ba08cf1ea32daacaa2f0f6265f8923d792e8b8e23cf8a7288d6ec7"
+      "bytes": 8769,
+      "sha256": "c08313c1c5434069942a1a9278759d21ed005a29fbbb8f9e22cbd7417dcb3379"
     },
     {
       "path": "knowledge_bridge/update_web.py",
@@ -1018,13 +1023,13 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 12924,
-      "sha256": "445ded86da5bc9e4f378baa009d38fad8dff83908109b007969b8d403e7288f7"
+      "bytes": 12946,
+      "sha256": "88c6b41ff33e251e1cec38e84ccb6c7fd297f63697ed922e51025731d9daa20b"
     },
     {
       "path": "pyproject.toml",
       "bytes": 1108,
-      "sha256": "e8b56f6ec2edb5be708353f22cd5e696a55393060931b71f5bc88218ffe23b68"
+      "sha256": "46c0e468adc91505654daaf90da5977dd6797a532bd3b905f277ee07f8eef6b7"
     },
     {
       "path": "requirements.lock.txt",
@@ -1133,8 +1138,8 @@
     },
     {
       "path": "static/software-update.js",
-      "bytes": 6908,
-      "sha256": "b039ff8a22e48256c2483ade4bc37d07aa692dd472efbdc011e9307e670a6c3e"
+      "bytes": 7378,
+      "sha256": "9256abb5f16fd98ce201cd39cb89ce074c7d679b0e978642319aa2157112b61a"
     },
     {
       "path": "static/style.css",
@@ -1593,8 +1598,8 @@
     },
     {
       "path": "tests/test_encoder_service.py",
-      "bytes": 5917,
-      "sha256": "e54e2c8b68a9a4d315cdb3ce0296d91aa97123221a7490c42b1d274f804616f8"
+      "bytes": 7667,
+      "sha256": "9d1b7cb1e86d61586928175b804560992222b2f059e1fe6b02093cc22d9173e1"
     },
     {
       "path": "tests/test_evidence_security.py",
@@ -1713,8 +1718,8 @@
     },
     {
       "path": "tests/test_launcher_preflight.py",
-      "bytes": 2017,
-      "sha256": "5e70b978a10c5953dcbd0f5d539d56fcecd3509918255816bd1c3c1f13ce35df"
+      "bytes": 2104,
+      "sha256": "5a9fe670e6b7eaa1089fcd0eab0daa5a9139d469df6763222abc37a577f217a6"
     },
     {
       "path": "tests/test_launcher_runtime.py",
@@ -1973,8 +1978,8 @@
     },
     {
       "path": "tests/test_update_quiesce.py",
-      "bytes": 7743,
-      "sha256": "79c3b67cb811683aba398052b2ca723adfcf35c1d9257570ad6a3aea623d3bdd"
+      "bytes": 11065,
+      "sha256": "4e105a04ef03a7cd02369c1528f9b634c927c4771220b065d18046a883e23494"
     },
     {
       "path": "tests/test_update_release.py",
@@ -1983,8 +1988,8 @@
     },
     {
       "path": "tests/test_update_workflow.py",
-      "bytes": 37407,
-      "sha256": "999dbc7cf5700fb65d7eafffadef22595906bb058a3a7ce1f8c6bebbcfbfa1ad"
+      "bytes": 42432,
+      "sha256": "4708f3656cdee19b52b4c99022013a4faf7508dc8ebe852649851700b4bfcb26"
     },
     {
       "path": "tests/test_wiki_daily_runs.py",

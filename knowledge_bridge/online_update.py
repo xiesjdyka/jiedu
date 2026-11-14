@@ -77,15 +77,39 @@ class OnlineUpdate:
             if work != expected.resolve():
                 return {}
             outcome = json.loads((work / 'result.json').read_text('utf-8'))
+            if (outcome.get('token') == helper['token'] and outcome.get('state') in
+                    {'waiting_exit','applying','installed','finalizing'} and self._helper_exited(helper)):
+                return self._interrupted_helper(helper, outcome)
             return outcome if outcome.get('token') == helper['token'] else {}
         except FileNotFoundError:
             if helper.get('helper_pid') and 'work' in locals() and work.is_dir():
+                if self._helper_exited(helper):
+                    return self._interrupted_helper(helper, {})
                 return {'state':'waiting_exit', 'token':helper['token'], 'message':'正在等待安全退出并交接更新。'}
             return {}
         except (OSError, ValueError):
             if 'work' in locals() and work.is_dir():
+                if self._helper_exited(helper):
+                    return self._interrupted_helper(helper, {'state': 'applying'})
                 return {'state':'waiting_exit','token':helper['token'],'message':'更新助手回执暂不可读，已阻止并发更新；请等待或检查恢复材料。'}
             return {}
+
+    def _helper_exited(self, helper):
+        from .update_quiesce import maintenance_identity
+        owner = helper.get('helper_identity')
+        return bool(isinstance(owner, dict) and type(owner.get('pid')) is int and owner['pid'] > 0
+                    and owner != maintenance_identity(owner['pid']))
+
+    def _interrupted_helper(self, helper, outcome):
+        # An interrupted file replacement needs its real transaction records.
+        # An interrupted drain is safe to retry after the existing stop marker expires.
+        state = 'recovery_required' if outcome.get('state') in {'applying','installed','finalizing'} else 'failed'
+        message = ('更新助手在安装过程中退出，保留事务与回退材料供核对。' if state == 'recovery_required'
+                   else '更新助手在安全退出阶段中断，原程序可在停机请求到期后重新启动。')
+        result = {**outcome, 'state': state, 'phase': state, 'token': helper['token'], 'message': message}
+        if state == 'recovery_required':
+            result['manual_recovery'] = True
+        return result
 
     def _clear_finished_for_check(self):
         if self.worker and self.worker.is_alive():
@@ -375,6 +399,7 @@ class OnlineUpdate:
         return self.start()
 
     def start(self, *, recovery=False):
+        from .update_quiesce import require_maintenance_open
         with self.lock:
             if not self.channel().get('manifest_url'):
                 return self.status()
@@ -385,7 +410,7 @@ class OnlineUpdate:
                 return self.status()
             if outcome.get('state') == 'recovery_required' and not recovery:
                 raise ValueError('请先恢复或审阅失败更新，不能覆盖唯一回退副本')
-            if recovery and outcome.get('state') != 'recovery_required':
+            if recovery and (outcome.get('state') != 'recovery_required' or outcome.get('manual_recovery')):
                 raise ValueError('当前没有待恢复的完整安装事务')
             from filelock import FileLock, Timeout
             self.root.mkdir(parents=True, exist_ok=True)
@@ -393,6 +418,11 @@ class OnlineUpdate:
             try:
                 operation.acquire(timeout=0)
             except Timeout:
+                return self.status()
+            try:
+                require_maintenance_open(self.program)
+            except RuntimeError:
+                operation.release()
                 return self.status()
             self.operation_lock = operation
             self.recovery_requested = recovery
@@ -405,8 +435,11 @@ class OnlineUpdate:
             return self.status()
 
     def _run(self):
-        from filelock import FileLock, Timeout
+        from filelock import Timeout
+        from .update_quiesce import MAINTENANCE_SECONDS, begin_maintenance, end_maintenance
         gate_started = False
+        maintenance_token = None
+        request = None
         handed_off = False
         try:
             self.root.mkdir(parents=True, exist_ok=True)
@@ -428,16 +461,26 @@ class OnlineUpdate:
                         self.download()
                     self._phase('verifying', '正在复核签名、版本和安装归属…')
                     self._inspect(artifact, record)
+                    from .full_installer_update import prepare_handoff
+                    request = prepare_handoff(self.program, self.root, record, artifact)
+                maintenance_token = self._read('helper.json')['token'] if self.recovery_requested else request['token']
+                begin_maintenance(self.program, maintenance_token)
+                deadline = time.monotonic() + MAINTENANCE_SECONDS - 5
                 while not self.cancel_event.is_set():
                     reasons = list(self.busy()) if self.busy else ['尚未接入运行任务的空闲核验']
-                    if not reasons and self.quiesce:
+                    if self.quiesce and self.busy:
                         gate_started = True
                         if self.quiesce() and not list(self.busy()):
                             break
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError('等待界渡现有任务排空超时。已恢复服务，可以重试。')
                     self._phase('waiting_idle', '正在等待当前任务自然结束；不会强制关闭。', busy=reasons)
                     self.cancel_event.wait(self.idle_interval)
                 if self.cancel_event.is_set():
-                    self._phase('cancelled', '更新已取消，原版本保持不变。')
+                    if self.recovery_requested:
+                        self._phase('cancelled', '更新已取消，原版本保持不变。')
+                    else:
+                        self._claim_handoff('', request['token'], request['request_path'])
                     return
                 if self.recovery_requested:
                     if not self._claim_handoff('正在安全退出并恢复上一个完整版本。',
@@ -450,8 +493,6 @@ class OnlineUpdate:
                     return
                 record = self._record()
                 self._inspect(artifact, record)
-                from .full_installer_update import prepare_handoff
-                request = prepare_handoff(self.program, self.root, record, artifact)
                 if not self._claim_handoff('当前任务已结束，正在交接安装并准备重启。',
                                            request['token'], request['request_path']):
                     return
@@ -466,6 +507,12 @@ class OnlineUpdate:
             else:
                 self._phase('failed', str(error)[:800], error=type(error).__name__)
         finally:
+            if maintenance_token and not handed_off:
+                end_maintenance(self.program, maintenance_token)
+            if request and not handed_off and not self._read('helper.json'):
+                request_path = Path(request['request_path'])
+                if request_path.parent == self.root and request_path.name == 'handoff-' + request['token'] + '.json':
+                    request_path.unlink(missing_ok=True)
             if gate_started and not handed_off and self.resume:
                 self.resume()
             if self.operation_lock:

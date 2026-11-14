@@ -42,7 +42,11 @@
     version.textContent = '当前版本 ' + (value.version || '读取中') + (value.latest ? ' · 最新版本 ' + value.latest : '');
     const progress = value.progress;
     const fraction = typeof progress === 'number' && Number.isFinite(progress) ? ' · ' + Math.max(0, Math.min(100, Math.round(progress))) + '%' : '';
-    const text = (value.message || '更新状态暂不可用') + fraction;
+    const blockers = Array.isArray(value.blocking_processes) ? value.blocking_processes : [];
+    const occupied = blockers.filter(row => row && typeof row.executable === 'string' && Number.isInteger(row.pid))
+      .slice(0, 3).map(row => row.executable.split(/[\\/]/).pop() + ' (PID ' + row.pid + ')');
+    const text = (value.message || '更新状态暂不可用') + fraction +
+      (occupied.length ? ' 占用进程 ' + occupied.join('、') + (blockers.length > occupied.length ? ' 等。' : '。') : '');
     if (message.textContent !== text) message.textContent = text;
     if (noticeMessage.textContent !== text) noticeMessage.textContent = text;
     notes.textContent = value.notes || ''; detail.hidden = !value.notes;
@@ -56,7 +60,7 @@
       group.start.hidden = !canStart || active;
       group.start.disabled = actionPending;
       group.start.textContent = value.state === 'failed' ? '重试更新' : '更新并重启';
-      group.recover.hidden = !needsRecovery;
+      group.recover.hidden = !needsRecovery || value.manual_recovery === true;
       group.recover.disabled = actionPending;
       group.remind.hidden = active || !canStart;
       group.remind.disabled = actionPending;
