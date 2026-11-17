@@ -1,3 +1,9 @@
+# 1.2.8 发布状态
+
+1.2.8 换上全新界面，统一首页、连接 AI 与故障排查的连接状态，并修复会话刷新页在未配置核心背景时的读取错误。从 1.2.6 直接升级仍由旧版助手执行，如果旧 MCP 连接持续占用安装目录，请关闭该连接后重试。详见[更新说明](changes-1.2.8.md)和 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.8)。
+
+以下为历史版本记录。
+
 # 1.2.7 发布状态
 
 1.2.7 修复软件更新时新请求和 MCP 自动重连持续占用界渡程序的问题。首次从 1.2.6 升级仍由旧版助手执行，如果旧 MCP 连接持续占用安装目录，请关闭该连接后重试。详见[更新说明](changes-1.2.7.md)和 [GitHub Release](https://github.com/xiesjdyka/jiedu/releases/tag/1.2.7)。

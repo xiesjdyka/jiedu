@@ -38,8 +38,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 8794,
-      "sha256": "d08826ddfcd9bb6c5c43a082ca0bd37efb191cad3f15c232ea3ca21fc27d8c60"
+      "bytes": 8990,
+      "sha256": "06c37c66778b43715297f497d6007499bf75094daecd08635530e6672c8520da"
     },
     {
       "path": "RELEASE_NOTES.md",
@@ -59,7 +59,7 @@
     {
       "path": "VERSION",
       "bytes": 6,
-      "sha256": "d9e8e8429c6a7d0b965e4fac26a5efff7103f055faa98cceb5bd4731fd24603a"
+      "sha256": "d2d31534641da01801512a3ec793bc8d57132d4cefa19a5fb503e8995f39eb8f"
     },
     {
       "path": "butler-resources.lock.json",
@@ -217,6 +217,11 @@
       "sha256": "cbf8a77dac27321d648b642dbdff9f161f962770f5bb22074a9778e0ee8bf874"
     },
     {
+      "path": "docs/changes-1.2.8.md",
+      "bytes": 2665,
+      "sha256": "bd0d676fda332e21055ac60b830edae8797c50dfe982b69a88061b93c4fbc55d"
+    },
+    {
       "path": "docs/changes-20261024.md",
       "bytes": 4063,
       "sha256": "2173cd4185c0787a3da3d3d0e0f376b5955e648c2111e104482e3c02b01c8d7f"
@@ -253,8 +258,8 @@
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 13053,
-      "sha256": "24661fce99482cbd30e15dfb5b1884fb04a88193e37f919b99e6c630068eeef0"
+      "bytes": 13505,
+      "sha256": "9a1a4eebbd7c79fe64ff799e1395a59d6491bf7e50e3d56eaaccb8fc70ea23ee"
     },
     {
       "path": "docs/release-version.md",
@@ -314,7 +319,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 22,
-      "sha256": "e3da6b08b6c4ddf1732dfc5e9b9addd9daf5895e3f2fe6cdd0de09ee3c54e720"
+      "sha256": "09f5579b4c3094a3d6d2484e730856c3ad53a60b5988b8a309e3ec00838adda5"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -1023,13 +1028,13 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 13583,
-      "sha256": "72ed3ecb88914c3ae18de45d28dce2b3be34636b04a9d16362c17b545aeaf137"
+      "bytes": 13605,
+      "sha256": "93db45c6db27b27dce5de4c0d7ef2c01d6a97e5fe41106435b6d66a2b617c3a4"
     },
     {
       "path": "pyproject.toml",
       "bytes": 1108,
-      "sha256": "46c0e468adc91505654daaf90da5977dd6797a532bd3b905f277ee07f8eef6b7"
+      "sha256": "67cc16f8141776cc17277dd4ba9264b3e8831d981fcf5565c91c31a68e91de23"
     },
     {
       "path": "requirements.lock.txt",
