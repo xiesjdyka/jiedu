@@ -187,6 +187,11 @@ def session_status(session_id: str, *, state_path: Path = SESSIONS_PATH) -> dict
     session = _load(state_path).get("sessions", {}).get(session_id)
     if not session:
         raise ValueError("会话不存在")
+    return session_view(session)
+
+
+def session_view(session: dict) -> dict:
+    """Status fields for one session record that is already loaded."""
     full = session["memory_mode"] == "full"
     token_kind = "actual" if session["actual_tokens"] is not None else "estimated" if full else "unavailable"
     token_value = session["actual_tokens"] if token_kind == "actual" else session["estimated_tokens"] if token_kind == "estimated" else None

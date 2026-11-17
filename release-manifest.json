@@ -873,8 +873,8 @@
     },
     {
       "path": "knowledge_bridge/session_manager.py",
-      "bytes": 11591,
-      "sha256": "7976d47188b840f39e0b0279cd36567cc1a81dd6b1b4484fde042da883f02828"
+      "bytes": 11738,
+      "sha256": "acc782a3cd28ae5f0e8fbb1ed5177db7862d27f1ecd977c2f765a105d2b71f86"
     },
     {
       "path": "knowledge_bridge/source_adapters.py",
@@ -943,8 +943,8 @@
     },
     {
       "path": "knowledge_bridge/web.py",
-      "bytes": 194768,
-      "sha256": "cf21da5a29e10cb10240af9f8338cff187dd20393a5e2b8a425c69bf38b8bb4e"
+      "bytes": 195501,
+      "sha256": "56c7100b727000b82670fd2ed6120ff15692a0baa5abffcd3024f4dea66377f4"
     },
     {
       "path": "knowledge_bridge/wiki_daily_runs.py",
@@ -1093,8 +1093,8 @@
     },
     {
       "path": "static/app.js",
-      "bytes": 389415,
-      "sha256": "3b39b5c88df51bafe84f0a4045b1ed0f173a02ff1ff6be11cca552b667a44c78"
+      "bytes": 389486,
+      "sha256": "498c0fd0e697597c6edaa9651f75e0d3bf2e8ff739d187f2251ff6b7cd02ea40"
     },
     {
       "path": "static/archives-studio.css",
@@ -1189,7 +1189,7 @@
     {
       "path": "static/index.html",
       "bytes": 56066,
-      "sha256": "a1ed9cded5934c2ef5fa812b58091cb64b3e1dbcf4185ea17de262ead9d37a3a"
+      "sha256": "6e3813c1c677dfbb631f43c3adcf8b6e829b2e1fbf76baa2e56faaa766f3b2d6"
     },
     {
       "path": "static/knowledge-studio.css",
@@ -1263,8 +1263,8 @@
     },
     {
       "path": "static/site-studio-3.css",
-      "bytes": 41052,
-      "sha256": "5f265fd9ac5554117352eeb28e98dd9306faded4231cbeeaaa4387833a24376b"
+      "bytes": 41255,
+      "sha256": "bc3ff69e99e9220bf9150e42b00cb8033c2c228cc70930477e7bb65ec57acba3"
     },
     {
       "path": "static/site-studio.css",

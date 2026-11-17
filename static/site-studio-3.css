@@ -267,3 +267,5 @@ html[data-theme] #protection#protection#protection .set-col>.software-update-car
 /* r44：工作区与设置一样居中单列，最宽 900 像素 */
 html[data-theme] #workspace#workspace#workspace .workspace-hub{max-width:900px;margin-inline:auto}
 html[data-theme] #workspace#workspace#workspace .knowledge-base-summary>div>*{white-space:normal;word-break:break-all;text-overflow:clip}
+/* r50：会话刷新页「权重状态」右上角状态胶囊在窄窗口下不换行 */
+html[data-theme] #weight .weight-status-console .memory-section-head>#weightState{white-space:nowrap;flex:none}

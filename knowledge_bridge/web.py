@@ -22,7 +22,7 @@ from .memory_pipeline import save_raw_conversation, create_candidate, edit_candi
 from .memory_control import raw_message
 from .local_ai import client_status,generated_config,test_client,disconnect_client,config_preview,config_apply,config_rollback,create_custom_client,custom_client_config
 from .bridge_settings import load_settings,save_settings,reminder_state
-from .session_manager import session_start,session_append,session_status,session_end,refresh_memory_context,list_sessions
+from .session_manager import session_start,session_append,session_status,session_view,session_end,refresh_memory_context,list_sessions
 from .session_archive import list_archives,materialize,list_archive_summaries,materialize_page
 from .hermes_session_adapter import status as hermes_adapter_status
 from .core_bootstrap import current as current_core,read_status as core_status,versions as core_versions,rollback as rollback_core
@@ -663,8 +663,12 @@ def butler_snapshot(jid:str,request:Request):
 
 @app.get("/")
 def home(): return FileResponse(STATIC/"index.html",headers={"Cache-Control":"no-store"})
+def _serving_port(request,fallback):
+    """The port this request actually reached; the settings value only when unknown."""
+    server=request.scope.get("server") if request is not None else None
+    return server[1] if isinstance(server,(tuple,list)) and len(server)==2 and isinstance(server[1],int) else fallback
 @app.get("/api/health")
-def health():
+def health(request:Request):
     from . import core
     workspace=workspace_runtime_status()
     if workspace["workspace_ready"] and not getattr(app.state,"knowledge_objects",None):
@@ -676,7 +680,7 @@ def health():
     from .bridge_settings import load_settings
     settings=load_settings()
     model_state=core.local_model_status()
-    return {"status":"ready","console":"ready","watcher":"external","launch_id":os.environ.get("KNOWLEDGE_BRIDGE_LAUNCH_ID"),"lancedb":"ready" if table_ready else "unavailable","bge_m3":model_state["state"],"vector_model":model_state,"mcp":"ready","environment":"isolated_test" if os.environ.get("KNOWLEDGE_BRIDGE_PROTECTION_TEST_MODE")=="1" else "production","vault":core.VAULT.name if workspace["workspace_ready"] else None,"program_root":str(core.ROOT),"pid":__import__('os').getpid(),"port":settings["console"]["port"],**workspace}
+    return {"status":"ready","console":"ready","watcher":"external","launch_id":os.environ.get("KNOWLEDGE_BRIDGE_LAUNCH_ID"),"lancedb":"ready" if table_ready else "unavailable","bge_m3":model_state["state"],"vector_model":model_state,"mcp":"ready","environment":"isolated_test" if os.environ.get("KNOWLEDGE_BRIDGE_PROTECTION_TEST_MODE")=="1" else "production","vault":core.VAULT.name if workspace["workspace_ready"] else None,"program_root":str(core.ROOT),"pid":__import__('os').getpid(),"port":_serving_port(request,settings["console"]["port"]),"configured_port":settings["console"]["port"],**workspace}
 
 class ProtectionInitializeRequest(BaseModel):
     passphrase: SecretStr = Field(min_length=12,max_length=1024)
@@ -2153,7 +2157,10 @@ def api_knowledge_governance_update(request:GovernanceRequest):
     except PermissionError as e:raise HTTPException(403,str(e))
     except ValueError as e:raise HTTPException(400,str(e))
 @app.get("/api/original-archives")
-def api_original_archives(request:Request):_owner_read(request);return original_archive_status(rescan=False)
+def api_original_archives(request:Request):
+    _owner_read(request);result=original_archive_status(rescan=False)
+    # Never scanned yet: scan once so the first visit is not an empty list.
+    return scan_original_archives() if result.get("last_scan_at") is None else result
 @app.post("/api/original-archives/refresh")
 def api_original_archives_refresh(request:Request):
     _same_origin(request);_owner(request,refresh=True);return scan_original_archives()
@@ -3013,7 +3020,9 @@ def api_sessions(request:Request,client_id:str|None=None):
     _owner_read(request)
     rows=list_sessions(client_id)
     if client_id=="hermes":rows=[row for row in rows if row.get("user_message_count",0)+row.get("assistant_message_count",0)>0]
-    return [session_status(row["session_id"])|{"reminder":reminder_state(row)} for row in rows]
+    # Build every row from the one snapshot list_sessions read: re-reading the state
+    # per session is N² file reads and fails when a session disappears in between.
+    return [session_view(row)|{"reminder":reminder_state(row)} for row in rows]
 @app.get("/api/session-archives")
 def api_session_archives(request:Request,offset:int=0,limit:int=50,client:str|None=None,status:str|None=None,query:str|None=None):
     _owner_read(request);return list_archive_summaries(offset,limit,client,status,query)
