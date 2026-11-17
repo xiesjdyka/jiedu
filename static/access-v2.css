@@ -1,0 +1,201 @@
+/* 界渡 · 连接 AI 重构（第 22 轮）
+   一张主控制台卡：顶部状态行 + 新增按钮；左侧客户端列表；右侧接入 / 权限面板。
+   下方「聊天来源管理」是一张细线列表卡。全部用 #access ×3 压过旧样式。 */
+
+/* ---------- 通用：开关（与管家开关同一规格） ---------- */
+html[data-theme] :is(.client-access-switch,.setting-switch){position:relative}
+html[data-theme] :is(.client-access-switch,.setting-switch)>input{position:absolute!important;opacity:0!important;width:1px!important;height:1px!important;pointer-events:none}
+html[data-theme] :is(.client-access-switch,.setting-switch)>i{--sw-w:40px;--sw-h:24px;--sw-k:20px;--sw-p:2px;position:relative!important;flex:none!important;display:block;width:var(--sw-w)!important;height:var(--sw-h)!important;border-radius:999px!important;background:var(--sw-off)!important;border:0!important;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.06)!important;transition:background-color .22s ease,box-shadow .22s ease!important;cursor:pointer}
+html[data-theme] :is(.client-access-switch,.setting-switch)>i::after{content:""!important;position:absolute!important;left:var(--sw-p)!important;top:var(--sw-p)!important;width:var(--sw-k)!important;height:var(--sw-k)!important;border-radius:999px!important;background:#fff!important;box-shadow:0 1px 2px rgba(15,20,40,.22),0 2px 6px rgba(15,20,40,.12)!important;transform:translateX(0)!important;transition:transform .24s cubic-bezier(.3,.7,.2,1.1),width .18s ease!important}
+html[data-theme] :is(.client-access-switch,.setting-switch)>input:checked+i{background:var(--accent)!important;box-shadow:none!important}
+html[data-theme] :is(.client-access-switch,.setting-switch)>input:checked+i::after{transform:translateX(calc(var(--sw-w) - var(--sw-k) - var(--sw-p) * 2))!important}
+html[data-theme] :is(.client-access-switch,.setting-switch):hover>input:not(:checked):not(:disabled)+i{background:var(--sw-off-hover)!important}
+html[data-theme] :is(.client-access-switch,.setting-switch):active>input:not(:disabled)+i::after{width:calc(var(--sw-k) + 4px)!important}
+html[data-theme] :is(.client-access-switch,.setting-switch):active>input:checked:not(:disabled)+i::after{transform:translateX(calc(var(--sw-w) - var(--sw-k) - var(--sw-p) * 2 - 4px))!important}
+html[data-theme] :is(.client-access-switch,.setting-switch)>input:focus-visible+i{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 28%,transparent)!important}
+html[data-theme] :is(.client-access-switch,.setting-switch)>input:disabled+i{opacity:.4;cursor:not-allowed}
+
+/* ---------- 主控制台：一张卡 ---------- */
+html[data-theme] #access#access#access .access-hub{display:flex;flex-direction:column;gap:28px}
+html[data-theme] #access#access#access .client-access-console{position:relative;display:block;padding:0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+/* 「新增其他客户端」放进卡片头部右侧 */
+html[data-theme] #access#access#access .client-access-head{position:absolute;top:10px;right:14px;z-index:3;margin:0!important;padding:0!important;height:auto!important;background:transparent!important;border:0!important}
+html[data-theme] #access#access#access #pairClient{height:32px!important;min-height:32px!important;padding:0 14px!important;font-size:12.5px!important;border-radius:10px!important;box-shadow:0 4px 14px -6px color-mix(in srgb,var(--accent) 70%,transparent)!important}
+html[data-theme] #access#access#access .client-access-workspace{display:grid!important;grid-template-columns:248px minmax(0,1fr)!important;grid-template-rows:auto 1fr;grid-template-areas:"gate gate" "list panel";gap:0!important;min-height:560px;padding:0!important;margin:0!important;border:1px solid var(--line)!important;border-radius:20px!important;background:var(--card)!important;box-shadow:var(--card-shadow,var(--shadow))!important;overflow:hidden;-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2)}
+/* 顶部状态行 */
+html[data-theme] #access#access#access .client-gate-status{grid-area:gate;display:flex!important;align-items:center;min-height:52px;margin:0!important;padding:0 200px 0 22px!important;background:transparent!important;border:0!important;border-bottom:1px solid var(--line-soft,var(--line))!important;border-radius:0!important;box-shadow:none!important}
+html[data-theme] #access#access#access .client-gate-status>div{display:flex;align-items:center;gap:10px;min-width:0}
+html[data-theme] #access#access#access .client-gate-status>div::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--st-ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--st-ok) 16%,transparent)}
+html[data-theme] #access#access#access .client-gate-status:not(.gate-ready)>div::before{background:var(--st-warn);box-shadow:0 0 0 4px color-mix(in srgb,var(--st-warn) 16%,transparent)}
+html[data-theme] #access#access#access .client-gate-status b{font-size:13px;font-weight:600;color:var(--text)}
+html[data-theme] #access#access#access .client-gate-status small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme] #access#access#access .client-gate-status>div>b::after{content:"";display:inline-block;width:1px;height:12px;margin:0 2px 0 12px;background:var(--line);vertical-align:-1px}
+
+/* 左侧：客户端列表 */
+html[data-theme] #access#access#access .client-identity-list{grid-area:list;display:flex!important;flex-direction:column;gap:2px;padding:14px 10px 16px!important;margin:0!important;background:color-mix(in srgb,var(--surface-2) 55%,transparent)!important;border:0!important;border-right:1px solid var(--line-soft,var(--line))!important;border-radius:0!important;box-shadow:none!important;overflow:auto;min-height:0}
+html[data-theme] #access#access#access .client-list-summary{display:flex;align-items:baseline;justify-content:space-between;padding:4px 10px 10px!important;margin:0!important;border:0!important}
+html[data-theme] #access#access#access .client-list-summary b{font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--muted)}
+html[data-theme] #access#access#access .client-list-summary small{display:none}
+html[data-theme] #access#access#access .client-identity-card{position:relative;display:grid!important;grid-template-columns:auto 1fr auto;grid-template-areas:"dot name state";align-items:center;column-gap:10px;width:100%!important;min-height:40px!important;height:auto!important;margin:0!important;padding:0 10px 0 12px!important;border:0!important;border-radius:10px!important;background:transparent!important;box-shadow:none!important;text-align:left;cursor:pointer;transition:background .15s ease}
+html[data-theme] #access#access#access .client-identity-card::before{content:"";grid-area:dot;width:8px;height:8px;border-radius:50%;background:color-mix(in srgb,var(--text) 22%,transparent);box-shadow:none!important;position:static!important;opacity:1!important;transform:none!important}
+html[data-theme] #access#access#access .client-identity-card::after{content:none!important}
+html[data-theme] #access#access#access .client-identity-card[data-tone="ok"]::before{background:var(--st-ok)}
+html[data-theme] #access#access#access .client-identity-card[data-tone="warn"]::before{background:var(--st-warn)}
+html[data-theme] #access#access#access .client-identity-card[data-tone="bad"]::before{background:var(--st-down)}
+html[data-theme] #access#access#access .client-identity-card>b{grid-area:name;font-size:13.5px!important;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme] #access#access#access .client-identity-card>small{display:none!important}
+html[data-theme] #access#access#access .client-identity-card>.identity-status{grid-area:state;justify-self:end;margin:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11.5px!important;font-weight:500;color:var(--muted)!important;white-space:nowrap}
+html[data-theme] #access#access#access .client-identity-card>.identity-status::before{content:none!important}
+html[data-theme] #access#access#access .client-identity-card[data-tone="warn"]>.identity-status{color:var(--st-warn-ink)!important}
+html[data-theme] #access#access#access .client-identity-card[data-tone="ok"]>.identity-status{color:var(--st-ok)!important}
+html[data-theme] #access#access#access .client-identity-card:hover{background:color-mix(in srgb,var(--text) 5%,transparent)!important}
+html[data-theme] #access#access#access .client-identity-card.selected,html[data-theme] #access#access#access .client-identity-card[aria-pressed="true"]{background:var(--card)!important;box-shadow:0 1px 2px rgba(20,24,60,.06),0 0 0 1px var(--line)!important}
+html[data-theme="dark"] #access#access#access .client-identity-card.selected,html[data-theme="dark"] #access#access#access .client-identity-card[aria-pressed="true"]{background:color-mix(in srgb,var(--text) 9%,transparent)!important;box-shadow:0 0 0 1px var(--line)!important}
+html[data-theme] #access#access#access .client-identity-card.selected>b,html[data-theme] #access#access#access .client-identity-card[aria-pressed="true"]>b{color:var(--accent-ink,var(--accent))}
+html[data-theme] #access#access#access .client-identity-card:focus-visible{outline:2px solid var(--focus-ring,var(--accent));outline-offset:1px}
+/* 已有连接分组 */
+html[data-theme] #access#access#access .other-client-identities{margin:10px 0 0!important;padding:10px 0 0!important;border:0!important;border-top:1px solid var(--line-soft,var(--line))!important;background:transparent!important}
+html[data-theme] #access#access#access .other-client-identities>summary{min-height:30px!important;padding:0 10px!important;font-size:11.5px!important;font-weight:600;letter-spacing:.04em;color:var(--muted)!important;background:transparent!important}
+html[data-theme] #access#access#access .other-client-identities>:not(summary){margin-left:0!important;max-width:none!important}
+html[data-theme] #access#access#access .other-client-identities .client-identity-card>.identity-status{display:none!important}
+
+/* 右侧：面板 */
+html[data-theme] #access#access#access .client-permission-panel{grid-area:panel;display:block!important;min-width:0;padding:26px 30px 28px!important;margin:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:auto}
+
+/* 未接入：干净的引导面板（去掉背后模糊的假预览） */
+html[data-theme] #access#access#access .branded-connect{display:block!important;min-height:0!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+html[data-theme] #access#access#access .branded-permission-preview{display:none!important}
+html[data-theme] #access#access#access .branded-connect-overlay{position:static!important;inset:auto!important;transform:none!important;width:auto!important;max-width:560px;margin:0!important;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;counter-reset:step}
+html[data-theme] #access#access#access .branded-connect-overlay>.identity-status{display:inline-flex;align-items:center;gap:6px;margin:0 0 10px!important;padding:3px 10px!important;border-radius:999px;border:0!important;background:color-mix(in srgb,var(--text) 6%,transparent)!important;font-size:11.5px!important;font-weight:500;color:var(--muted)!important}
+html[data-theme] #access#access#access .branded-connect-overlay>.identity-status::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7}
+html[data-theme] #access#access#access .branded-connect-overlay>h3{margin:0 0 8px!important;font-size:22px!important;font-weight:700;letter-spacing:-.01em;color:var(--text)}
+html[data-theme] #access#access#access .branded-connect-overlay>p:not(.branded-connect-feedback){margin:0 0 6px!important;font-size:13.5px!important;line-height:1.7;color:var(--text-2,var(--muted))!important}
+html[data-theme] #access#access#access .branded-connect-overlay>p:nth-of-type(2){font-size:12.5px!important;color:var(--muted)!important}
+html[data-theme] #access#access#access .branded-connect-actions{display:flex!important;flex-wrap:wrap;gap:10px!important;margin:20px 0 0!important;padding:16px 0 0!important;border-top:1px solid var(--line-soft,var(--line))}
+html[data-theme] #access#access#access .branded-connect-actions>button{height:36px!important;min-height:36px!important;padding:0 16px!important;border-radius:10px!important;font-size:13px!important;counter-increment:step}
+html[data-theme] #access#access#access .branded-connect-actions>button::before{content:counter(step);display:inline-grid;place-items:center;width:18px;height:18px;margin-right:8px;border-radius:50%;font-size:11px;font-weight:700;background:rgba(255,255,255,.22)}
+html[data-theme] #access#access#access .branded-connect-actions>button.secondary::before{background:color-mix(in srgb,var(--text) 9%,transparent)}
+html[data-theme] #access#access#access .branded-connect-feedback{margin:10px 0 0!important;font-size:12px!important;color:var(--muted)!important}
+
+/* 已有连接：权限面板 */
+html[data-theme] #access#access#access .client-permission-head{margin:0 0 14px!important;padding:0!important;border:0!important;background:transparent!important}
+html[data-theme] #access#access#access .client-permission-head span{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+html[data-theme] #access#access#access .client-permission-head h3{margin:0!important;font-size:22px!important;font-weight:700;letter-spacing:-.01em}
+html[data-theme] #access#access#access .client-daily-status{display:flex;flex-direction:column;gap:2px;margin:0 0 20px!important;padding:12px 14px!important;border:0!important;border-radius:12px!important;background:color-mix(in srgb,var(--text) 4%,transparent)!important;box-shadow:none!important}
+html[data-theme] #access#access#access .client-daily-status p{margin:0!important;font-size:12.5px!important;color:var(--muted)!important}
+html[data-theme] #access#access#access .client-daily-status p:first-child{font-size:13px!important;color:var(--text)!important}
+html[data-theme] #access#access#access .legacy-permissions{margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+html[data-theme] #access#access#access .legacy-permissions>h4{margin:0 0 8px!important;font-size:11.5px!important;font-weight:600;letter-spacing:.04em;color:var(--muted)}
+html[data-theme] #access#access#access .legacy-permissions>p{margin:8px 0 18px!important;font-size:12px!important;color:var(--muted)!important}
+html[data-theme] #access#access#access .client-access-switch{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;min-height:48px;margin:0!important;padding:10px 16px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;cursor:pointer}
+html[data-theme] #access#access#access .client-access-switch>span{min-width:0}
+html[data-theme] #access#access#access .client-access-switch b{display:block;font-size:13.5px!important;font-weight:500;color:var(--text)}
+html[data-theme] #access#access#access .client-access-switch small{display:block;margin-top:2px;font-size:12px!important;color:var(--muted)!important}
+/* 总开关：单独一块 */
+html[data-theme] #access#access#access .legacy-permissions>.client-access-switch{min-height:60px;border:1px solid var(--line)!important;border-radius:14px!important;background:var(--card)!important}
+html[data-theme] #access#access#access .legacy-permissions>.client-access-switch b{font-weight:600}
+/* 分组：一组一张细线卡 */
+html[data-theme] #access#access#access .permission-groups{display:flex!important;flex-direction:column;gap:16px!important;margin:0!important}
+html[data-theme] #access#access#access .permission-groups>details{margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+html[data-theme] #access#access#access .permission-groups>details>summary{min-height:28px!important;margin:0 0 6px!important;padding:0 2px!important;font-size:11.5px!important;background:transparent!important}
+html[data-theme] #access#access#access .permission-groups>details>summary b{font-size:11.5px!important;font-weight:600;letter-spacing:.04em;color:var(--muted)}
+html[data-theme] #access#access#access .permission-groups>details>div{margin:0!important;padding:0!important;border:1px solid var(--line)!important;border-radius:14px!important;background:var(--card)!important;overflow:hidden;max-width:none!important}
+html[data-theme] #access#access#access .permission-groups>details>div>.client-access-switch+.client-access-switch{border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #access#access#access .permission-groups>details>div>.client-access-switch:hover,html[data-theme] #access#access#access .legacy-permissions>.client-access-switch:hover{background:color-mix(in srgb,var(--text) 3%,transparent)!important}
+
+/* 面板底部的折叠项：细线行 */
+html[data-theme] #access#access#access .client-permission-panel>details{margin:0!important;padding:0!important;border:0!important;border-top:1px solid var(--line-soft,var(--line))!important;background:transparent!important;box-shadow:none!important}
+html[data-theme] #access#access#access .client-permission-panel>details:first-of-type{margin-top:24px!important}
+html[data-theme] #access#access#access .client-permission-panel>details>summary{min-height:52px!important;padding:0!important;background:transparent!important}
+html[data-theme] #access#access#access .client-permission-panel>details>summary>span{display:flex;align-items:baseline;gap:10px;min-width:0}
+html[data-theme] #access#access#access .client-permission-panel>details>summary b{font-size:13px!important;font-weight:600}
+html[data-theme] #access#access#access .client-permission-panel>details>summary small{font-size:12px!important;color:var(--muted)!important}
+html[data-theme] #access#access#access .client-permission-panel>details>:not(summary){margin:0 0 14px 22px!important;padding:0!important;border:0!important;background:transparent!important}
+html[data-theme] #access#access#access .client-permission-panel>details p{font-size:12.5px!important;font-weight:400!important;color:var(--muted)!important;margin:0 0 6px!important}
+
+/* 卡片下方的边界说明 */
+html[data-theme] #access#access#access .client-access-boundary{margin:12px 6px 0!important;padding:0!important;border:0!important;background:transparent!important;font-size:12px!important;line-height:1.6;color:var(--muted)!important}
+
+/* ---------- 聊天来源管理：一张细线列表卡 ---------- */
+html[data-theme] #access#access#access .local-chat-collectors{margin:0!important;padding:0!important;background:var(--card)!important;border:1px solid var(--line)!important;border-radius:20px!important;box-shadow:var(--card-shadow,var(--shadow))!important;overflow:hidden;-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2)}
+html[data-theme] #access#access#access .local-chat-head{display:flex!important;align-items:center;justify-content:space-between;min-height:56px;margin:0!important;padding:0 16px 0 22px!important;border-bottom:1px solid var(--line-soft,var(--line))!important;background:transparent!important}
+html[data-theme] #access#access#access .local-chat-head h2{margin:0!important;font-size:15px!important;font-weight:650}
+html[data-theme] #access#access#access .local-chat-head button{height:32px!important;min-height:32px!important}
+html[data-theme] #access#access#access .local-chat-grid{display:block!important;margin:0!important;padding:0!important;gap:0!important}
+html[data-theme] #access#access#access .local-chat-card{display:grid!important;grid-template-columns:150px minmax(0,1fr) auto;grid-template-areas:"name sum btn" "det det det" "fb fb fb";align-items:center;column-gap:16px;margin:0!important;padding:12px 16px 12px 22px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transition:background .15s}
+html[data-theme] #access#access#access .local-chat-card+.local-chat-card{border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #access#access#access .local-chat-card:hover{background:color-mix(in srgb,var(--text) 2.5%,transparent)!important}
+html[data-theme] #access#access#access .local-chat-card-head{grid-area:name;display:flex!important;flex-direction:column;align-items:flex-start;gap:4px;width:auto!important;height:auto!important;position:static!important;margin:0!important;padding:0!important;overflow:visible!important}
+html[data-theme] #access#access#access .local-chat-card-head h3{margin:0!important;font-size:13.5px!important;font-weight:600}
+html[data-theme] #access#access#access .local-chat-card-head strong{display:inline-flex;align-items:center;gap:6px;padding:0!important;border:0!important;background:transparent!important;font-size:11.5px!important;font-weight:500;color:var(--muted)!important}
+html[data-theme] #access#access#access .local-chat-card-head strong::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6}
+html[data-theme] #access#access#access .local-chat-card[data-tone="ok"] .local-chat-card-head strong{color:var(--st-ok)!important}
+html[data-theme] #access#access#access .local-chat-card[data-tone="warn"] .local-chat-card-head strong{color:var(--st-warn-ink)!important}
+html[data-theme] #access#access#access .local-chat-summary{grid-area:sum;margin:0!important;font-size:12.5px!important;color:var(--muted)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme] #access#access#access .local-chat-card>button{grid-area:btn;height:32px!important;min-height:32px!important;padding:0 14px!important;font-size:12.5px!important}
+html[data-theme] #access#access#access .local-chat-details{grid-area:det;margin:6px 0 0!important;padding:0!important;border:0!important;background:transparent!important;width:auto!important}
+html[data-theme] #access#access#access .local-chat-details>summary{min-height:28px!important;padding:0!important;font-size:12px!important;color:var(--muted)!important;background:transparent!important}
+html[data-theme] #access#access#access .local-chat-details[open]>summary{color:var(--text)!important}
+html[data-theme] #access#access#access .local-chat-details>p{margin:4px 0 2px 22px!important;font-size:12.5px!important;line-height:1.6;color:var(--text-2,var(--muted))!important}
+html[data-theme] #access#access#access .local-chat-details>p.local-chat-boundary{font-size:12px!important;color:var(--muted)!important}
+html[data-theme] #access#access#access .local-chat-feedback{grid-area:fb;margin:0!important;font-size:12px;color:var(--muted)}
+html[data-theme] #access#access#access .local-chat-feedback:empty{display:none}
+
+/* 窄窗口：列表和面板上下排 */
+@media (max-width:980px){
+  html[data-theme] #access#access#access .client-access-workspace{grid-template-columns:1fr!important;grid-template-areas:"gate" "list" "panel"}
+  html[data-theme] #access#access#access .client-identity-list{border-right:0!important;border-bottom:1px solid var(--line-soft,var(--line))!important}
+  html[data-theme] #access#access#access .local-chat-card{grid-template-columns:120px minmax(0,1fr) auto}
+}
+html[data-theme] #access#access#access .client-gate-status::before,html[data-theme] #access#access#access .client-gate-status::after{content:none!important;display:none!important}
+html[data-theme] #access#access#access .client-permission-panel>details>summary{display:flex!important;align-items:center!important;gap:8px!important;flex-direction:row!important}
+html[data-theme] #access#access#access .client-permission-panel>details>summary>span{flex-direction:row!important}
+html[data-theme] #access#access#access .client-permission-panel>details>summary>span>*{display:inline!important;margin:0!important}
+html[data-theme] #access#access#access .client-gate-status>div>b::after{content:none!important}
+html[data-theme] #access#access#access .client-gate-status>div>small{display:inline!important}
+html[data-theme] #access#access#access .client-gate-status>div>small::before{content:"·";margin-right:8px;color:var(--muted)}
+
+/* ================= r24 · 未连接：权限模糊锁定 / 连接后解锁 ================= */
+html[data-theme] #access#access#access .studio-lock{position:relative;margin:26px 0 0;border-radius:18px;overflow:hidden}
+html[data-theme] #access#access#access .studio-lock .sl-body{filter:blur(5px) saturate(.9);opacity:.75;transform:scale(1.01);pointer-events:none;user-select:none;transition:filter .6s ease,opacity .6s ease}
+html[data-theme] #access#access#access .studio-lock .legacy-permissions>h4{margin:0 0 10px!important}
+html[data-theme] #access#access#access .studio-lock .client-access-switch>input:disabled+i{opacity:1}
+html[data-theme] #access#access#access .studio-lock .sl-veil{position:absolute;inset:0;display:grid;place-items:center;padding:20px;background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 18%,transparent),color-mix(in srgb,var(--bg) 42%,transparent));-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+html[data-theme] #access#access#access .studio-lock .sl-pill{display:inline-flex;align-items:center;gap:10px;max-width:100%;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:500;color:var(--text);background:color-mix(in srgb,var(--card) 92%,#fff 8%);border:1px solid var(--line);box-shadow:0 12px 30px -14px rgba(20,24,50,.35),inset 0 1px 0 rgba(255,255,255,.6);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+html[data-theme="mist"] #access#access#access .studio-lock .sl-pill{background:rgba(255,255,255,.92)}
+html[data-theme="dark"] #access#access#access .studio-lock .sl-pill{background:rgba(30,30,36,.88);box-shadow:0 12px 30px -14px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.06)}
+html[data-theme] #access#access#access .studio-lock .sl-pill>i{flex:none;width:16px;height:16px;background:var(--accent);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='10.5' width='14' height='9.5' rx='2.2'/%3E%3Cpath d='M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7'/%3E%3C/svg%3E") center/16px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='10.5' width='14' height='9.5' rx='2.2'/%3E%3Cpath d='M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7'/%3E%3C/svg%3E") center/16px no-repeat}
+html[data-theme] #access#access#access .sl-legacy{height:36px!important;min-height:36px!important;padding:0 14px!important;border-radius:10px!important;font-size:12.5px!important}
+html[data-theme] #access#access#access .sl-legacy::before{content:none!important}
+/* 连接成功：模糊层消散 */
+html[data-theme] #access#access#access .client-permission-panel.sl-unlock :is(.legacy-permissions,.client-daily-status){animation:slUnlock .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes slUnlock{0%{filter:blur(6px);opacity:.55;transform:scale(1.01)}100%{filter:none;opacity:1;transform:none}}
+/* 总开关关闭：子开关柔和置灰、不可操作 */
+html[data-theme] #access#access#access .legacy-permissions:has(>.client-access-switch input[data-legacy-access]:not(:checked)) .permission-groups{opacity:.5;filter:grayscale(1);pointer-events:none;transition:opacity .25s ease,filter .25s ease}
+html[data-theme] #access#access#access .legacy-permissions:has(>.client-access-switch input[data-legacy-access]:not(:checked)) .permission-groups .client-access-switch>input:checked+i{background:var(--sw-off-hover)!important}
+html[data-theme] #access#access#access .legacy-permissions:has(>.client-access-switch input[data-legacy-access]:not(:checked))>p{color:var(--muted)!important}
+html[data-theme] #access#access#access .legacy-permissions .permission-groups{transition:opacity .25s ease,filter .25s ease}
+html[data-theme] #access#access#access .studio-lock .sl-veil{place-items:start center!important;padding-top:118px!important}
+html[data-theme] #access#access#access .client-identity-card.sl-current{background:var(--card)!important;box-shadow:0 1px 2px rgba(20,24,60,.06),0 0 0 1px var(--line)!important}
+html[data-theme="dark"] #access#access#access .client-identity-card.sl-current{background:color-mix(in srgb,var(--text) 9%,transparent)!important}
+html[data-theme] #access#access#access .client-identity-card.sl-current>b{color:var(--accent-ink,var(--accent))}
+
+/* ================= r26 · 左侧客户端列表吸顶，左栏底色贯通 ================= */
+html[data-theme] #access#access#access .client-access-workspace{position:relative;overflow:clip!important;align-items:start}
+/* 左栏底色和分隔线画在卡片上，整列到底都有，不再跟着列表一起走 */
+html[data-theme] #access#access#access .client-access-workspace::before{content:"";position:absolute;left:0;top:52px;bottom:0;width:248px;pointer-events:none;z-index:0;background:color-mix(in srgb,var(--surface-2) 55%,transparent);border-right:1px solid var(--line-soft,var(--line))}
+html[data-theme="mist"] #access#access#access .client-access-workspace::before{background:rgba(255,255,255,.22)}
+html[data-theme] #access#access#access .client-identity-list{position:sticky!important;top:104px;z-index:1;align-self:start!important;max-height:calc(100vh - 124px);overflow-y:auto;overscroll-behavior:contain;background:transparent!important;border-right:0!important;scrollbar-width:thin}
+html[data-theme] #access#access#access .client-permission-panel{position:relative;z-index:1}
+@media (max-width:980px){html[data-theme] #access#access#access .client-access-workspace::before{display:none}html[data-theme] #access#access#access .client-identity-list{position:static!important;max-height:none}}
+html[data-theme] #access#access#access .client-access-console{overflow:visible!important}
+
+/* r38：已连接客户端的权限面板——绿色状态胶囊 + 顶部一道柔和连接光 */
+html[data-theme] #access .client-permission-panel{--cn-ok:var(--st-ok)}
+html[data-theme] #access#access#access .client-permission-panel[data-tone="ok"]{position:relative}
+html[data-theme] #access#access#access .client-permission-panel[data-tone="ok"]::before{content:"";position:absolute;left:24px;right:24px;top:0;height:2px;border-radius:2px;pointer-events:none;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--cn-ok) 70%,transparent) 30%,color-mix(in srgb,var(--cn-ok) 70%,transparent) 70%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--cn-ok) 45%,transparent)}
+html[data-theme] #access#access#access .client-permission-panel[data-tone="ok"] .client-permission-head span{display:inline-flex;align-items:center;gap:7px;width:max-content;margin-bottom:8px;padding:3px 10px 3px 8px;border-radius:999px;font-size:12px;font-weight:600;color:var(--cn-ok);background:color-mix(in srgb,var(--cn-ok) 11%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--cn-ok) 26%,transparent)}
+html[data-theme] #access#access#access .client-permission-panel[data-tone="ok"] .client-permission-head span::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cn-ok);box-shadow:0 0 0 0 color-mix(in srgb,var(--cn-ok) 55%,transparent);animation:cnPulse 2.4s ease-out infinite}
+html[data-theme] #access#access#access .client-permission-panel[data-tone="ok"] .client-daily-status{border-left:3px solid color-mix(in srgb,var(--cn-ok) 55%,transparent)}
+@keyframes cnPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--cn-ok) 55%,transparent)}70%,100%{box-shadow:0 0 0 7px transparent}}
+@media (prefers-reduced-motion:reduce){html[data-theme] #access .client-permission-panel[data-tone="ok"] .client-permission-head span::before{animation:none}}

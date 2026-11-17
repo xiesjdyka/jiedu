@@ -1,0 +1,92 @@
+/* 暖调晨雾 · 全站页面精修（在自动映射的基础上统一控件、卡片、字体） */
+
+/* ---------- 页面通用 ---------- */
+html[data-theme] .eyebrow{display:none!important}
+html[data-theme] .topbar{height:92px!important;margin-bottom:18px!important}
+html[data-theme] .topbar h1{font-size:30px!important;font-weight:650!important;letter-spacing:-.02em!important}
+html[data-theme] .topbar p{font-size:13.5px!important;margin-top:6px!important}
+html[data-theme] main>.page:not(#overview){color:var(--text);animation:mist-page-in .38s cubic-bezier(.2,.8,.2,1) both}
+@keyframes mist-page-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+html[data-theme] main>.page:not(#overview) :is(h2,h3,h4){color:var(--text);letter-spacing:-.01em}
+html[data-theme] main>.page:not(#overview) h2{font-size:19px;font-weight:650}
+html[data-theme] main>.page:not(#overview) h3{font-size:15.5px;font-weight:600}
+html[data-theme] main>.page:not(#overview) :is(p,small,label){color:var(--text-2)}
+html[data-theme] main>.page:not(#overview) small{color:var(--muted)}
+html[data-theme] main>.page:not(#overview) :is(code,kbd,pre){font-family:var(--mono)}
+html[data-theme] main>.page:not(#overview) pre{background:var(--surface-2)!important;color:var(--text)!important;border:1px solid var(--line-soft)!important;border-radius:12px}
+
+/* 卡片：统一成半透明暖白毛玻璃 */
+html[data-theme] main>.page:not(#overview) :is([class$="-console"],[class*="-console "],[class$="-panel"],[class*="-panel "],[class$="-card"],[class*="-card "],.rail-panel,.content-panel,.knowledge-object-toolbar,.client-access-console,.local-chat-collectors,.prompt-workflow-card,.protection-hero,.protection-panel,.search-console,.shared-result-shell,.knowledge-object-hub>.knowledge-object-toolbar):not([class*="title"]):not([class*="head"]):not(details){
+  background:var(--card)!important;border:1px solid var(--card-line)!important;border-radius:18px!important;box-shadow:var(--shadow)!important;backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%)}
+html[data-theme] main>.page:not(#overview) :is([class$="-console"],[class$="-panel"],[class$="-card"]) :is([class$="-console"],[class$="-panel"],[class$="-card"]){box-shadow:none!important;backdrop-filter:none!important;background:var(--nest-bg)!important;border-color:var(--line-soft)!important;border-radius:14px!important}
+
+/* 按钮：浅色胶囊，主按钮用强调色 */
+html[data-theme] :where(main .page:not(#overview),dialog,.wide-dialog) button:not(.primary):not([role="tab"]):not(.sh-row){
+  background:var(--btn-bg);border:1px solid var(--line);color:var(--text);border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,border-color .18s,color .18s,transform .12s}
+html[data-theme] :where(main .page:not(#overview),dialog) button:not(.primary):not(:disabled):hover{background:var(--btn-hover);border-color:var(--line-hot);color:var(--text)}
+html[data-theme] :is(main .page:not(#overview),dialog) :is(button.primary,.primary-action,[data-primary]){background:var(--accent)!important;border:1px solid var(--accent)!important;color:#fff!important;border-radius:10px;box-shadow:0 6px 16px -8px var(--accent)!important}
+html[data-theme] :is(main .page:not(#overview),dialog) button.primary:not(:disabled):hover{background:var(--accent-2)!important}
+html[data-theme] :is(main .page:not(#overview),dialog) :is(button.danger,.danger-button,[data-danger]){color:var(--danger)!important;border-color:rgba(217,83,79,.35)!important;background:color-mix(in srgb,var(--danger) 9%,transparent)!important}
+html[data-theme] :is(main .page:not(#overview),dialog) button:disabled{opacity:.5}
+
+/* 选项卡、筛选 */
+html[data-theme] main .page :is([role="tablist"],.memory-test-tabs,.knowledge-object-filters){background:var(--surface-2)!important;border:1px solid var(--line-soft)!important;border-radius:12px!important;padding:3px!important;gap:2px!important;box-shadow:none!important}
+html[data-theme] main .page :is([role="tablist"],.memory-test-tabs,.knowledge-object-filters) button{background:transparent!important;border:0!important;box-shadow:none!important;color:var(--text-2)!important;border-radius:9px!important}
+html[data-theme] main .page :is([role="tablist"],.memory-test-tabs,.knowledge-object-filters) button:is(.active,[aria-selected="true"]){background:var(--tab-on)!important;color:var(--text)!important;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)!important}
+
+/* 输入框 */
+html[data-theme] :is(main .page:not(#overview),dialog) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea){background:var(--input-bg)!important;border:1px solid var(--line)!important;color:var(--text)!important;border-radius:10px!important;box-shadow:none!important}
+html[data-theme] :is(main .page:not(#overview),dialog) :is(input,select,textarea):focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--accent-dim)!important;outline:none!important}
+html[data-theme] :is(main .page:not(#overview),dialog) :is(input,textarea)::placeholder{color:var(--muted)!important}
+html[data-theme] option{background:var(--bg);color:var(--text)}
+html[data-theme] input[type="checkbox"],html[data-theme] input[type="radio"]{accent-color:var(--accent)}
+
+/* 折叠区 */
+html[data-theme] main .page details{border-color:var(--line-soft)!important}
+html[data-theme] main .page details>summary{color:var(--text-2)!important}
+html[data-theme] main .page details>summary:hover{color:var(--text)!important}
+
+/* 空状态 */
+html[data-theme] main .page .empty{color:var(--muted)!important;background:transparent!important}
+html[data-theme] main .page .empty span{color:var(--text-2)!important}
+
+/* 列表行、选中态 */
+html[data-theme] main .page :is(.file,.knowledge-object-row,.archive-row,.session-row,[class*="-row"]):not(.sh-row):hover{background:var(--surface-2)!important}
+html[data-theme] main .page :is(.file.selected,.knowledge-object-row.selected,[class*="-row"].active,[class*="-row"].selected,[aria-current="true"]){background:var(--tab-on)!important;box-shadow:inset 3px 0 0 var(--accent),0 1px 3px rgba(0,0,0,.08)!important}
+
+/* 状态徽标 */
+html[data-theme] main .page :is(.badge,.pill,.tag,.chip,.status-pill,[class*="policy"]){border-color:var(--line)!important}
+
+/* 弹窗 */
+html[data-theme] dialog{background:var(--dialog-bg)!important;color:var(--text)!important;border:1px solid var(--card-line)!important;box-shadow:0 40px 100px -30px rgba(0,0,0,.45)!important}
+html[data-theme] dialog::backdrop{background:rgba(20,24,36,.22)!important;backdrop-filter:blur(4px)}
+
+/* 提示条（toast） */
+html[data-theme] :is(.toast,#toast,[class*="toast"]){background:var(--toast-bg)!important;color:var(--toast-text)!important;border:0!important;border-radius:12px!important}
+
+/* 滚动条 */
+html[data-theme] *{scrollbar-color:var(--scroll-thumb) transparent}
+html[data-theme] ::-webkit-scrollbar-thumb{background:var(--scroll-thumb)!important}
+
+/* ---------- 聊天记录 ---------- */
+html[data-theme] #archives .client-actions{display:flex;flex-wrap:wrap;gap:8px}
+
+/* ---------- 知识 ---------- */
+html[data-theme] main .page :is(.file-path,.file-parent,.knowledge-object-main small){font-family:var(--sans)!important;letter-spacing:0!important}
+html[data-theme] #files .file-path{font-weight:550;color:var(--text)!important}
+
+/* ---------- 全站按压反馈 ---------- */
+html[data-theme] :is(main .page:not(#overview),dialog) button:not(:disabled):active{transform:scale(.97)}
+html[data-theme] main .page :is(.file,.knowledge-object-row,[class*="-row"]):not(.sh-row){transition:background .15s,box-shadow .15s,transform .12s}
+html[data-theme] main .page :is(.file,.knowledge-object-row,[class*="-row"]):not(.sh-row):active{transform:scale(.995);background:var(--press)!important}
+html[data-theme] main .page details>summary{cursor:pointer;transition:color .15s}
+
+/* ---------- 全站悬停高亮（浅色 / 深色通用） ---------- */
+html[data-theme] :is(main .page:not(#overview),dialog) button:not(.primary):not(:disabled):hover{border-color:var(--line-hot);box-shadow:0 0 0 3px var(--accent-dim)}
+html[data-theme] :is(main .page:not(#overview),dialog) button.primary:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 10px 22px -10px var(--accent)!important}
+html[data-theme] main .page:not(#overview) :is(.file,.knowledge-object-row,[class*="-row"],[class*="-item"]):not(.sh-row):not(.palette-item):hover{background:var(--surface-2)!important;box-shadow:inset 0 0 0 1px var(--line)!important}
+html[data-theme] main .page:not(#overview) :is([class$="-card"],[class*="-card "]):has(button,a):hover{border-color:var(--line-hot)!important}
+html[data-theme] main .page details>summary:hover{background:var(--surface-2);border-radius:8px}
+html[data-theme] main .page :is(input,select,textarea):hover:not(:focus){border-color:var(--line-hot)!important}
+html[data-theme] main .page [role="tablist"] button:not([aria-selected="true"]):not(.active):hover,
+html[data-theme] main .page .knowledge-object-filters button:not(.active):hover{background:var(--surface-3)!important;color:var(--text)!important}

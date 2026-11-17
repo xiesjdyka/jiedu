@@ -1870,6 +1870,70 @@ def api_lifecycle_action(action:str,request:OwnerConfirmRequest):
         "workspace_id":target.get("workspace_id"),
     }
 
+@app.get("/api/knowledge-base/recent")
+def api_knowledge_base_recent(limit:int=6,days:int=56):
+    """首页「最近收录」与「沉淀趋势」：只读文件修改时间，不读写知识内容以外的任何东西。"""
+    from .knowledge_base import load as _kb_load, markdown_files as _kb_md
+    from datetime import timedelta
+    try:base=Path(_kb_load()["vault_path"]).resolve()
+    except Exception:return {"available":False,"items":[],"daily":[],"days":0}
+    limit=max(1,min(int(limit),20));days=max(7,min(int(days),180))
+    rows=[]
+    for rel in _kb_md(base):
+        top=rel.split("/",1)[0]
+        if top.startswith(("_",".")):continue
+        try:st=(base/rel).stat()
+        except OSError:continue
+        rows.append((st.st_mtime,rel,st.st_size))
+    rows.sort(reverse=True)
+    def describe(rel):
+        parts=rel.split("/")
+        if parts[0]=="90_原始档案" and len(parts)>=3:return parts[2],parts[1],"chat"
+        return parts[-1][:-3] if parts[-1].lower().endswith(".md") else parts[-1],parts[0],"doc"
+    def meaningful(lines,skip_title=""):
+        in_tag=False
+        for line in lines:
+            t=line.strip()
+            if not t:continue
+            if t.startswith("</"):in_tag=False;continue
+            if t.startswith("<"):
+                in_tag=not (t.endswith(">") and t.count("<")>1);continue
+            if in_tag:continue
+            if t.startswith(("#","```","![","- 附件","---","|")) or "AGENTS.md" in t:continue
+            t=t.lstrip("-*> ").replace("**","").strip()
+            if len(t)>=6 and t!=skip_title:return t[:80]
+        return ""
+    def snippet(rel,kind,title):
+        try:
+            with open(base/rel,"rb") as fh:
+                if kind=="chat":
+                    fh.seek(0,2);size=fh.tell();fh.seek(max(0,size-12000))
+                    tail=fh.read().decode("utf-8","ignore")
+                    blocks=tail.split("## MESSAGE ")
+                    for block in reversed(blocks[1:] if len(blocks)>1 else blocks):
+                        text=meaningful(block.splitlines()[1:],title)
+                        if text:return text
+                    return ""
+                head=fh.read(6000).decode("utf-8","ignore")
+        except OSError:return ""
+        lines=head.splitlines();i=0
+        if lines and lines[0].strip()=="---":
+            i=1
+            while i<len(lines) and lines[i].strip()!="---":i+=1
+            i+=1
+        return meaningful(lines[i:],title)
+    items=[]
+    for mtime,rel,size in rows[:limit]:
+        title,group,kind=describe(rel)
+        items.append({"path":rel,"title":title,"group":group,"kind":kind,"bytes":size,"snippet":snippet(rel,kind,title),
+                      "modified_at":datetime.fromtimestamp(mtime,timezone.utc).isoformat()})
+    now=datetime.now().astimezone();start=(now-timedelta(days=days-1)).date()
+    daily=[0]*days
+    for mtime,rel,size in rows:
+        d=datetime.fromtimestamp(mtime).astimezone().date()
+        if d>=start:daily[(d-start).days]+=1
+    return {"available":True,"items":items,"daily":daily,"days":days,"start":start.isoformat(),"total":len(rows)}
+
 @app.get("/api/knowledge-base")
 def api_knowledge_base():
     result=knowledge_base_status()
@@ -2371,7 +2435,14 @@ def api_writer_undo(version:str,request:OwnerConfirmRequest,mode:str="acceptance
 @app.get("/api/memory/bootstrap")
 def api_memory_bootstrap(): return bootstrap_documents()
 @app.get("/api/memory/core-bootstrap")
-def api_core_bootstrap():return current_core()
+def api_core_bootstrap():
+    """会话刷新页读取正式 Core。尚未勾选核心背景文件、来源文件缺失或知识库刚切换时，
+    compile_core 会抛 ValueError；这是「还没准备好」的正常状态，不应变成 500。"""
+    try:return current_core()|{"ready":True}
+    except (ValueError,OSError) as e:
+        message=str(e) or "核心背景暂时无法读取"
+        return {"ready":False,"status":"尚未配置核心背景" if "尚未配置" in message else "核心背景暂不可用",
+                "message":message,"version":None,"content":"","characters":0,"source_files":[]}
 @app.get("/api/memory/core-bootstrap/versions")
 def api_core_bootstrap_versions():return [{k:v for k,v in x.items() if k!="content"} for x in core_versions()]
 @app.post("/api/memory/core-bootstrap/rollback/{version}")

@@ -1,0 +1,49 @@
+/* 子页面瘦身：删掉没用的解释小字、压平层层套的框；低频工具收进折叠抽屉。只隐藏说明文字，不动任何功能按钮。 */
+
+/* ========== 整理知识 ========== */
+#wikiGuide>p:not(.organize-simple-steps),
+#memory .wiki-guide-prompt-option>p,
+#memory .organize-suggestions .memory-section-head p,
+#memory .suggestion-total-summary,
+#memory #suggestionCountNote,
+#memory .suggestions-empty p,
+#memory .organize-automation-note,
+#memory #continuousTasks details.continuous-details p:not(:first-of-type),
+#memory #manualSourcesPanel>p,
+#memory .archive-scan-meta,
+#memory .original-archive-panel small,
+#memory #externalManualWorkbench>p,
+#memory #providerStatus>p:not(#organizationProviderResult),
+#memory #motherDistillation .prompt-workflow-card p:not(#motherDistillationStatus),
+#memory #organizeWikiRecords>p,
+#memory .organize-schedule-option>p,
+#memory .wiki-guide-schedule{display:none!important}
+#memory .suggestions-empty{padding:28px 12px!important;text-align:center;border:0!important;background:transparent!important;box-shadow:none!important}
+#memory .suggestions-empty::after{content:"把聊天交给 Codex 整理后，建议会出现在这里";display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+#memory .organize-simple-steps{margin:10px 0 4px!important;padding:10px 14px!important;border-radius:12px!important;background:var(--surface-2)!important;border:0!important;color:var(--text-2)!important;font-size:13px!important}
+/* 高级与手动操作抽屉：里面不再一层套一层 */
+#memory #organizationTools>summary,#memory #organizeWikiRecords>summary{font-size:15px;font-weight:600;color:var(--text)!important;padding:4px 2px}
+#memory #organizationTools details,#memory #organizeWikiRecords details{border:0!important;border-top:1px solid var(--line-soft)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;padding:10px 2px!important;margin:0!important}
+#memory #organizationTools section,#memory #organizationTools [class*="-console"],#memory #organizeWikiRecords section{background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;padding-left:0!important;padding-right:0!important}
+#memory :is(.pending-empty,.deferred-session-list p,.extraction-session-list>p,.manual-history p){font-size:13px;color:var(--muted)!important;padding:6px 0!important;border:0!important;background:transparent!important}
+
+/* ========== 故障排查 ========== */
+#troubleshooting .prompt-workflow-card>p,
+#troubleshooting .memory-section-head p,
+#troubleshooting .codex-import-note:not(#codexArchiveFeedback),
+#troubleshooting .hermes-archive-actions small,
+#troubleshooting .hermes-history-panel p+p,
+#troubleshooting .bridge-source-note,
+#troubleshooting .local-config-controls>p,
+#troubleshooting details>p:first-of-type{display:none!important}
+#troubleshooting .archive-diagnostics{margin-top:12px}
+#troubleshooting .archive-diagnostics>summary{font-size:15px;font-weight:600;color:var(--text)!important;padding:14px 18px;border-radius:14px;background:var(--card);border:1px solid var(--card-line);box-shadow:var(--shadow);list-style-position:inside}
+#troubleshooting .archive-diagnostics[open]>summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
+#troubleshooting .archive-diagnostics>section{margin-top:0!important;border-top-left-radius:0!important;border-top-right-radius:0!important}
+#troubleshooting .archive-diagnostics .memory-section-head h2{display:none}
+#troubleshooting .raw-session-console details,#troubleshooting .access-compatibility-body details{border:0!important;border-top:1px solid var(--line-soft)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:10px 0!important}
+#troubleshooting .access-compatibility-body section{background:transparent!important;border:0!important;border-top:1px solid var(--line-soft)!important;border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important}
+
+#memory :is(#pendingMemoryList,.pending-workspace,.suggestion-cards){border-color:var(--line-soft)!important;background:transparent!important;box-shadow:none!important}
+#troubleshooting .prompt-workflow-card h2{display:none!important}
+#troubleshooting .prompt-workflow-card{display:flex!important;justify-content:flex-end;padding:10px 14px!important;background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;margin-bottom:-6px}

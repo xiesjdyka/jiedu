@@ -1,0 +1,39 @@
+/* 界渡 · 首页「全量启动脉冲」（第 27 轮），配合 boot-pulse.js。只在 .studio-home.boot 期间生效 */
+
+/* 主盘刻度依次点亮扫过 */
+.studio-home.boot .studio-hub .spin.ticks .tick{animation:boot-tick .75s cubic-bezier(.3,.7,.3,1) var(--bd,0s) both}
+@keyframes boot-tick{0%{}22%{stroke:var(--accent);stroke-width:2.4;opacity:1}100%{}}
+
+/* 扇区逐个亮起 */
+.studio-home.boot .studio-hub .hub-node .seg{animation:boot-seg .8s cubic-bezier(.3,.7,.3,1) var(--bd,0s) both}
+@keyframes boot-seg{0%{}38%{filter:brightness(1.32) drop-shadow(0 0 10px color-mix(in srgb,var(--tint) 75%,transparent));transform:scale(1.035)}100%{}}
+
+/* 能量汇入后，核心泛起一圈光 */
+.studio-home.boot-core .studio-core .core-plate{animation:boot-core 1.3s cubic-bezier(.25,.7,.3,1)}
+@keyframes boot-core{0%{}28%{box-shadow:var(--core-shadow),0 0 0 1.5px color-mix(in srgb,var(--accent) 70%,transparent),0 0 110px -6px color-mix(in srgb,var(--accent) 90%,transparent)}100%{}}
+
+/* 两盘之间的连接线：短暂加速 */
+.studio-home.boot-bridge .lk.flow{animation-duration:.9s!important}
+
+/* 知识动态小盘：一次扫描后落定 */
+.sub-hub .boot-scan{position:absolute;inset:0;z-index:3;border-radius:50%;pointer-events:none;
+  background:conic-gradient(from 0deg,transparent 0deg,transparent 280deg,color-mix(in srgb,var(--accent) 16%,transparent) 330deg,color-mix(in srgb,var(--accent) 55%,transparent) 359deg,transparent 360deg);
+  -webkit-mask:radial-gradient(closest-side,transparent 36%,#000 40%,#000 96%,transparent 100%);mask:radial-gradient(closest-side,transparent 36%,#000 40%,#000 96%,transparent 100%);
+  animation:boot-scan 1.1s cubic-bezier(.35,.1,.25,1) both}
+@keyframes boot-scan{0%{transform:rotate(0);opacity:0}12%{opacity:1}80%{opacity:1}100%{transform:rotate(360deg);opacity:0}}
+.studio-home.boot .sub-hub .sub-spin .tick{animation:boot-tick .6s cubic-bezier(.3,.7,.3,1) var(--bd,0s) both}
+.studio-home.boot .sub-hub .sub-bar{animation:boot-bar .7s cubic-bezier(.3,.7,.3,1) var(--bd,0s) both}
+.studio-home.boot .sub-hub .sub-day.zero .sub-bar{animation-name:boot-bar-zero}
+@keyframes boot-bar{0%{}35%{fill:var(--accent);opacity:1;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--accent) 80%,transparent))}100%{}}
+@keyframes boot-bar-zero{0%{}35%{fill:var(--accent);opacity:.35}100%{}}
+
+/* 底部波形：一道完整光波从左涌到右 */
+.pw-svg .pw-boot{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;
+  stroke-dasharray:220 1400;stroke-dashoffset:220;filter:drop-shadow(0 0 6px var(--accent));animation:boot-wave 1.35s cubic-bezier(.45,.05,.4,1) forwards}
+@keyframes boot-wave{0%{stroke-dashoffset:220;opacity:0}10%{opacity:1}85%{opacity:1}100%{stroke-dashoffset:-1000;opacity:0}}
+.pulse-wave.boot-wash::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 14%,transparent),transparent) no-repeat;background-size:36% 100%;
+  animation:boot-wash 1.35s cubic-bezier(.45,.05,.4,1) forwards}
+@keyframes boot-wash{0%{background-position:-60% 0;opacity:0}12%{opacity:1}88%{opacity:1}100%{background-position:160% 0;opacity:0}}
+
+@media (prefers-reduced-motion:reduce){.studio-home.boot *,.pw-boot,.boot-scan,.pulse-wave.boot-wash::after{animation:none!important}}

@@ -1,0 +1,221 @@
+/* =====================================================================
+   界渡 · 全站基础层（所有子页面 + 搜索 + 弹窗）
+   ===================================================================== */
+:root{--chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 3.5 4.5 4.5L6 12.5'/%3E%3C/svg%3E");
+  --chev-down:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a90a2' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E")}
+
+/* ---------- 顶栏：所有页面都固定在顶上，滚动时变成磨砂玻璃 ---------- */
+html[data-theme] body .topbar{position:sticky!important;top:0;z-index:40;margin-left:-8px;margin-right:-8px;padding-left:8px;padding-right:8px;background:linear-gradient(180deg,var(--bg) 0%,color-mix(in srgb,var(--bg) 88%,transparent) 70%,transparent)!important;backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%)}
+
+/* ---------- 折叠：去掉原生三角，换成会转动的矢量箭头 ---------- */
+html[data-theme] details>summary{list-style:none}
+html[data-theme] details>summary::-webkit-details-marker{display:none}
+html[data-theme] details>summary::marker{content:""}
+html[data-theme] :is(main,dialog) details>summary{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;transition:color .15s}
+html[data-theme] :is(main,dialog) details>summary::before{content:"";flex:none;width:14px;height:14px;background:currentColor;opacity:.5;-webkit-mask:var(--chev) center/12px no-repeat;mask:var(--chev) center/12px no-repeat;transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .15s}
+html[data-theme] :is(main,dialog) details[open]>summary::before{transform:rotate(90deg);opacity:.8}
+html[data-theme] :is(main,dialog) details>summary:hover{color:var(--accent)}
+html[data-theme] :is(main,dialog) details>summary:hover::before{opacity:1}
+html[data-theme] :is(main,dialog) details>summary:focus-visible{outline:2px solid var(--focus-ring);outline-offset:3px;border-radius:8px}
+/* 已有自己箭头的地方不重复画 */
+html[data-theme] #access#access .client-permission-panel>details>summary::before{-webkit-mask:var(--chev) center/12px no-repeat!important;mask:var(--chev) center/12px no-repeat!important;width:14px!important;height:14px!important;border:0!important;background:currentColor!important;transform:none}
+html[data-theme] #access#access .client-permission-panel>details[open]>summary::before{transform:rotate(90deg)}
+
+/* ---------- 原生控件：下拉框 / 输入框 / 勾选 ---------- */
+html[data-theme] :is(main,dialog) select{-webkit-appearance:none;appearance:none;min-height:36px;padding:0 34px 0 12px;border:1px solid var(--line);border-radius:10px;background:var(--input-bg,var(--card)) var(--chev-down) no-repeat right 11px center/13px;color:var(--text);font-size:13px;cursor:pointer;transition:border-color .15s,box-shadow .15s,background-color .15s}
+html[data-theme] :is(main,dialog) select:hover{border-color:var(--line-hot)}
+html[data-theme] :is(main,dialog) :is(select,input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea):focus{outline:none;border-color:var(--accent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)!important}
+html[data-theme] :is(main,dialog) :is(input[type=text],input[type=search],input[type=number],input[type=password],input:not([type]),textarea){border:1px solid var(--line);border-radius:10px;background:var(--input-bg,var(--card));color:var(--text);transition:border-color .15s,box-shadow .15s}
+html[data-theme] :is(main,dialog) :is(input,textarea):hover:not(:focus):not([type=checkbox]):not([type=radio]){border-color:var(--line-hot)}
+html[data-theme] :is(main,dialog) :is(input[type=checkbox],input[type=radio]){accent-color:var(--accent);width:16px;height:16px;cursor:pointer}
+html[data-theme] :is(main,dialog) ::placeholder{color:var(--muted)}
+
+/* ---------- 按钮：统一高度、圆角、悬停与按压（深浅两套都走变量） ---------- */
+html[data-theme] :is(main,dialog) :is(.copy-button,button.secondary){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:var(--btn-bg);color:var(--text);font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s,transform .12s}
+html[data-theme] :is(main,dialog) :is(.copy-button,button.secondary):hover:not(:disabled){border-color:var(--line-hot);background:var(--btn-hover);box-shadow:0 6px 16px -12px rgba(20,24,40,.45)}
+html[data-theme] :is(main,dialog) :is(.copy-button,button.secondary,button.primary,.execute):active:not(:disabled){transform:scale(.97)}
+html[data-theme] :is(main,dialog) :is(button.primary,.execute){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 18px;border:0;border-radius:11px;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:13.5px;cursor:pointer;box-shadow:0 10px 22px -12px var(--accent);transition:filter .15s,transform .12s,box-shadow .15s}
+html[data-theme] :is(main,dialog) :is(button.primary,.execute):hover:not(:disabled){filter:brightness(1.07);box-shadow:0 12px 26px -12px var(--accent)}
+html[data-theme] :is(main,dialog) button:disabled{opacity:.45;cursor:not-allowed}
+html[data-theme] :is(main,dialog) .danger-button{min-height:34px;padding:0 14px;border-radius:10px;border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);background:transparent;color:var(--danger);cursor:pointer;transition:background .15s}
+html[data-theme] :is(main,dialog) .danger-button:hover{background:color-mix(in srgb,var(--danger) 10%,transparent)}
+
+/* ---------- 弹窗：一层玻璃，不再框中框 ---------- */
+html[data-theme] dialog{border:1px solid var(--card-line)!important;border-radius:22px!important;background:var(--dialog-bg)!important;color:var(--text);box-shadow:0 40px 90px -30px rgba(10,14,30,.45)!important;backdrop-filter:blur(30px) saturate(160%)}
+html[data-theme="dark"] dialog{box-shadow:0 40px 90px -20px #000!important}
+html[data-theme] dialog::backdrop{background:rgba(12,14,22,.28);backdrop-filter:blur(6px)}
+html[data-theme] dialog .icon-button,html[data-theme] dialog .butler-icon-button{border-radius:10px;transition:background .15s}
+html[data-theme] dialog .icon-button:hover,html[data-theme] dialog .butler-icon-button:hover{background:var(--surface-2)}
+
+/* =====================================================================
+   设置 / 故障排查 / 工作区 / 整理知识 / 搜索：一层玻璃卡 + 内部平铺
+   （用 :is() 叠两次拿到两个 id 的权重，盖过早期那条给所有区块套卡片的通用规则）
+   ===================================================================== */
+:is(#protection,#troubleshooting,#workspace,#memory,#search):is(#protection,#troubleshooting,#workspace,#memory,#search){--card-pad:22px 24px}
+html[data-theme] :is(#protection,#troubleshooting,#workspace):is(#protection,#troubleshooting,#workspace)>*{max-width:1040px}
+/* 顶层卡片 */
+html[data-theme] :is(#protection,#troubleshooting,#workspace,#memory,#search):is(#protection,#troubleshooting,#workspace,#memory,#search) :is(.protection-hub>section:not([hidden]),section.software-update-card,.workspace-hub>section,.memory-hub>section,.memory-hub>details,#archiveDiagnosticsHost>details,.search-console,.shared-result-shell){position:relative;margin:0;padding:var(--card-pad)!important;border:1px solid var(--card-line)!important;border-radius:20px!important;background:var(--card)!important;box-shadow:var(--shadow)!important;backdrop-filter:blur(24px) saturate(150%)}
+/* 卡片里面：一律平铺，只用细线分隔 */
+html[data-theme] :is(#protection,#troubleshooting,#workspace,#memory,#search):is(#protection,#troubleshooting,#workspace,#memory,#search) :is(.protection-hub>section,section.software-update-card,.workspace-hub>section,.memory-hub>section,.memory-hub>details,#archiveDiagnosticsHost>details,.search-console,.shared-result-shell) :is([class$="-console"],[class*="-console "],[class$="-panel"],[class*="-panel "],[class$="-card"],[class*="-card "],section,article,details){margin-left:0;margin-right:0;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+html[data-theme] :is(#protection,#troubleshooting,#workspace,#memory,#search):is(#protection,#troubleshooting,#workspace,#memory,#search) :is(.protection-hub>section,section.software-update-card,.workspace-hub>section,.memory-hub>section,.memory-hub>details,#archiveDiagnosticsHost>details) details{margin-top:14px!important;padding:14px 0 0!important;border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] :is(#protection,#troubleshooting,#workspace,#memory,#search) :is(h2){margin:0;font:650 16px/1.35 var(--display);letter-spacing:-.005em;color:var(--text)}
+html[data-theme] :is(#protection,#troubleshooting,#workspace,#memory,#search) h3{margin:0;font:650 14px/1.4 var(--display);color:var(--text)}
+html[data-theme] :is(#protection,#troubleshooting,#workspace,#memory,#search) summary{font-size:13.5px;font-weight:600;color:var(--text)}
+html[data-theme] :is(#protection,#troubleshooting,#workspace,#memory,#search) summary small,html[data-theme] :is(#protection,#troubleshooting,#workspace,#memory,#search) summary span:not(:first-child){font-weight:400;font-size:12px;color:var(--muted)}
+
+/* 顶层的抽屉卡（整卡就是一个折叠行） */
+html[data-theme] :is(#troubleshooting,#memory):is(#troubleshooting,#memory) :is(.memory-hub>details,#archiveDiagnosticsHost>details){padding:0!important;overflow:hidden}
+html[data-theme] :is(#troubleshooting,#memory):is(#troubleshooting,#memory) :is(.memory-hub>details,#archiveDiagnosticsHost>details)>summary{min-height:56px;padding:0 22px;font-size:14px;transition:background .15s,color .15s}
+html[data-theme] :is(#troubleshooting,#memory):is(#troubleshooting,#memory) :is(.memory-hub>details,#archiveDiagnosticsHost>details)>summary:hover{background:color-mix(in srgb,var(--surface-2) 70%,transparent);color:var(--text)}
+html[data-theme] :is(#troubleshooting,#memory):is(#troubleshooting,#memory) :is(.memory-hub>details,#archiveDiagnosticsHost>details)[open]>summary{border-bottom:1px solid var(--line-soft,var(--line))}
+html[data-theme] :is(#troubleshooting,#memory):is(#troubleshooting,#memory) :is(.memory-hub>details,#archiveDiagnosticsHost>details)>:not(summary){padding:18px 22px!important}
+html[data-theme] :is(#troubleshooting,#memory):is(#troubleshooting,#memory) :is(.memory-hub>details,#archiveDiagnosticsHost>details)>summary>*{margin:0}
+
+/* ---------- 设置 ---------- */
+html[data-theme] #protection#protection.active{display:flex;flex-direction:column;gap:16px}
+html[data-theme] #protection#protection .protection-hub{display:flex;flex-direction:column;gap:16px;max-width:1040px}
+html[data-theme] #protection#protection .software-update-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:20px;row-gap:4px;order:2}
+html[data-theme] #protection#protection .software-update-card>h2{grid-column:1/-1;margin-bottom:6px}
+html[data-theme] #protection#protection .software-update-card>p:first-of-type{grid-column:1;margin:0;font-size:13.5px;color:var(--text)}
+html[data-theme] #protection#protection .software-update-card>p:not(:first-of-type),html[data-theme] #protection#protection .software-update-help{display:none}
+html[data-theme] #protection#protection .software-update-card .ui-update-notice__actions{grid-column:2;grid-row:2;margin:0}
+html[data-theme] #protection#protection .software-update-card #updateNoticeSettings{grid-column:1/-1;display:flex!important;align-items:center;justify-content:space-between;gap:16px;margin:12px 0 0!important;padding:12px 0 0!important;border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #protection#protection .software-update-card #updateNoticeSettings[hidden]{display:none!important}
+html[data-theme] #protection#protection #updateNoticeSettings h2{font-size:13.5px;font-weight:500}
+html[data-theme] #protection#protection #updateNoticeSettings p{display:none}
+html[data-theme] #protection#protection .protection-hero{display:flex;align-items:center;justify-content:space-between;gap:16px}
+html[data-theme] #protection#protection .protection-kicker,html[data-theme] #protection#protection #protectionSummary{display:none}
+html[data-theme] #protection#protection .protection-state{padding:4px 12px;border-radius:999px;background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok);font-size:12.5px;font-weight:600;border:0}
+html[data-theme] #protection#protection .protection-hub{order:1}
+html[data-theme] #protection#protection .protection-hero{margin-bottom:-16px!important;border-bottom-left-radius:0!important;border-bottom-right-radius:0!important;border-bottom:0!important;padding-bottom:6px!important;box-shadow:none!important}
+html[data-theme] #protection#protection #protectionPanel{border-top-left-radius:0!important;border-top-right-radius:0!important;border-top:0!important;padding-top:8px!important}
+html[data-theme] #protection#protection .protection-step p{display:none}
+html[data-theme] #protection#protection .protection-step{display:flex;align-items:baseline;gap:12px}
+html[data-theme] #protection#protection .protection-step h3::before{content:"";display:inline-block;width:7px;height:7px;margin-right:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 18%,transparent);vertical-align:middle}
+html[data-theme] #protection#protection .protection-truth{display:grid;gap:8px}
+html[data-theme] #protection#protection .protection-truth>div p{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+html[data-theme] #protection#protection .protection-truth>div b{font-size:13.5px}
+
+/* ---------- 故障排查 ---------- */
+html[data-theme] #troubleshooting#troubleshooting .memory-hub{display:flex;flex-direction:column;gap:12px;max-width:1040px}
+html[data-theme] #troubleshooting#troubleshooting .prompt-workflow-card{display:flex;justify-content:flex-end;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+html[data-theme] #troubleshooting#troubleshooting #archiveDiagnosticsHost{display:flex;flex-direction:column;gap:12px}
+html[data-theme] #troubleshooting#troubleshooting .raw-session-console>.memory-section-head{display:none}
+html[data-theme] #troubleshooting#troubleshooting .access-compatibility>summary{flex-wrap:wrap}
+html[data-theme] #troubleshooting#troubleshooting .access-compatibility>summary>span{display:flex;align-items:baseline;gap:10px}
+html[data-theme] #troubleshooting#troubleshooting .access-compatibility-body>section+section{margin-top:18px;padding-top:18px!important;border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #troubleshooting#troubleshooting .memory-section-head p{font-size:12px;color:var(--muted)}
+
+/* ---------- 工作区 ---------- */
+html[data-theme] #workspace#workspace .workspace-hub{display:flex;flex-direction:column;gap:16px;max-width:1040px}
+html[data-theme] #workspace#workspace .connection-gate-note,html[data-theme] #workspace#workspace .memory-section-head p,html[data-theme] #workspace#workspace .workspace-optional-note{display:none}
+html[data-theme] #workspace#workspace .memory-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+html[data-theme] #workspace#workspace .section-head-actions{display:flex;gap:8px}
+html[data-theme] #workspace#workspace .initialization-steps{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0;padding:0;list-style:none}
+html[data-theme] #workspace#workspace .initialization-steps li{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--surface-2);font-size:12.5px;color:var(--text-2)}
+html[data-theme] #workspace#workspace .initialization-steps li.done{background:color-mix(in srgb,var(--ok) 11%,transparent);color:var(--ok)}
+html[data-theme] #workspace#workspace .initialization-status{display:flex;align-items:center;justify-content:space-between;gap:12px}
+html[data-theme] #workspace#workspace .workspace-start-actions{margin-top:12px}
+html[data-theme] #workspace#workspace .knowledge-base-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+html[data-theme] #workspace#workspace .knowledge-base-summary>div{display:grid;gap:4px;align-content:start;padding:14px 16px;border-radius:14px;background:color-mix(in srgb,var(--surface-2) 75%,transparent);border:1px solid var(--line-soft,var(--line));transition:border-color .15s,background .15s}
+html[data-theme] #workspace#workspace .knowledge-base-summary>div:hover{border-color:var(--line-hot)}
+html[data-theme] #workspace#workspace .knowledge-base-summary span{font-size:11.5px;color:var(--muted)}
+html[data-theme] #workspace#workspace .knowledge-base-summary strong{font:650 18px/1.25 var(--num,inherit);color:var(--text);word-break:break-all}
+html[data-theme] #workspace#workspace .knowledge-base-summary small{font-size:11.5px;color:var(--muted)}
+html[data-theme] #workspace#workspace .knowledge-base-state{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--warn) 9%,transparent);font-size:13px}
+html[data-theme] #workspace#workspace .knowledge-base-state small{display:none}
+html[data-theme] #workspace#workspace #buildKnowledgeIndex{margin:2px 0 4px}
+html[data-theme] #workspace#workspace .studio-drawer>summary{font-size:13.5px}
+
+/* ---------- 整理知识 ---------- */
+html[data-theme] #memory#memory .memory-hub{display:flex;flex-direction:column;gap:16px}
+html[data-theme] #memory#memory .wiki-guide{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:24px;row-gap:10px}
+html[data-theme] #memory#memory .wiki-guide>h2{grid-column:1}
+html[data-theme] #memory#memory .organize-simple-steps{grid-column:1;margin:0;font-size:12.5px;color:var(--muted);letter-spacing:.01em}
+html[data-theme] #memory#memory .wiki-guide-prompt-option{grid-column:2;grid-row:1/3;display:grid;justify-items:end;gap:6px;margin:0;padding:0!important}
+html[data-theme] #memory#memory .wiki-guide-prompt-option>h3{display:none}
+html[data-theme] #memory#memory .wiki-guide-prompt-preview{margin:0!important;padding:0!important;border:0!important}
+html[data-theme] #memory#memory .wiki-guide-prompt-preview>summary{font-size:12px;font-weight:500;color:var(--muted)}
+html[data-theme] #memory#memory .wiki-guide-prompt-preview[open]{grid-column:1/-1}
+html[data-theme] #memory#memory .memory-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+html[data-theme] #memory#memory .suggestion-overview{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
+html[data-theme] #memory#memory .suggestion-overview strong{font:650 26px/1 var(--num,inherit);color:var(--text)}
+html[data-theme] #memory#memory .suggestion-overview small{color:var(--muted);font-size:12px}
+html[data-theme] #memory#memory .suggestion-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line-soft,var(--line))}
+html[data-theme] #memory#memory .suggestion-toolbar button{min-height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--text-2);font-size:12.5px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+html[data-theme] #memory#memory .suggestion-toolbar button:hover{background:var(--surface-2);color:var(--text)}
+html[data-theme] #memory#memory .suggestion-toolbar button.active,html[data-theme] #memory#memory .suggestion-toolbar button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+html[data-theme] #memory#memory .suggestion-cards .empty,html[data-theme] #memory#memory .suggestion-cards .memory-test-empty{margin:28px 0;text-align:center;border:0;background:transparent}
+
+/* ---------- 搜索资料：一枚大搜索框 + 结果平铺 ---------- */
+html[data-theme] #search#search.active{display:flex;flex-direction:column;gap:16px;max-width:1100px}
+html[data-theme] #search#search .memory-test-tabs{display:inline-flex;align-self:flex-start;gap:2px;padding:3px;border-radius:12px;background:var(--surface-2);border:0;box-shadow:none}
+html[data-theme] #search#search .memory-test-tabs button{min-height:30px;padding:0 14px;border:0;border-radius:9px;background:transparent;color:var(--text-2);font-size:13px;cursor:pointer;transition:background .15s,color .15s}
+html[data-theme] #search#search .memory-test-tabs button:hover{color:var(--text)}
+html[data-theme] #search#search .memory-test-tabs button.active{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(20,24,40,.12)}
+html[data-theme="dark"] #search#search .memory-test-tabs button.active{background:var(--surface-3);box-shadow:none}
+html[data-theme] #search#search .search-console{padding:10px!important;border-radius:22px!important}
+html[data-theme] #search#search .query-shell{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:4px 4px 4px 14px;border:0;background:transparent}
+html[data-theme] #search#search .query-prefix{font-size:0;width:20px;height:20px;background:var(--muted);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6'/%3E%3Cpath d='m15 15 5 5'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6'/%3E%3Cpath d='m15 15 5 5'/%3E%3C/svg%3E") center/contain no-repeat}
+html[data-theme] #search#search #sharedQueryInput{min-height:46px;border:0!important;background:transparent!important;box-shadow:none!important;font-size:16px;color:var(--text)}
+html[data-theme] #search#search .shared-query-controls{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:10px 4px 2px;border-top:1px solid var(--line-soft,var(--line))}
+html[data-theme] #search#search .shared-query-controls>label{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+html[data-theme] #search#search .search-advanced{margin:0!important;padding:0!important;border:0!important}
+html[data-theme] #search#search .search-advanced>summary{font-size:12.5px;font-weight:500;color:var(--text-2)}
+html[data-theme] #search#search .search-advanced[open]>div{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+html[data-theme] #search#search .search-advanced label{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+html[data-theme] #search#search .search-meta{display:flex;justify-content:space-between;padding:6px 10px 0;font-size:12px;color:var(--muted)}
+html[data-theme] #search#search .shared-result-shell{min-height:calc(100dvh - 380px);padding:6px!important}
+html[data-theme] #search#search .result-stream>.empty{display:grid;place-content:center;justify-items:center;gap:6px;min-height:calc(100dvh - 420px);margin:0;border:0;background:transparent;text-align:center}
+html[data-theme] #search#search .result-stream>.empty span{font-size:15px;font-weight:600;color:var(--text)}
+html[data-theme] #search#search .result-stream>.empty p{margin:0;font-size:12.5px;color:var(--muted)}
+html[data-theme] #search#search .result-stream>:not(.empty){margin:0 0 8px;padding:14px 16px;border-radius:14px;border:1px solid transparent;transition:background .15s,border-color .15s}
+html[data-theme] #search#search .result-stream>:not(.empty):hover{background:color-mix(in srgb,var(--surface-2) 70%,transparent);border-color:var(--line-soft,var(--line))}
+
+/* ---------- 全站列表行 / 选项卡的悬停与按压（深浅一致） ---------- */
+html[data-theme] main :is([role="tab"],.memory-tabs button,.knowledge-object-filters button){transition:background .15s,color .15s,transform .12s}
+html[data-theme] main :is([role="tab"],.memory-tabs button,.knowledge-object-filters button):active{transform:scale(.97)}
+html[data-theme] main :is(.interface-row,.suggestion-card,.original-archive-list>*,.extraction-session-list>*){transition:background .15s,border-color .15s}
+html[data-theme] main :is(.interface-row,.suggestion-card,.original-archive-list>*,.extraction-session-list>*):hover{background:color-mix(in srgb,var(--surface-2) 65%,transparent)}
+html[data-theme] main :is(.switch,.client-access-switch,.setting-switch){transition:opacity .15s}
+html[data-theme] main :is(.switch,.client-access-switch,.setting-switch):hover{opacity:.9}
+
+@media (max-width:1000px){html[data-theme] #workspace#workspace .knowledge-base-summary{grid-template-columns:repeat(2,minmax(0,1fr))}html[data-theme] #memory#memory .wiki-guide{grid-template-columns:1fr}html[data-theme] #memory#memory .wiki-guide-prompt-option{grid-column:1;grid-row:auto;justify-items:start}}
+/* 被程序隐藏的元素永远保持隐藏（统一按钮样式不能把 hidden 的按钮顶出来） */
+html[data-theme] :is(main,dialog) [hidden]{display:none!important}
+html[data-theme] #protection#protection .protection-hub{width:100%;margin:0}
+html[data-theme] #protection#protection>*{width:100%;max-width:1040px;box-sizing:border-box}
+html[data-theme] #troubleshooting#troubleshooting .memory-hub>section.prompt-workflow-card{display:flex;justify-content:flex-end;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+/* 状态数字：统一成小卡片，不要表格硬线 */
+html[data-theme] :is(#troubleshooting,#workspace):is(#troubleshooting,#workspace) .knowledge-base-summary{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:12px 0;border:0!important;background:transparent!important}
+html[data-theme] :is(#troubleshooting,#workspace):is(#troubleshooting,#workspace) .knowledge-base-summary>div{display:grid;gap:4px;align-content:start;padding:14px 16px!important;border:1px solid var(--line-soft,var(--line))!important;border-radius:14px!important;background:color-mix(in srgb,var(--surface-2) 70%,transparent)!important;transition:border-color .15s}
+html[data-theme] :is(#troubleshooting,#workspace):is(#troubleshooting,#workspace) .knowledge-base-summary>div:hover{border-color:var(--line-hot)!important}
+html[data-theme] :is(#troubleshooting,#workspace):is(#troubleshooting,#workspace) .knowledge-base-summary span{font-size:11.5px;color:var(--muted)}
+html[data-theme] :is(#troubleshooting,#workspace):is(#troubleshooting,#workspace) .knowledge-base-summary strong{font:650 17px/1.3 var(--num,inherit);color:var(--text)}
+html[data-theme] #troubleshooting#troubleshooting .interface-list{border:0!important;background:transparent!important}
+html[data-theme] #troubleshooting#troubleshooting :is(.hermes-archive-actions,.codex-archive-actions,.client-actions){display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+html[data-theme] #troubleshooting#troubleshooting #troubleshootingHub>section.prompt-workflow-card{display:flex;justify-content:flex-end;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+html[data-theme] #workspace#workspace #knowledgeBaseStatus #buildKnowledgeIndex{min-height:36px;padding:0 18px;border:0!important;border-radius:11px!important;background:var(--accent)!important;color:var(--on-accent)!important;font-weight:600;box-shadow:0 10px 22px -12px var(--accent)!important}
+html[data-theme] #workspace#workspace #knowledgeBaseStatus #buildKnowledgeIndex:hover:not(:disabled){filter:brightness(1.07)}
+
+html[data-theme] #memory#memory .memory-hub{align-items:stretch}
+html[data-theme] #memory#memory #memory .memory-hub>*,html[data-theme] #memory#memory .memory-hub>*:not([hidden]){width:100%;max-width:none;box-sizing:border-box}
+html[data-theme] #memory#memory :is(.pending-workspace,.pending-list,.suggestion-cards){border:0!important;background:transparent!important;box-shadow:none!important}
+html[data-theme] #memory#memory .suggestion-pagination{font-size:12px;color:var(--muted)}
+html[data-theme] #memory#memory #wikiGuide .organize-simple-steps{padding:0!important;border:0!important;background:transparent!important}
+html[data-theme] #search#search .result-stream{background:transparent!important;background-image:none!important;border:0!important}
+html[data-theme] #search#search .shared-result-shell{min-height:calc(100dvh - 440px)}
+html[data-theme] #search#search .result-stream>.empty{min-height:calc(100dvh - 480px)}
+/* 搜索结果：紧凑的一行一条 */
+html[data-theme] #search#search #results>article.result{display:grid;grid-template-columns:34px minmax(0,1fr);column-gap:14px;margin:0 0 4px;padding:14px 16px!important;border:1px solid transparent!important;border-radius:14px!important;background:transparent!important;box-shadow:none!important}
+html[data-theme] #search#search #results>article.result:hover{background:color-mix(in srgb,var(--surface-2) 70%,transparent)!important;border-color:var(--line-soft,var(--line))!important}
+html[data-theme] #search#search .result-rank{font:600 13px/1.6 var(--num,inherit);color:var(--muted);text-align:right;padding-top:1px}
+html[data-theme] #search#search .result-title{margin:0;font:650 14.5px/1.4 var(--display)!important;color:var(--text)}
+html[data-theme] #search#search .result-meta{margin:2px 0 6px;font-size:11.5px;color:var(--muted)}
+html[data-theme] #search#search .result-body{margin:0;font-size:13px;line-height:1.7;color:var(--text-2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+html[data-theme] #search#search .result-actions{display:flex;gap:6px;margin-top:8px;opacity:.0;transition:opacity .18s}
+html[data-theme] #search#search .result:hover .result-actions,html[data-theme] #search#search .result:focus-within .result-actions{opacity:1}
+html[data-theme] #search#search .result-actions .copy-button{min-height:28px;padding:0 10px;font-size:12px}
+html[data-theme] #search#search .result details{margin-top:6px;padding:0;border:0}
+html[data-theme] #search#search .result details>summary{font-size:12px;font-weight:500;color:var(--muted)}
+html[data-theme] #search#search .search-telemetry{margin:4px 6px 10px;padding:10px 14px!important;border:0!important;border-radius:12px!important;background:color-mix(in srgb,var(--warn) 8%,transparent)!important;font-size:12.5px;color:var(--text-2)}

@@ -27,7 +27,7 @@ button{min-height:36px;padding:6px 12px;background:var(--surface-2);color:var(--
 textarea{line-height:1.65}
 button:disabled{opacity:.48;cursor:not-allowed}
 input,textarea,select{min-height:40px;max-width:100%}
-select{appearance:auto;color-scheme:dark}
+select{appearance:auto}
 option{background:var(--bg-elev);color:var(--text)}
 input,textarea,pre,.selectable{user-select:text}
 input,textarea{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px}

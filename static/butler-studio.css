@@ -1,0 +1,220 @@
+/* 管家 · 重做：同一套晨雾 / 曜石质感，去掉盒套盒 */
+html[data-theme] #butler{background:var(--bg)!important}
+html[data-theme] #butler .butler-layout{background:transparent}
+
+/* 左侧对话列表：和主侧栏同一种玻璃 */
+html[data-theme] #butler .butler-history{background:color-mix(in srgb,var(--card) 82%,transparent)!important;border-right:1px solid var(--line-soft,var(--line))!important;backdrop-filter:blur(24px) saturate(150%);box-shadow:none}
+html[data-theme] #butler .butler-brand strong{font-family:var(--display);color:var(--text)}
+html[data-theme] #butler .butler-brand span{color:var(--muted)}
+html[data-theme] #butler .butler-new{min-height:40px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line))!important;border-radius:13px!important;background:color-mix(in srgb,var(--accent) 9%,var(--card))!important;color:var(--text)!important;font-weight:600;box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 8px 18px -14px var(--accent);transition:transform .18s cubic-bezier(.2,.8,.2,1),background .18s,border-color .18s}
+html[data-theme="dark"] #butler .butler-new{box-shadow:0 1px 0 rgba(255,255,255,.05) inset}
+html[data-theme] #butler .butler-new:hover{background:color-mix(in srgb,var(--accent) 15%,var(--card))!important;border-color:var(--accent)!important}
+html[data-theme] #butler .butler-new:active{transform:scale(.98)}
+html[data-theme] #butler #butlerSessions button,html[data-theme] #butler .butler-sidebar-footer button{border-radius:10px!important;transition:background .15s,color .15s}
+html[data-theme] #butler #butlerSessions button:hover,html[data-theme] #butler .butler-sidebar-footer button:hover{background:var(--surface-2)!important;color:var(--text)!important}
+html[data-theme] #butler #butlerSessions button:active,html[data-theme] #butler .butler-sidebar-footer button:active{background:var(--press)!important}
+html[data-theme] #butler .butler-sidebar-footer{border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #butler .butler-sidebar-footer button{color:var(--text-2)!important}
+
+/* 顶栏：模型选择和设置做成小胶囊 */
+html[data-theme] #butler .butler-topbar{background:transparent!important;border:0!important;box-shadow:none!important}
+html[data-theme] #butler .butler-model-picker,html[data-theme] #butler .butler-topbar .butler-text-button{min-height:34px;padding:0 14px;border:1px solid var(--card-line)!important;border-radius:999px!important;background:var(--card)!important;color:var(--text)!important;box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 6px 16px -12px rgba(20,30,60,.35);backdrop-filter:blur(16px);transition:border-color .15s,transform .15s}
+html[data-theme="dark"] #butler .butler-model-picker,html[data-theme="dark"] #butler .butler-topbar .butler-text-button{box-shadow:0 1px 0 rgba(255,255,255,.05) inset}
+html[data-theme] #butler .butler-model-picker:hover,html[data-theme] #butler .butler-topbar .butler-text-button:hover{border-color:var(--line-hot)!important}
+html[data-theme] #butler .butler-model-picker:active,html[data-theme] #butler .butler-topbar .butler-text-button:active{transform:scale(.97)}
+html[data-theme] #butler .butler-model-picker p{margin:0;color:inherit}
+
+/* 空状态：一颗会呼吸的液态光核，代替小 logo */
+html[data-theme] #butler .butler-welcome{position:relative;display:grid;justify-items:center;gap:10px}
+html[data-theme] #butler .butler-welcome::before{content:"";position:absolute;left:50%;top:44px;width:420px;height:420px;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:-1;background:radial-gradient(circle,color-mix(in srgb,var(--glow) 14%,transparent),transparent 65%)}
+html[data-theme] #butler .butler-orb{position:relative;display:block;width:86px;height:86px;margin-bottom:8px;border-radius:50%;--core-tint:var(--core-default)}
+html[data-theme] #butler .butler-orb .core-plate{position:absolute;inset:0}
+html[data-theme] #butler .butler-orb::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:1px dashed color-mix(in srgb,var(--glow) 40%,transparent);animation:studio-spin 40s linear infinite}
+html[data-theme] #butler .butler-welcome-title{display:grid;justify-items:center;gap:6px}
+html[data-theme] #butler .butler-welcome-logo{display:none}
+html[data-theme] #butler .butler-welcome h3{margin:0;font:680 22px/1.3 var(--display);color:var(--text)}
+html[data-theme] #butler .butler-welcome>p{margin:0;max-width:440px;text-align:center;font-size:13.5px;color:var(--text-2)}
+html[data-theme] #butler .butler-welcome .butler-text-button{min-height:36px;padding:0 18px;border:0!important;border-radius:999px!important;background:var(--accent)!important;color:var(--on-accent)!important;font-weight:600;box-shadow:0 10px 22px -12px var(--accent);transition:filter .15s,transform .15s}
+html[data-theme] #butler .butler-welcome .butler-text-button:hover{filter:brightness(1.06)}
+html[data-theme] #butler .butler-welcome .butler-text-button:active{transform:scale(.97)}
+
+/* 输入框：一块浮起的玻璃 */
+html[data-theme] #butler #butlerForm{border:1px solid var(--card-line)!important;border-radius:24px!important;background:var(--card)!important;box-shadow:var(--shadow),0 1px 0 rgba(255,255,255,.6) inset!important;backdrop-filter:blur(24px) saturate(150%);transition:border-color .2s,box-shadow .2s}
+html[data-theme="dark"] #butler #butlerForm{box-shadow:var(--shadow),0 1px 0 rgba(255,255,255,.06) inset!important}
+html[data-theme] #butler #butlerForm:focus-within{border-color:color-mix(in srgb,var(--accent) 55%,transparent)!important;box-shadow:var(--shadow),0 0 0 4px color-mix(in srgb,var(--accent) 12%,transparent)!important}
+html[data-theme] #butler #butlerQuestion{border:0!important;background:transparent!important;box-shadow:none!important;color:var(--text)!important;font-size:14.5px}
+html[data-theme] #butler #butlerQuestion::placeholder{color:var(--muted)}
+html[data-theme] #butler .butler-compose-options button,html[data-theme] #butler .butler-compose-options label{border-radius:999px!important;transition:background .15s,color .15s}
+html[data-theme] #butler .butler-compose-options button:hover:not(:disabled){background:var(--surface-2)!important}
+html[data-theme] #butler .butler-footnote{color:var(--muted)!important;font-size:11.5px}
+html[data-theme] #butler .butler-messages{background:transparent}
+
+/* 设置弹窗：去掉盒套盒，左侧导航变成胶囊 */
+html[data-theme] #butlerSettingsDialog,html[data-theme] #butlerProductDialog{border:1px solid var(--card-line)!important;border-radius:26px!important;background:var(--dialog-bg)!important;box-shadow:0 40px 80px -30px rgba(10,15,30,.45)!important;backdrop-filter:blur(30px) saturate(160%)}
+html[data-theme] #butlerSettingsDialog .butler-control-panel{border:0!important;background:transparent!important;box-shadow:none!important}
+html[data-theme] #butlerSettingsDialog .butler-settings-nav{border:0!important;background:transparent!important}
+html[data-theme] #butlerSettingsDialog .butler-settings-nav button{border-radius:10px!important;transition:background .15s,color .15s}
+html[data-theme] #butlerSettingsDialog .butler-settings-nav button:hover{background:var(--surface-2)!important}
+html[data-theme] #butlerSettingsDialog .butler-settings-body{border-left:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #butlerSettingsDialog .butler-flat-section,html[data-theme] #butlerSettingsDialog .butler-settings-section{border-color:var(--line-soft,var(--line))!important;background:transparent!important}
+html[data-theme] #butlerSettingsDialog .butler-settings-note{display:none}
+html[data-theme] #butlerSettingsDialog .butler-permission-groups>p,html[data-theme] #butlerSettingsDialog .butler-group-row p{font-size:12px;color:var(--muted)}
+html[data-theme] #butlerSettingsDialog .studio-dup-note{display:none}
+html[data-theme] #butler .butler-welcome .butler-welcome-title h3{font-size:22px!important;font-weight:680!important;letter-spacing:-.01em}
+html[data-theme] #butler .butler-welcome{margin-top:4vh}
+html[data-theme] main>.page #butlerSettingsDialog .butler-control-panel.butler-control-panel{border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;margin-top:8px}
+html[data-theme] #butler #butlerSettingsDialog .butler-control-panel{border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+
+/* ===================== 对话设置弹窗：重排 ===================== */
+html[data-theme] #butler #butlerSettingsDialog{width:min(900px,94vw);max-width:none;height:min(700px,88vh);max-height:none;padding:22px 24px 0;display:flex;flex-direction:column;overflow:hidden}
+html[data-theme] #butler #butlerSettingsDialog .butler-dialog-head{flex:none;display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;padding:0 2px}
+html[data-theme] #butler #butlerSettingsDialog .butler-dialog-head h2{font:680 18px/1.3 var(--display);color:var(--text)}
+html[data-theme] #butler #butlerSettingsDialog .butler-control-panel{flex:1;min-height:0;display:grid!important;grid-template-columns:168px minmax(0,1fr)!important;grid-template-rows:auto auto minmax(0,1fr);column-gap:0;margin:0!important}
+html[data-theme] #butler #butlerSettingsDialog .butler-control-panel>p{grid-column:1/-1;margin:0 0 10px;font-size:12px;color:var(--muted)}
+html[data-theme] #butler #butlerSettingsDialog .butler-control-panel>p:empty{display:none}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-nav{grid-column:1;grid-row:3;display:flex;flex-direction:column;gap:2px;padding:2px 12px 0 0!important}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-nav button{display:flex;align-items:center;min-height:38px;padding:0 12px;border:0;background:transparent;color:var(--text-2);font-size:13.5px;text-align:left;cursor:pointer}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-nav button[aria-selected="true"],html[data-theme] #butler #butlerSettingsDialog .butler-settings-nav button.active,html[data-theme] #butler #butlerSettingsDialog .butler-settings-nav button:is([aria-current="true"],[aria-current="page"],.is-on){background:color-mix(in srgb,var(--accent) 11%,transparent)!important;color:var(--text)!important;font-weight:600}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-body{grid-column:2;grid-row:3;min-height:0;overflow:auto;padding:4px 10px 28px 28px!important;border-left:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-body>section>*+*{margin-top:14px}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-body :is(h3,strong:first-child){font:650 14px/1.4 var(--display);color:var(--text)}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-body p{font-size:12.5px;line-height:1.65;color:var(--text-2)}
+html[data-theme] #butler #butlerSettingsDialog .butler-flat-section{padding:16px 0 0!important;border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-body label:not(.butler-check):not(fieldset label){display:grid;gap:6px;font-size:12.5px;color:var(--text-2)}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-body :is(input[type=text],input[type=url],input[type=password],input:not([type]),textarea){min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:11px;background:var(--input-bg);color:var(--text)}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-body > section > div > button,html[data-theme] #butler #butlerSettingsDialog .butler-model-paths button{border-radius:11px!important}
+/* 模型来源三选一：分段胶囊 */
+html[data-theme] #butler #butlerSettingsDialog .butler-model-paths{display:flex;gap:3px;padding:3px;border-radius:12px;background:var(--surface-2)}
+html[data-theme] #butler #butlerSettingsDialog .butler-model-paths button{flex:1;min-height:32px;border:0!important;background:transparent!important;color:var(--text-2);font-size:13px;cursor:pointer;transition:background .15s,color .15s}
+html[data-theme] #butler #butlerSettingsDialog .butler-model-paths button:hover{color:var(--text)}
+html[data-theme] #butler #butlerSettingsDialog .butler-model-paths button:is(.active,[aria-pressed="true"],[aria-selected="true"]){background:var(--card)!important;color:var(--text);box-shadow:0 1px 3px rgba(20,24,40,.12)}
+/* 开关：现代胶囊开关 */
+html[data-theme] #butlerSettingsDialog .butler-check{display:flex;align-items:center;gap:10px;min-height:36px;cursor:pointer}
+html[data-theme] #butlerSettingsDialog .butler-check input[type=checkbox]{-webkit-appearance:none;appearance:none;position:relative;flex:none;width:34px!important;height:20px!important;margin:0;border-radius:999px;background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--line);cursor:pointer;transition:background .2s,box-shadow .2s}
+html[data-theme] #butlerSettingsDialog .butler-check input[type=checkbox]::before{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+html[data-theme] #butlerSettingsDialog .butler-check input[type=checkbox]:checked{background:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+html[data-theme] #butlerSettingsDialog .butler-check input[type=checkbox]:checked::before{transform:translateX(14px)}
+html[data-theme] #butlerSettingsDialog .butler-check input[type=checkbox]:disabled{opacity:.45;cursor:not-allowed}
+html[data-theme] #butlerSettingsDialog .butler-check input[type=checkbox]:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-nav button:not(.is-on):not([aria-selected="true"]):not([aria-current="true"]):not([aria-current="page"]){background:transparent!important}
+html[data-theme] #butler #butlerSettingsDialog .butler-settings-nav button:not(.is-on):hover{background:var(--surface-2)!important;color:var(--text)!important}
+/* 管家自己的开关：同一套胶囊开关 */
+html[data-theme] .butler-switch{position:relative;flex:none;width:34px!important;height:20px!important;min-height:0!important;padding:0!important;border:0!important;border-radius:999px!important;background:var(--surface-3)!important;box-shadow:inset 0 0 0 1px var(--line)!important;cursor:pointer;transition:background .2s,box-shadow .2s}
+html[data-theme] .butler-switch>span{position:absolute!important;left:2px;top:2px;width:16px!important;height:16px!important;margin:0!important;border-radius:50%!important;background:#fff!important;box-shadow:0 1px 3px rgba(0,0,0,.25)!important;transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+html[data-theme] .butler-switch[aria-checked="true"]{background:var(--accent)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
+html[data-theme] .butler-switch[aria-checked="true"]>span{transform:translateX(14px)}
+html[data-theme] .butler-switch:hover{box-shadow:inset 0 0 0 1px var(--line-hot)!important}
+html[data-theme] .butler-switch:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+html[data-theme] .butler-switch:disabled{opacity:.45;cursor:not-allowed}
+html[data-theme] #butlerSettingsDialog .butler-group-row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid var(--line-soft,var(--line))}
+html[data-theme] #butlerSettingsDialog .butler-group-row strong{font-size:13.5px}
+html[data-theme] #butlerSettingsDialog .butler-group-row p{margin:3px 0 0}
+/* r21 · 管家复选开关统一（indicator → 胶囊开关） */
+html[data-theme] #butler .butler-check,html[data-theme] #butlerSettingsDialog .butler-check{display:flex!important;align-items:center;gap:10px;min-height:36px;cursor:pointer}
+html[data-theme] .butler-check .butler-check-indicator{position:relative!important;flex:none;width:34px!important;height:20px!important;border:0!important;border-radius:999px!important;background:var(--surface-3)!important;box-shadow:inset 0 0 0 1px var(--line)!important;transition:background .2s,box-shadow .2s}
+html[data-theme] .butler-check .butler-check-indicator::after{content:""!important;position:absolute!important;left:2px!important;top:2px!important;width:16px!important;height:16px!important;border-radius:50%!important;background:#fff!important;box-shadow:0 1px 3px rgba(0,0,0,.25)!important;transform:none;transition:transform .22s cubic-bezier(.2,.8,.2,1)!important}
+html[data-theme] .butler-check input:checked+.butler-check-indicator{background:var(--accent)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
+html[data-theme] .butler-check input:checked+.butler-check-indicator::after{transform:translateX(14px)!important}
+html[data-theme] .butler-check:hover .butler-check-indicator{box-shadow:inset 0 0 0 1px var(--line-hot)!important}
+html[data-theme] .butler-check input:focus-visible+.butler-check-indicator{outline:2px solid var(--focus-ring);outline-offset:2px}
+html[data-theme] .butler-check input:disabled+.butler-check-indicator{opacity:.45}
+html[data-theme] .butler-check:has(input:disabled){cursor:not-allowed;color:var(--muted)}
+html[data-theme] .butler-check .butler-check-state{margin-left:auto;font-size:12px;color:var(--muted)}
+/* 双横线、输入间距 */
+html[data-theme] #butlerSettingsDialog .butler-flat-section{border-top:0!important;margin-top:4px!important}
+html[data-theme] #butlerSettingsDialog .butler-settings-body label:has(>input:not([type=checkbox]):not([type=radio]),>textarea,>.s-select){display:flex;flex-direction:column;gap:6px;margin-top:12px!important;font-size:12.5px;color:var(--text-2,var(--muted))}
+html[data-theme] #butlerSettingsDialog #butlerNetworkStatus{display:inline-flex;align-items:center;gap:6px;margin-top:14px!important;padding:3px 10px;border-radius:999px;background:var(--surface-2);font-size:12px;color:var(--muted)}
+html[data-theme] #butlerSettingsDialog #butlerNetworkStatus::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-settings-nav button:not([aria-current="page"]){background:transparent!important;font-weight:500}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-settings-nav button:not([aria-current="page"]):hover{background:var(--surface-2)!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-settings-nav button[aria-current="page"]{background:var(--accent-soft,rgba(88,101,242,.11))!important;color:var(--accent-ink,var(--accent))!important;font-weight:600}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-settings-nav button:focus:not(:focus-visible){outline:none}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-flat-section{border-top:0!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog #butlerNetworkStatus{width:fit-content;background:var(--surface-2)!important}
+/* 统一折叠箭头（替换旧 › 文本字形） */
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog details>summary{display:flex!important;align-items:center;gap:8px;list-style:none}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog details>summary::-webkit-details-marker{display:none}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog details>summary::before{content:""!important;display:block!important;flex:none;width:14px!important;height:14px!important;margin:0!important;font-size:0!important;border:0!important;background:currentColor!important;opacity:.5;-webkit-mask:var(--chev) center/12px no-repeat!important;mask:var(--chev) center/12px no-repeat!important;transform:rotate(0)!important;transition:transform .22s cubic-bezier(.2,.8,.2,1)!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog details[open]>summary::before{transform:rotate(90deg)!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog details>summary::after{content:none!important}
+/* 资料页按钮：桌面式行内按钮，而非通栏 */
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog [data-settings-page="data"] button:not(.butler-switch):not(.s-select-btn){width:auto!important;min-width:0!important;justify-self:start;align-self:flex-start;padding:0 16px!important}
+/* 模型页节奏：步骤标题 / 字段 / 按钮组 */
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-api-step{margin:22px 0 0!important;padding:0!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog #butlerProviderSavedState+.butler-api-step{margin-top:10px!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-api-step>h3{margin:0 0 10px!important;font-size:13px;font-weight:600;letter-spacing:.01em}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog :is(.butler-api-step,.butler-api-credentials,.butler-api-models,#butlerKeySlot,#butlerCustomModelSlot) label{margin:0!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-api-credentials{display:flex!important;flex-direction:column;gap:12px!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog #butlerCustomModelSlot{margin:12px 0 0!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-api-models{display:flex!important;align-items:center;gap:10px!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-api-models>label{flex:1;min-width:0}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-control-actions{display:flex!important;flex-wrap:wrap;gap:8px!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-polish-advanced>label:not(.butler-check){margin:14px 0 0!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-polish-advanced>p{margin:8px 0 0!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-polish-advanced>fieldset{margin:14px 0 4px!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-api-credentials{align-items:stretch!important;grid-template-columns:none!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-api-credentials>*{width:auto!important;justify-self:stretch}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog :is(.butler-api-save,.butler-control-actions>button){width:auto!important;flex:none}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-control-actions{background:transparent!important;box-shadow:none!important;border:0!important;padding:14px 0 0!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-api-models>.butler-control-actions{padding:0!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-api-models .butler-control-actions>button{background:var(--surface-2)!important;color:var(--text)!important;border:1px solid var(--line)!important;box-shadow:none!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-api-models .butler-control-actions>button:hover{border-color:var(--line-hot)!important;background:var(--surface-3)!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog #butlerProviderSavedState{margin:0 0 4px!important;font-size:12px;color:var(--muted)}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog label.butler-permission-row{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between;gap:20px;margin:0!important;padding:8px 0;font-size:13px;color:var(--text)!important;text-align:left}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog label.butler-permission-row>span:first-child{flex:1;min-width:0}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog label.butler-permission-row>.s-select{flex:none;width:128px}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-polish-advanced>.butler-flat-section{padding-top:2px!important;margin-top:0!important;padding-left:22px!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-flat-section>summary{margin:4px 0 8px!important;min-height:36px}
+/* 界渡能做什么：单箭头、卡片一体化 */
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic>summary::before{content:none!important;display:none!important}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic{overflow:hidden;border-radius:14px}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic>summary{padding:14px 16px!important;gap:12px}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic[open]>summary{background:transparent!important;border-bottom:1px solid var(--line)}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic[open]{box-shadow:inset 0 0 0 1px var(--line-hot),0 6px 18px -10px rgba(40,50,120,.18)!important}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic-body{padding:14px 16px 16px!important;margin:0!important}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-chevron{display:grid;place-items:center;width:22px;height:22px;font-size:0!important;color:var(--muted)}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-chevron::before{content:"";width:14px;height:14px;background:currentColor;-webkit-mask:var(--chev) center/12px no-repeat;mask:var(--chev) center/12px no-repeat;transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic[open] .product-help-chevron{transform:none!important}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic[open] .product-help-chevron::before{transform:rotate(90deg)}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog :is(.product-help-more,.product-help-evidence)>summary::before{content:""!important;width:14px;height:14px;font-size:0;background:currentColor;opacity:.5;-webkit-mask:var(--chev) center/12px no-repeat;mask:var(--chev) center/12px no-repeat;display:inline-block;margin-right:6px;vertical-align:-2px;transition:transform .2s}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog :is(.product-help-more,.product-help-evidence)[open]>summary::before{transform:rotate(90deg)}
+/* r22 · 界渡能做什么：大白话卡片 */
+.sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-intro{font-size:13px;color:var(--text-2,var(--muted));margin:4px 0 14px!important}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic-text>strong{font-size:14px;font-weight:650}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic-text>span{display:block;margin-top:4px;font-size:12.5px;line-height:1.6;color:var(--muted);-webkit-line-clamp:unset}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-topic-body{display:flex;flex-direction:column;gap:10px}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-row{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:baseline}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-row h4{margin:0!important;font-size:12px;font-weight:600;color:var(--muted)}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-row p{margin:0!important;font-size:13px;line-height:1.65;color:var(--text)}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-row.note p{color:var(--text-2,var(--muted))}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-entry{align-self:flex-start;margin-top:4px;height:32px!important;padding:0 14px!important;font-size:12.5px}
+html[data-theme] dialog#butlerProductDialog#butlerProductDialog .product-help-status.unfinished{flex:none;padding:2px 8px;border-radius:999px;font-size:11.5px;background:color-mix(in srgb,var(--st-warn) 16%,transparent);color:var(--st-warn-ink);border:0}
+/* r22 · 对话设置：底部留白，按钮不被圆角/框体裁切 */
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog{height:min(720px,calc(100vh - 48px))!important;max-height:calc(100vh - 48px)!important;padding-bottom:0!important;overflow:hidden!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-control-panel{flex:1 1 auto;min-height:0!important;margin:0!important;padding-bottom:0!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-settings-body{min-height:0!important;padding-bottom:32px!important;scroll-padding-bottom:32px}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-settings-body>section>:last-child{margin-bottom:0!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-settings-nav{padding-bottom:24px!important}
+
+/* r22 · 胶囊开关精修：40×24 轨道，20px 圆钮，四周均匀 2px，按压拉伸 */
+html[data-theme] :is(.butler-check .butler-check-indicator,.butler-switch){--sw-w:40px;--sw-h:24px;--sw-k:20px;--sw-p:2px;position:relative!important;flex:none!important;width:var(--sw-w)!important;height:var(--sw-h)!important;min-width:var(--sw-w)!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;border-radius:999px!important;background:var(--sw-off)!important;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.06)!important;transition:background-color .22s ease,box-shadow .22s ease!important;cursor:pointer;box-sizing:border-box!important}
+html[data-theme="mist"]{--sw-off:rgba(116,124,158,.24);--sw-off-hover:rgba(116,124,158,.32)}
+html[data-theme="dark"]{--sw-off:rgba(255,255,255,.16);--sw-off-hover:rgba(255,255,255,.22)}
+html[data-theme] .butler-check .butler-check-indicator::after,html[data-theme] .butler-switch>span{content:""!important;position:absolute!important;left:var(--sw-p)!important;top:var(--sw-p)!important;width:var(--sw-k)!important;height:var(--sw-k)!important;margin:0!important;border:0!important;border-radius:999px!important;background:#fff!important;box-shadow:0 1px 2px rgba(15,20,40,.22),0 2px 6px rgba(15,20,40,.12)!important;transform:translateX(0)!important;transition:transform .24s cubic-bezier(.3,.7,.2,1.1),width .18s ease!important}
+html[data-theme] .butler-check input:checked+.butler-check-indicator,html[data-theme] .butler-switch[aria-checked="true"]{background:var(--accent)!important;box-shadow:none!important}
+html[data-theme] .butler-check input:checked+.butler-check-indicator::after,html[data-theme] .butler-switch[aria-checked="true"]>span{transform:translateX(calc(var(--sw-w) - var(--sw-k) - var(--sw-p) * 2))!important}
+html[data-theme] .butler-check:hover input:not(:checked):not(:disabled)+.butler-check-indicator,html[data-theme] .butler-switch[aria-checked="false"]:hover{background:var(--sw-off-hover)!important}
+html[data-theme] .butler-check:active input:not(:disabled)+.butler-check-indicator::after,html[data-theme] .butler-switch:active>span{width:calc(var(--sw-k) + 4px)!important}
+html[data-theme] .butler-check:active input:checked:not(:disabled)+.butler-check-indicator::after,html[data-theme] .butler-switch[aria-checked="true"]:active>span{transform:translateX(calc(var(--sw-w) - var(--sw-k) - var(--sw-p) * 2 - 4px))!important}
+html[data-theme] .butler-check input:focus-visible+.butler-check-indicator,html[data-theme] .butler-switch:focus-visible{outline:none!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 28%,transparent)!important}
+html[data-theme] .butler-check input:disabled+.butler-check-indicator,html[data-theme] .butler-switch:disabled{opacity:.4;cursor:not-allowed}
+/* 行排布：文字在左、开关在右，整行垂直居中；去掉多余的「开 / 关」字样 */
+html[data-theme] label.butler-check:has(.butler-check-indicator){display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;min-height:44px!important;padding:6px 0!important;margin:0!important;font-size:13px;line-height:1.5;color:var(--text)}
+html[data-theme] label.butler-check:has(.butler-check-indicator)>.butler-check-indicator{order:2;margin-left:auto!important}
+html[data-theme] label.butler-check:has(.butler-check-indicator)>.butler-check-state{display:none!important}
+html[data-theme] label.butler-check:has(.butler-check-indicator)+label.butler-check:has(.butler-check-indicator){border-top:1px solid var(--line-soft,var(--line))}
+html[data-theme] #butlerSettingsDialog .butler-group-row{min-height:56px}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog :is(section,details,form,div)>button:not(.butler-switch):not(.s-select-btn)+button:not(.butler-switch):not(.s-select-btn){margin-left:8px!important}
+html[data-theme] dialog#butlerSettingsDialog#butlerSettingsDialog .butler-flat-section>button{margin-top:12px}

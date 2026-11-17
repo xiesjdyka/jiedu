@@ -943,8 +943,8 @@
     },
     {
       "path": "knowledge_bridge/web.py",
-      "bytes": 191622,
-      "sha256": "294f059847f2c9759cf33cf1a5f202cfe39eb90b45a80ca4a00927017dd10273"
+      "bytes": 195305,
+      "sha256": "c8ea325ac46d7fefbf3fdfff76a1252ede469cfdaeea0c58e4a4673defa2bbc2"
     },
     {
       "path": "knowledge_bridge/wiki_daily_runs.py",
@@ -1023,8 +1023,8 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 12946,
-      "sha256": "88c6b41ff33e251e1cec38e84ccb6c7fd297f63697ed922e51025731d9daa20b"
+      "bytes": 13558,
+      "sha256": "b283af5a8f7872e197cbd46b2ff60d297bae5b45c7bd716a2b32ca351239ff5a"
     },
     {
       "path": "pyproject.toml",
@@ -1082,9 +1082,34 @@
       "sha256": "67759a25270d2bac5b4d7e3f3d9d675e0fa5224dfd5882d109ec638511320ab9"
     },
     {
+      "path": "static/access-studio.css",
+      "bytes": 12614,
+      "sha256": "9b06d599b2eadb4093a42aed7c586f65f8d91a20e151af0d465447df1aa2dd6b"
+    },
+    {
+      "path": "static/access-v2.css",
+      "bytes": 32374,
+      "sha256": "d540c7dd96f8e3a8d45a8a5bb7acc33ebb1950368883c83add03659530e9dda5"
+    },
+    {
       "path": "static/app.js",
-      "bytes": 403455,
-      "sha256": "11dff6ac47be796aa247829a59dde5ba0f73ec673359dc7fbc2dd73c03f0e41c"
+      "bytes": 389415,
+      "sha256": "3b39b5c88df51bafe84f0a4045b1ed0f173a02ff1ff6be11cca552b667a44c78"
+    },
+    {
+      "path": "static/archives-studio.css",
+      "bytes": 18100,
+      "sha256": "7de62dd13fd07ee49ef29b2f8e4f179e615d9c89cf5e3b1d1c1e69df0146d8f8"
+    },
+    {
+      "path": "static/boot-pulse.css",
+      "bytes": 3401,
+      "sha256": "c6d442094dc5a00c97dabb431f46f73ea712e85d5b2945527d6c0cef1998b8e4"
+    },
+    {
+      "path": "static/boot-pulse.js",
+      "bytes": 4770,
+      "sha256": "5c0e83409e6d6c410d4acf6644131c99bff178abee72f1b1bb94891621098718"
     },
     {
       "path": "static/brand/jiedu-256.png",
@@ -1097,19 +1122,34 @@
       "sha256": "d8963f4e7d3aa0433c49ada644b623cfa0f3681f50322a70e6974af401a4a0b8"
     },
     {
+      "path": "static/brand/jiedu-mark.png",
+      "bytes": 22685,
+      "sha256": "7e5efffd8ec0abc638d07e0571a21fab0744df7d0defb4ca7b91243fdbe35678"
+    },
+    {
       "path": "static/butler-controls.js",
       "bytes": 74521,
       "sha256": "6355f2fa59653bff79fc81dd431f775900c7ac102854f21d54ab215c6398c66c"
     },
     {
+      "path": "static/butler-studio.css",
+      "bytes": 33488,
+      "sha256": "aa8b17e4e2fefdd845e5cb454c317657e7ea1f2c4369e44f8bbccc17db792f8a"
+    },
+    {
       "path": "static/butler.css",
-      "bytes": 57096,
-      "sha256": "523ea08436e7ebc0568447b73a4eb94b46a93405ad0614d5259c66f204a8910e"
+      "bytes": 57078,
+      "sha256": "8a443a46feb1e0b27d2cca833975404372d6ac256885c79fa69eea576b8ed75c"
     },
     {
       "path": "static/butler.js",
-      "bytes": 69141,
-      "sha256": "be944efd078fb3e46a04501f7f0dd8e984ffaa2f0490b295a1574ef36b7b6e3e"
+      "bytes": 77882,
+      "sha256": "1e933ce5f4899c0ddba5102bc10990ca7cb3003e2d7d33603a32c843fb587880"
+    },
+    {
+      "path": "static/client-state.js",
+      "bytes": 8355,
+      "sha256": "a070f28b3357de6cc24b30e0c0f5796b63c2b899995e6cac847f8f0372c1418f"
     },
     {
       "path": "static/codex-archive.js",
@@ -1118,13 +1158,68 @@
     },
     {
       "path": "static/design-system.css",
-      "bytes": 19596,
-      "sha256": "bf97aa61c2cc18ea4166349217580eaa7ea556398f13d33cece7ce07eca3ad8b"
+      "bytes": 19578,
+      "sha256": "1189b0a5ee526bfbf576493b11bd28c8020c60de7823993e4315f9e0cefca604"
+    },
+    {
+      "path": "static/diagnostics.css",
+      "bytes": 7502,
+      "sha256": "54bf9be7957b09e400d3e0e84154a7f63f116b9152612b75abf0d75208460344"
+    },
+    {
+      "path": "static/diagnostics.js",
+      "bytes": 10687,
+      "sha256": "102b95d0d4775a5c275063abbb84ed04290442b67e8d3240bcf77314bd7bf213"
+    },
+    {
+      "path": "static/home-studio.css",
+      "bytes": 90687,
+      "sha256": "afdfd8bec8dcd34a54a45cd093d9925a168118e5184d38ddfb070f6e0066aff5"
+    },
+    {
+      "path": "static/home-studio.js",
+      "bytes": 59665,
+      "sha256": "3c313ddddf41804797011d3d8f3efe5eb60fbd2f10837511491d941be9b61f9d"
     },
     {
       "path": "static/index.html",
-      "bytes": 56901,
-      "sha256": "5ecb9c0818509b3c7e54dcd27e6fbd292f6a5e84ac96f3ce0ce2a837f0e89d9f"
+      "bytes": 56065,
+      "sha256": "033252c50fcf00d5203562e104f8b85cf4b1278580132de80f99f4b537f62cb3"
+    },
+    {
+      "path": "static/knowledge-studio.css",
+      "bytes": 16399,
+      "sha256": "4a100921cab2f31f93ec8c11fa6f4182daf9c05f26cc47ce02f6127d76e7df4d"
+    },
+    {
+      "path": "static/launch-dark-back.webp",
+      "bytes": 374660,
+      "sha256": "5c831b69b75a11209a3d088959b45520b99de1ad8b75c3ef8ad9dff4315dc96f"
+    },
+    {
+      "path": "static/launch-dark-near.webp",
+      "bytes": 111526,
+      "sha256": "c9117bcc2594b7e47492df5ee09078381affc7c3d5b6127e76e5cc06d2e3d539"
+    },
+    {
+      "path": "static/launch-light-back.webp",
+      "bytes": 398870,
+      "sha256": "6a112cacfd8c5fa22307f06179d2b8280b2a214dc19df296e1529d619932d097"
+    },
+    {
+      "path": "static/launch-light-near.webp",
+      "bytes": 111294,
+      "sha256": "18ab494865bfec1d41c106f9b952d32f77f68b5de30daced24d14d231e3376a0"
+    },
+    {
+      "path": "static/launch.css",
+      "bytes": 9868,
+      "sha256": "a8449217865b00137db0f2d6db457eebdd8819deecb68fd19b3eb8325b45b876"
+    },
+    {
+      "path": "static/launch.js",
+      "bytes": 16042,
+      "sha256": "0bd975d6a8e66a712863c659e2148659ee39125c8655b0243e1dec6c84412c73"
     },
     {
       "path": "static/local-chat-collectors.js",
@@ -1132,9 +1227,49 @@
       "sha256": "26cf371f18b29524eecbc894bc75e381239906f8a3c5b9e108f893ae119f1367"
     },
     {
+      "path": "static/mist-v3.css",
+      "bytes": 5486,
+      "sha256": "d255061e764b5e7d2b8e7c5137573cc26468eef10cb4517cee9e509106acde79"
+    },
+    {
+      "path": "static/page-slim.css",
+      "bytes": 4557,
+      "sha256": "7438ac3304279a22b9e02309755745c641e0fc4ae909d34940eeb4d4f5a938ab"
+    },
+    {
+      "path": "static/pages-mist.css",
+      "bytes": 9193,
+      "sha256": "20892b98a19169926f1a248283cf79c7ca019cac26d1f65b0268048243559fb1"
+    },
+    {
+      "path": "static/pages-studio.js",
+      "bytes": 36345,
+      "sha256": "3a3cfce337aa2ec94d122754ea335b18669667335008ae8948f637587ca704a4"
+    },
+    {
       "path": "static/prompt-workflow.js",
       "bytes": 14393,
       "sha256": "0dd48ca3625722e9fa842d4c6b5919717d90b6a0bd7514efea0e10f1a7d5b3f5"
+    },
+    {
+      "path": "static/site-studio-2.css",
+      "bytes": 38942,
+      "sha256": "06f841e1b50d9b54b15d5df7cf5bd80a022261f56053189307bf2dee12b614ac"
+    },
+    {
+      "path": "static/site-studio-3.css",
+      "bytes": 41052,
+      "sha256": "5f265fd9ac5554117352eeb28e98dd9306faded4231cbeeaaa4387833a24376b"
+    },
+    {
+      "path": "static/site-studio.css",
+      "bytes": 31019,
+      "sha256": "eb4e7c2ec7b72f72e9847e2e8f54fd550150106c172f3f9196a84f3ce1118508"
+    },
+    {
+      "path": "static/skin-mist-base.css",
+      "bytes": 61091,
+      "sha256": "4d9f7de6ab0c0ae5d9f964ab31adddebe562224dd9b980461a6cbfbcacd2f3fd"
     },
     {
       "path": "static/software-update.js",
@@ -1143,18 +1278,13 @@
     },
     {
       "path": "static/style.css",
-      "bytes": 250566,
-      "sha256": "e386a42c25b9eec09ed9fc233e5078aeb0b3b9a7060f531d782b31e25bf786d6"
+      "bytes": 249872,
+      "sha256": "4fa8cf1472a2ddeda20f0da0b05b1b619d49df380f81c97113ab8e474df2d8de"
     },
     {
       "path": "static/update-notice.js",
       "bytes": 12053,
       "sha256": "56ef5fc786c1a1bab85dabdb0ebf4f5c022547091bd47c257b5500da5949d773"
-    },
-    {
-      "path": "static/vendor/echarts-5.6.0.min.js",
-      "bytes": 1034102,
-      "sha256": "bf4a223524e40b77c304bec67e1222cf551f14880cf42c69dc046558e11c07b1"
     },
     {
       "path": "static/vendor/heroicons/LICENSE",

@@ -1,0 +1,269 @@
+/* ================= 状态色令牌（r47 统一） =================
+   全站「正常 / 需处理 / 中断 / 未接入」只用这一组变量：右上角运行状态点、故障排查、连接 AI、设置页胶囊、管家提示等。
+   --st-warn-ink 用于浅底上的琥珀文字，保证对比度。首页圆盘的 --ai-ok / --ai-warn 属于定稿视觉，单独保留。 */
+html[data-theme="mist"]{--st-ok:#22a06b;--st-warn:#d4890f;--st-warn-ink:#b8730f;--st-down:#e5484d;--st-idle:#8195b4}
+html[data-theme="dark"]{--st-ok:#59d499;--st-warn:#ffc35a;--st-warn-ink:#ffc35a;--st-down:#ff6b6b;--st-idle:#9aa8c4}
+
+/* r23 · 侧边栏：线性矢量图标 + 层次化悬停 */
+html[data-theme] .sidebar [data-page="overview"]>i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5h-4.2v-5.6H9.2v5.6H5A1.5 1.5 0 0 1 3.5 19z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5h-4.2v-5.6H9.2v5.6H5A1.5 1.5 0 0 1 3.5 19z'/%3E%3C/svg%3E")}
+html[data-theme] .sidebar [data-page="butler"]>i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 6A2.5 2.5 0 0 1 7 3.5h10A2.5 2.5 0 0 1 19.5 6v7.5A2.5 2.5 0 0 1 17 16h-6.5l-4.2 3.6V16H7a2.5 2.5 0 0 1-2.5-2.5z'/%3E%3Cpath d='M8.5 8.6h7M8.5 11.6h4.5'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 6A2.5 2.5 0 0 1 7 3.5h10A2.5 2.5 0 0 1 19.5 6v7.5A2.5 2.5 0 0 1 17 16h-6.5l-4.2 3.6V16H7a2.5 2.5 0 0 1-2.5-2.5z'/%3E%3Cpath d='M8.5 8.6h7M8.5 11.6h4.5'/%3E%3C/svg%3E")}
+html[data-theme] .sidebar [data-page="files"]>i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.6c-1.8-1.4-4.3-2.1-8-2.1v13.2c3.7 0 6.2.7 8 2.1 1.8-1.4 4.3-2.1 8-2.1V4.5c-3.7 0-6.2.7-8 2.1zM12 6.6v13.2'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.6c-1.8-1.4-4.3-2.1-8-2.1v13.2c3.7 0 6.2.7 8 2.1 1.8-1.4 4.3-2.1 8-2.1V4.5c-3.7 0-6.2.7-8 2.1zM12 6.6v13.2'/%3E%3C/svg%3E")}
+html[data-theme] .sidebar [data-page="archives"]>i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 4.8h17v4.1h-17zM5 8.9v9.6A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V8.9M10 12.8h4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 4.8h17v4.1h-17zM5 8.9v9.6A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V8.9M10 12.8h4'/%3E%3C/svg%3E")}
+html[data-theme] .sidebar [data-page="memory"]>i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 3.8l1.5 4.2 4.2 1.5-4.2 1.5L11 15.2 9.5 11 5.3 9.5 9.5 8zM17.5 14.3l.75 2 2 .75-2 .75-.75 2-.75-2-2-.75 2-.75z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 3.8l1.5 4.2 4.2 1.5-4.2 1.5L11 15.2 9.5 11 5.3 9.5 9.5 8zM17.5 14.3l.75 2 2 .75-2 .75-.75 2-.75-2-2-.75 2-.75z'/%3E%3C/svg%3E")}
+html[data-theme] .sidebar [data-page="access"]>i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.6 14.4l4.8-4.8M10.3 6.9l1.4-1.4a3.6 3.6 0 0 1 5.1 5.1l-1.4 1.4M13.7 17.1l-1.4 1.4a3.6 3.6 0 0 1-5.1-5.1l1.4-1.4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.6 14.4l4.8-4.8M10.3 6.9l1.4-1.4a3.6 3.6 0 0 1 5.1 5.1l-1.4 1.4M13.7 17.1l-1.4 1.4a3.6 3.6 0 0 1-5.1-5.1l1.4-1.4'/%3E%3C/svg%3E")}
+html[data-theme] .sidebar [data-page="protection"]>i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7.5h7.2M15.8 7.5H20M4 16.5h3.2M11.8 16.5H20'/%3E%3Ccircle cx='13.5' cy='7.5' r='2.2'/%3E%3Ccircle cx='9.5' cy='16.5' r='2.2'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7.5h7.2M15.8 7.5H20M4 16.5h3.2M11.8 16.5H20'/%3E%3Ccircle cx='13.5' cy='7.5' r='2.2'/%3E%3Ccircle cx='9.5' cy='16.5' r='2.2'/%3E%3C/svg%3E")}
+html[data-theme] .sidebar [data-page="troubleshooting"]>i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12.5h4l2.3-6 5.2 11.5 2.5-5.5H21'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12.5h4l2.3-6 5.2 11.5 2.5-5.5H21'/%3E%3C/svg%3E")}
+html[data-theme] .sidebar [data-page="workspace"]>i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 7.2A1.7 1.7 0 0 1 5.2 5.5h3.9l2 2.1h7.7a1.7 1.7 0 0 1 1.7 1.7v8.5a1.7 1.7 0 0 1-1.7 1.7H5.2a1.7 1.7 0 0 1-1.7-1.7z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 7.2A1.7 1.7 0 0 1 5.2 5.5h3.9l2 2.1h7.7a1.7 1.7 0 0 1 1.7 1.7v8.5a1.7 1.7 0 0 1-1.7 1.7H5.2a1.7 1.7 0 0 1-1.7-1.7z'/%3E%3C/svg%3E")}
+html[data-theme] .sidebar .task-navigation [data-page]>i,html[data-theme] .sidebar [data-page]>i{display:block!important;flex:none;width:18px!important;height:18px!important;margin:0!important;border:0!important;border-radius:0!important;background:currentColor!important;box-shadow:none!important;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:18px;mask-size:18px;opacity:.62;transition:opacity .18s ease,transform .25s cubic-bezier(.3,.7,.2,1.2),color .18s}
+html[data-theme] .sidebar [data-page]{display:flex!important;align-items:center;gap:10px!important;cursor:pointer!important;border-radius:11px!important;transition:background-color .18s ease,box-shadow .18s ease,color .18s ease!important}
+html[data-theme] .sidebar [data-page]:hover>i{opacity:.95;transform:translateX(1px)}
+html[data-theme] .sidebar [data-page].active>i{opacity:1;color:var(--accent)}
+html[data-theme="mist"] .sidebar [data-page]:not(.active):hover{background:rgba(255,255,255,.95)!important;box-shadow:0 0 0 1px rgba(26,30,48,.05),0 4px 12px -6px rgba(26,30,48,.18)!important;color:var(--text)!important}
+html[data-theme="mist"] .sidebar [data-page].active{background:#fff!important;box-shadow:0 0 0 1px rgba(26,30,48,.06),0 6px 16px -8px rgba(26,30,48,.22)!important;color:var(--text)!important;font-weight:600}
+html[data-theme="dark"] .sidebar [data-page]:not(.active):hover{background:rgba(255,255,255,.06)!important;color:var(--text)!important}
+html[data-theme="dark"] .sidebar [data-page].active{background:rgba(255,255,255,.08)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)!important;font-weight:600}
+html[data-theme] .sidebar [data-page]:active{transform:scale(.985)}
+
+/* r23 · 全站：可点的东西都是小手 + 悬停反馈 */
+html[data-theme] :is(button,summary,[role=button],[role=tab],[role=option],[role=switch],select,a[href],label:has(>input[type=checkbox]),label:has(>input[type=radio]),.s-opt,.client-identity-card,.result,.archive-session-item,[data-select-client],[data-open-session],[data-path]):not(:disabled):not([aria-disabled="true"]){cursor:pointer!important}
+html[data-theme] summary *{cursor:pointer!important}
+html[data-theme] main details>summary{border-radius:10px;transition:background-color .15s ease,color .15s ease}
+html[data-theme] main details details>summary:hover,html[data-theme] dialog details>summary:hover{background:color-mix(in srgb,var(--text) 4%,transparent)!important}
+html[data-theme] main details>summary:hover::before,html[data-theme] dialog details>summary:hover::before{opacity:.9!important}
+html[data-theme] :is(button,[role=button]):disabled{cursor:not-allowed!important}
+html[data-theme] .sidebar [data-page]>i,html[data-theme] .sidebar [data-page].active>i{transform:none!important;rotate:none!important;animation:none!important}
+html[data-theme] .sidebar [data-page]:hover>i{transform:translateX(1px)!important}
+html[data-theme] .sidebar [data-page]>i::before,html[data-theme] .sidebar [data-page]>i::after{content:none!important}
+
+/* r23 · 吸顶顶栏：近乎不透明的珍珠底 + 底部 28px 柔和渐隐，内容滑过去是"淡出"，不是被一刀切 */
+html[data-theme="mist"] body .topbar.is-stuck{background:rgba(251,251,253,.94)!important;box-shadow:none!important;-webkit-backdrop-filter:blur(20px) saturate(1.4)!important;backdrop-filter:blur(20px) saturate(1.4)!important}
+html[data-theme="dark"] body .topbar.is-stuck{background:color-mix(in srgb,var(--bg) 94%,transparent)!important;box-shadow:none!important}
+html[data-theme] body .topbar::after{content:"";position:absolute;left:0;right:0;top:100%;height:28px;pointer-events:none;opacity:0;transition:opacity .2s ease}
+html[data-theme="mist"] body .topbar::after{background:linear-gradient(180deg,rgba(251,251,253,.94),rgba(251,251,253,0))}
+html[data-theme="dark"] body .topbar::after{background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 94%,transparent),transparent)}
+html[data-theme] body .topbar.is-stuck::after{opacity:1}
+
+/* r23 · 整理知识：空态不显示「共 0 条」；完整指令收成紧凑代码块 */
+.studio-zero{display:none!important}
+html[data-theme] #memory#memory#memory .wiki-guide pre,html[data-theme] #memory#memory#memory details pre{max-height:220px!important;overflow:auto!important;margin:10px 0 0!important;padding:14px 16px!important;border-radius:12px!important;font:12px/1.7 ui-monospace,"Cascadia Mono",Consolas,monospace!important;white-space:pre-wrap;word-break:break-all;background:color-mix(in srgb,var(--text) 4%,transparent)!important;border:1px solid var(--line-soft,var(--line))!important;color:var(--text-2)!important;box-shadow:inset 0 1px 2px rgba(0,0,0,.03)!important}
+html[data-theme="dark"] #memory#memory#memory :is(.wiki-guide,details) pre{background:rgba(0,0,0,.28)!important}
+html[data-theme] body .topbar::after{height:40px!important}
+/* r23 · 抽屉更紧凑：摘要行 38px，展开后底部只留 6px */
+html[data-theme] #memory#memory#memory#memory .organize-tools details>summary,html[data-theme] #workspace#workspace#workspace#workspace details>summary{min-height:38px!important}
+html[data-theme] #memory#memory#memory#memory .organize-tools details[open],html[data-theme] #workspace#workspace#workspace#workspace details[open]{padding-bottom:6px!important}
+html[data-theme] #memory#memory#memory#memory .organize-tools details details{margin-top:0!important}
+html[data-theme] #workspace#workspace#workspace#workspace .card details,html[data-theme] #workspace#workspace#workspace#workspace section details{margin-top:8px!important}
+
+/* ================= r23 · 故障排查健康总览 ================= */
+html[data-theme] #troubleshooting details{scroll-margin-top:110px}
+
+/* ================= r23 · 空状态：知识 / 聊天记录 ================= */
+html[data-theme] .empty.studio-empty{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:0;min-height:100%;height:auto!important;padding:56px 32px!important;text-align:center;background:transparent!important;border:0!important}
+html[data-theme] .studio-empty .se-orb{position:relative;display:grid;place-items:center;width:88px;height:88px;margin:0 0 22px;border-radius:50%;background:radial-gradient(circle at 50% 38%,#fff,rgba(240,242,252,.6) 72%);box-shadow:inset 0 2px 0 #fff,0 0 0 1px rgba(26,30,48,.05),0 0 0 10px color-mix(in srgb,var(--accent) 5%,transparent),0 0 0 22px color-mix(in srgb,var(--accent) 3%,transparent),0 22px 44px -22px color-mix(in srgb,var(--accent) 60%,transparent)}
+html[data-theme="dark"] .studio-empty .se-orb{background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.12),rgba(255,255,255,.03) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(255,255,255,.06),0 0 0 10px color-mix(in srgb,var(--accent) 7%,transparent),0 0 0 22px color-mix(in srgb,var(--accent) 4%,transparent),0 22px 44px -22px color-mix(in srgb,var(--accent) 70%,transparent)}
+html[data-theme] .studio-empty .se-orb::after{content:"";position:absolute;inset:-22px;border-radius:50%;border:1px dashed color-mix(in srgb,var(--accent) 22%,transparent);animation:seSpin 40s linear infinite}
+@keyframes seSpin{to{transform:rotate(360deg)}}
+html[data-theme] .studio-empty .se-ico{width:34px;height:34px;background:var(--accent);-webkit-mask:var(--ico) center/34px no-repeat;mask:var(--ico) center/34px no-repeat}
+html[data-theme] .studio-empty .se-book{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.6c-1.8-1.4-4.3-2.1-8-2.1v13.2c3.7 0 6.2.7 8 2.1 1.8-1.4 4.3-2.1 8-2.1V4.5c-3.7 0-6.2.7-8 2.1zM12 6.6v13.2'/%3E%3C/svg%3E")}
+html[data-theme] .studio-empty .se-chat{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 6A2.5 2.5 0 0 1 7 3.5h10A2.5 2.5 0 0 1 19.5 6v7.5A2.5 2.5 0 0 1 17 16h-6.5l-4.2 3.6V16H7a2.5 2.5 0 0 1-2.5-2.5z'/%3E%3Cpath d='M8.5 8.6h7M8.5 11.6h4.5'/%3E%3C/svg%3E")}
+html[data-theme] .studio-empty>span{display:block;margin:0 0 6px!important;font-size:18px!important;font-weight:700!important;letter-spacing:-.01em;color:var(--text)!important}
+html[data-theme] .studio-empty>p{margin:0!important;max-width:360px;font-size:13px!important;line-height:1.6;color:var(--muted)!important}
+html[data-theme] .studio-empty .se-label{margin:30px 0 10px;font-size:11.5px;font-weight:600;letter-spacing:.06em;color:var(--muted)}
+html[data-theme] .studio-empty .se-folders{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;width:100%;max-width:600px}
+html[data-theme] .se-folder{display:flex;flex-direction:column;align-items:flex-start;gap:2px;height:auto!important;min-height:0!important;padding:12px 14px!important;border-radius:14px!important;border:1px solid var(--line)!important;background:var(--card)!important;box-shadow:0 1px 2px rgba(26,30,48,.04)!important;text-align:left;font:inherit;color:var(--text);cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+html[data-theme="mist"] .se-folder{background:rgba(255,255,255,.9)!important}
+html[data-theme] .se-folder:hover{transform:translateY(-2px);border-color:var(--line-hot)!important;box-shadow:0 10px 22px -14px color-mix(in srgb,var(--accent) 55%,transparent)!important}
+html[data-theme] .se-folder small{font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.04em}
+html[data-theme] .se-folder b{max-width:100%;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme] .se-folder em{font-style:normal;font-size:12px;color:var(--muted)}
+html[data-theme] .studio-empty .se-actions{display:flex;gap:10px;margin-top:26px}
+html[data-theme] .studio-empty .se-actions>button{height:36px!important;min-height:36px!important;padding:0 18px!important;border-radius:11px!important;font-size:13px!important}
+html[data-theme] .se-flash{animation:seFlash 1.2s ease}
+@keyframes seFlash{0%,40%{background:color-mix(in srgb,var(--accent) 16%,transparent)}100%{background:transparent}}
+
+/* ================= r23 · 设置：两栏，右侧是「关于界渡」卡 ================= */
+html[data-theme] #protection#protection#protection>.protection-hub{grid-area:main;max-width:none!important}
+html[data-theme] #protection#protection#protection>.software-update-card{grid-area:side;display:flex!important;flex-direction:column;align-items:stretch;gap:10px;padding:24px!important;border-radius:20px!important}
+html[data-theme] #protection .about-mark{display:flex;align-items:center;gap:14px;margin:0 0 10px;padding:0 0 18px;border-bottom:1px solid var(--line-soft,var(--line))}
+html[data-theme] #protection .about-mark .jiedu-mark{width:52px;height:52px;flex:none;filter:drop-shadow(0 8px 16px color-mix(in srgb,var(--accent) 30%,transparent))}
+html[data-theme] #protection .about-mark b{display:block;font-size:20px;font-weight:700;letter-spacing:.02em}
+html[data-theme] #protection .about-mark small{display:block;margin-top:3px;font-size:12px;color:var(--muted)}
+html[data-theme] #protection#protection#protection .software-update-card>h2{font-size:14px!important;font-weight:650}
+html[data-theme] #protection#protection#protection .software-update-card .ui-update-notice__actions{margin-top:6px}
+html[data-theme] #protection#protection#protection .software-update-card .ui-update-notice__actions>button{width:100%;justify-content:center;height:36px!important}
+
+/* ================= r23 · 设置：外观 / 数据位置 ================= */
+html[data-theme] #protection .studio-set-card{padding:20px 24px 22px;border-radius:20px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow)}
+html[data-theme="mist"] #protection .studio-set-card{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.8));border-color:rgba(255,255,255,.95)}
+html[data-theme="dark"] #protection .studio-set-card{-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+html[data-theme] #protection .ssc-head{display:flex;align-items:baseline;gap:12px;margin:0 0 16px}
+html[data-theme] #protection .ssc-head h2{font-size:16px!important;font-weight:650}
+html[data-theme] #protection .ssc-head small{font-size:12px;color:var(--muted)}
+html[data-theme] #protection .look-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+html[data-theme] #protection .look-tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;height:auto!important;min-height:0!important;padding:10px 10px 12px!important;border-radius:16px!important;border:1px solid var(--line)!important;background:transparent!important;box-shadow:none!important;text-align:left;font:inherit;color:var(--text);cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+html[data-theme] #protection .look-tile:hover{transform:translateY(-1px);border-color:var(--line-hot)!important}
+html[data-theme] #protection .look-tile[aria-checked="true"]{border-color:var(--accent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)!important}
+html[data-theme] #protection .look-tile b{margin-top:8px;font-size:13.5px;font-weight:600;padding-left:2px}
+html[data-theme] #protection .look-tile small{font-size:11.5px;color:var(--muted);padding-left:2px}
+html[data-theme] #protection .look-pv{position:relative;display:block;width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(26,30,48,.08)}
+html[data-theme] #protection .look-light{background:radial-gradient(70% 80% at 20% 0%,rgba(170,186,255,.55),transparent 70%),radial-gradient(60% 70% at 100% 20%,rgba(255,196,222,.5),transparent 70%),#f8f8fb}
+html[data-theme] #protection .look-dark{background:radial-gradient(70% 80% at 20% 0%,rgba(255,90,100,.32),transparent 70%),radial-gradient(60% 70% at 100% 100%,rgba(120,110,255,.28),transparent 70%),#111216}
+html[data-theme] #protection .look-schedule{background:linear-gradient(105deg,#f8f8fb 0 50%,#111216 50% 100%)}
+html[data-theme] #protection .look-pv>i{position:absolute;display:block;border-radius:4px;background:rgba(255,255,255,.85);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+html[data-theme] #protection .look-pv>i:nth-child(1){left:8%;top:14%;width:18%;height:72%}
+html[data-theme] #protection .look-pv>i:nth-child(2){left:30%;top:14%;width:62%;height:30%}
+html[data-theme] #protection .look-pv>i:nth-child(3){left:30%;top:52%;width:62%;height:34%}
+html[data-theme] #protection .look-dark>i{background:rgba(255,255,255,.1)}
+html[data-theme] #protection .look-schedule>i:nth-child(3){background:rgba(255,255,255,.14)}
+html[data-theme] #protection .data-row{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-radius:14px;background:color-mix(in srgb,var(--text) 3.5%,transparent)}
+html[data-theme] #protection .data-ico{flex:none;width:20px;height:20px;background:var(--accent);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 7.2A1.7 1.7 0 0 1 5.2 5.5h3.9l2 2.1h7.7a1.7 1.7 0 0 1 1.7 1.7v8.5a1.7 1.7 0 0 1-1.7 1.7H5.2a1.7 1.7 0 0 1-1.7-1.7z'/%3E%3C/svg%3E") center/20px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 7.2A1.7 1.7 0 0 1 5.2 5.5h3.9l2 2.1h7.7a1.7 1.7 0 0 1 1.7 1.7v8.5a1.7 1.7 0 0 1-1.7 1.7H5.2a1.7 1.7 0 0 1-1.7-1.7z'/%3E%3C/svg%3E") center/20px no-repeat}
+html[data-theme] #protection .data-row code{flex:1;min-width:0;font:12.5px/1.4 ui-monospace,"Cascadia Mono",Consolas,monospace;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;padding:0}
+html[data-theme] #protection .data-row button{flex:none;height:32px!important;min-height:32px!important;padding:0 14px!important}
+html[data-theme] #protection#protection#protection>#studioLook{grid-area:look}
+html[data-theme] #protection#protection#protection>#studioData{grid-area:data;align-self:start}
+html[data-theme] #protection:not(.active)>.studio-set-card{display:none}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #troubleshootingHub>.prompt-workflow-card{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:0!important;margin:4px 0 2px!important;padding:0 4px!important;background:transparent!important;border:0!important;box-shadow:none!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #troubleshootingHub>.prompt-workflow-card::before{content:"详细状态";font-size:11.5px;font-weight:600;letter-spacing:.06em;color:var(--muted)}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #troubleshootingHub>.prompt-workflow-card>:not(button){display:none!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #refreshTroubleshooting{height:30px!important;min-height:30px!important;padding:0 12px!important;font-size:12px!important}
+html[data-theme] .empty.studio-empty::before,html[data-theme] .empty.studio-empty::after{content:none!important;display:none!important}
+/* r24 · 设置：两条独立的竖列（不再按行对齐留出空洞），左 1.35 : 右 1 */
+html[data-theme] #protection>.set-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+html[data-theme] #protection>.set-col>*{grid-area:auto!important;margin:0!important}
+html[data-theme] #protection:not(.active)>.set-col{display:none}
+/* 关于卡更饱满：标志放大、版本做成胶囊 */
+html[data-theme] #protection .about-mark{padding-bottom:20px!important;margin-bottom:14px!important}
+html[data-theme] #protection .about-mark .jiedu-mark{width:60px!important;height:60px!important}
+html[data-theme] #protection#protection#protection .software-update-card>p:first-of-type{display:inline-flex;align-self:flex-start;align-items:center;gap:6px;margin:2px 0 6px!important;padding:3px 10px;border-radius:999px;font-size:12px;background:color-mix(in srgb,var(--text) 5%,transparent);color:var(--text-2)}
+/* 数据位置在右栏：路径换行显示，按钮单独一行 */
+/* 定时预览：左亮右暗，中间柔和晨昏过渡 */
+html[data-theme] #protection .look-schedule{background:linear-gradient(100deg,#f8f8fb 0%,#f3f2f8 30%,#b9b8c6 46%,#3a3946 56%,#141419 72%,#111216 100%)!important}
+html[data-theme] #protection .look-schedule>i:nth-child(1){background:rgba(255,255,255,.9)}
+html[data-theme] #protection .look-schedule>i:nth-child(2){background:linear-gradient(100deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.55) 45%,rgba(255,255,255,.14) 70%)}
+html[data-theme] #protection .look-schedule>i:nth-child(3){background:linear-gradient(100deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.5) 45%,rgba(255,255,255,.12) 70%)!important}
+/* 本机设置：分割线贯通整张卡 */
+html[data-theme] #protection#protection#protection .protection-card>details{margin-left:-24px!important;margin-right:-24px!important;padding-left:24px!important;padding-right:24px!important}
+html[data-theme] #protection#protection#protection .set-col>*{order:0!important}
+html[data-theme] #protection#protection#protection .set-col>.software-update-card{display:flex!important;flex-direction:column;align-items:stretch;gap:10px;padding:24px!important;border-radius:20px!important}
+html[data-theme] #protection#protection#protection .set-col>.protection-hub{max-width:none!important}
+/* r24 · 整理知识：按钮行固定，指令框在下方平滑展开 */
+html[data-theme] #memory#memory#memory .wiki-guide-prompt-option{display:flex!important;flex-wrap:wrap!important;align-items:center!important;column-gap:16px!important;row-gap:0!important}
+html[data-theme] #memory#memory#memory .wiki-guide-prompt-option>details.wiki-guide-prompt-preview{flex:0 0 auto!important;width:auto!important;margin:0!important;padding:0!important;border:0!important}
+html[data-theme] #memory#memory#memory .wiki-guide-prompt-option>details.wiki-guide-prompt-preview>summary{min-height:36px!important;padding:0 12px 0 8px!important;border-radius:10px;color:var(--text-2)}
+html[data-theme] #memory#memory#memory .wiki-guide-prompt-option>details.wiki-guide-prompt-preview>summary:hover{background:color-mix(in srgb,var(--text) 5%,transparent)!important;color:var(--text)}
+html[data-theme] #memory .prompt-panel{flex:0 0 100%;display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .38s cubic-bezier(.2,.8,.2,1),opacity .28s ease,margin-top .38s ease;margin-top:0}
+html[data-theme] #memory .prompt-panel.open{grid-template-rows:1fr;opacity:1;margin-top:14px}
+html[data-theme] #memory .prompt-panel-in{min-height:0;overflow:hidden}
+html[data-theme] #memory#memory#memory .prompt-panel pre{max-height:220px!important;overflow:auto!important;margin:0!important;padding:14px 16px!important;border-radius:12px!important;font:12px/1.7 ui-monospace,"Cascadia Mono",Consolas,monospace!important;white-space:pre-wrap;word-break:break-all;background:color-mix(in srgb,var(--text) 4%,transparent)!important;border:1px solid var(--line-soft,var(--line))!important;color:var(--text-2)!important}
+html[data-theme="dark"] #memory#memory#memory .prompt-panel pre{background:rgba(0,0,0,.28)!important}
+
+/* r24 · 整理知识等页的大折叠标题：小手 + 明确悬停 */
+html[data-theme] :is(#memory,#workspace,#troubleshooting) :is(.memory-hub,.workspace-hub,#troubleshootingHub)>details>summary{cursor:pointer!important;transition:background-color .18s ease,color .18s ease!important}
+html[data-theme] :is(#memory,#workspace,#troubleshooting) :is(.memory-hub,.workspace-hub,#troubleshootingHub)>details>summary:hover{background:color-mix(in srgb,var(--accent) 5%,transparent)!important}
+html[data-theme] :is(#memory,#workspace,#troubleshooting) :is(.memory-hub,.workspace-hub,#troubleshootingHub)>details>summary:hover::before{opacity:1!important;background:var(--accent)!important}
+html[data-theme] :is(#memory,#workspace,#troubleshooting) :is(.memory-hub,.workspace-hub,#troubleshootingHub)>details>summary:active{background:color-mix(in srgb,var(--accent) 9%,transparent)!important}
+
+/* r24 · 主按钮：悬停时柔和的外框光晕，进出都有过渡 */
+html[data-theme] :is(main,dialog) :is(button.primary,button.execute,.primary):not(:disabled){transition:background-color .2s ease,box-shadow .28s cubic-bezier(.2,.8,.2,1),transform .18s ease,filter .2s ease!important;box-shadow:0 1px 2px rgba(0,0,0,.08),0 6px 16px -10px color-mix(in srgb,var(--accent) 70%,transparent),0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent)!important}
+html[data-theme] :is(main,dialog) :is(button.primary,button.execute,.primary):not(:disabled):hover{transform:translateY(-1px);filter:brightness(1.05);box-shadow:0 1px 2px rgba(0,0,0,.08),0 12px 26px -12px color-mix(in srgb,var(--accent) 80%,transparent),0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent)!important}
+html[data-theme] :is(main,dialog) :is(button.primary,button.execute,.primary):not(:disabled):active{transform:translateY(0) scale(.985);box-shadow:0 1px 2px rgba(0,0,0,.1),0 4px 10px -8px color-mix(in srgb,var(--accent) 70%,transparent),0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)!important}
+html[data-theme] #memory#memory#memory .wiki-guide-prompt-option>.prompt-panel{order:99!important}
+
+/* ================= 骨架屏规范（r47 统一，取代 r25 微光扫过与 r41 补丁） =================
+   - 新代码：容器加 .jd-skel，里面放若干 <i> 作为灰条（宽度依次递减）；单根灰条用 .jd-bar
+   - 旧代码里「正在读取 / 读取中」这类文字占位：pages-studio.js 自动识别后套 .sk-pill（行内）/ .sk-block（块级），视觉与 .jd-skel 一致
+   - 颜色统一用 --jd-skel（浅色晨雾 / 深色曜石各一套，见下方「滚动地基 / 骨架屏」令牌），动画统一 jdBreath 原位呼吸，布局零跳动 */
+html[data-theme] .sk{color:transparent!important;-webkit-text-fill-color:transparent;position:relative;overflow:hidden;pointer-events:none;user-select:none;border:0!important;box-shadow:none!important;animation:jdBreath 1.6s ease-in-out infinite}
+html[data-theme] .sk *{visibility:hidden}
+html[data-theme] .sk::before,html[data-theme] .sk::after{content:none!important}
+html[data-theme] .sk-pill{display:inline-block!important;min-width:64px;height:14px!important;line-height:14px!important;vertical-align:middle;border-radius:999px!important;background:var(--jd-skel)!important;padding:0!important}
+html[data-theme] .sk-block{display:block!important;min-height:76px;padding:0!important;margin:6px 0!important;border-radius:12px!important;
+  background:
+    linear-gradient(var(--jd-skel),var(--jd-skel)) 0 4px/58% 12px no-repeat,
+    linear-gradient(var(--jd-skel),var(--jd-skel)) 0 30px/92% 10px no-repeat,
+    linear-gradient(var(--jd-skel),var(--jd-skel)) 0 50px/76% 10px no-repeat,
+    linear-gradient(var(--jd-skel),var(--jd-skel)) 0 70px/40% 10px no-repeat!important}
+html[data-theme] .jd-bar{display:block;height:12px;border-radius:999px;background:var(--jd-skel);animation:jdBreath 1.6s ease-in-out infinite}
+/* 数据到达：内容柔和渐显 */
+html[data-theme] .sk-in>*{animation:skIn .5s cubic-bezier(.2,.8,.2,1) both}
+html[data-theme] .sk-in>*:nth-child(2){animation-delay:.04s}
+html[data-theme] .sk-in>*:nth-child(3){animation-delay:.08s}
+html[data-theme] .sk-in>*:nth-child(n+4){animation-delay:.12s}
+@keyframes skIn{0%{opacity:0;transform:translateY(6px);filter:blur(2px)}100%{opacity:1;transform:none;filter:none}}
+@media (prefers-reduced-motion:reduce){html[data-theme] .sk,html[data-theme] .jd-bar,html[data-theme] .sk-in>*{animation:none}}
+
+/* r38：首页外部智能域展示数量（分段按钮） */
+html[data-theme] #protection .ai-count-note{margin:10px 2px 0;font-size:12px;color:var(--muted);line-height:1.6}
+
+/* r39：首页外部智能域——小标题 + 客户端胶囊标签 */
+html[data-theme] #protection .ai-sub{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 2px 8px}
+html[data-theme] #protection #studioHomeAi .ssc-head+.ai-sub{margin-top:0}
+html[data-theme] #protection .ai-sub b{font-size:12.5px;font-weight:600;color:var(--text-2,var(--muted))}
+html[data-theme] #protection .ai-pick-reset{height:26px!important;min-height:0!important;padding:0 11px!important;border-radius:999px!important;border:1px solid var(--line)!important;background:transparent!important;box-shadow:none!important;color:var(--accent);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+html[data-theme] #protection .ai-pick-reset:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)!important}
+html[data-theme] #protection .ai-pick{display:flex;flex-wrap:wrap;gap:7px}
+html[data-theme] #protection .ai-chip{--st:var(--st-idle);display:inline-flex;align-items:center;gap:6px;height:30px!important;min-height:0!important;padding:0 12px 0 10px!important;border-radius:999px!important;border:1px solid var(--line)!important;background:transparent!important;box-shadow:none!important;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:background .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease}
+html[data-theme] #protection .ai-chip i{width:7px;height:7px;border-radius:50%;background:var(--st);opacity:.55;flex:none}
+html[data-theme] #protection .ai-chip[data-state="ok"]{--st:var(--st-ok)}
+html[data-theme] #protection .ai-chip[data-state="warn"]{--st:var(--st-warn)}
+html[data-theme] #protection .ai-chip[data-state="ok"] i,html[data-theme] #protection .ai-chip[data-state="warn"] i{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,var(--st) 18%,transparent)}
+html[data-theme] #protection .ai-chip:hover{color:var(--text);border-color:var(--line-hot,var(--accent))!important}
+html[data-theme] #protection .ai-chip[aria-pressed="true"]{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent)!important;background:color-mix(in srgb,var(--accent) 9%,transparent)!important}
+html[data-theme] #protection .ai-pick.auto .ai-chip[aria-pressed="true"]{border-style:dashed!important;background:color-mix(in srgb,var(--accent) 5%,transparent)!important}
+html[data-theme] #protection .ai-chip:focus-visible{outline:2px solid var(--focus-ring,var(--accent));outline-offset:2px}
+html[data-theme] #protection .ai-chip.nope{animation:aiNope .36s ease}
+@keyframes aiNope{20%,60%{transform:translateX(-3px)}40%,80%{transform:translateX(3px)}}
+html[data-theme] #protection .ai-count-note.warn{color:var(--st-warn-ink)}
+/* r39：数据位置移到左栏（更宽），路径与按钮一行排开 */
+html[data-theme] #protection .set-col.l .data-row{flex-wrap:nowrap}
+html[data-theme] #protection .set-col.l .data-row code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html[data-theme] #protection .ai-pick{gap:6px}
+html[data-theme] #protection .ai-chip{height:28px!important;padding:0 11px 0 9px!important;font-size:12px}
+html[data-theme] #protection #studioData{display:flex;flex-direction:column}
+html[data-theme] #protection #studioHomeAi{display:flex;flex-direction:column}
+
+/* r40：运行状态点固定语义色，柔和同色呼吸；不再被数据刷新的闪光改色 */
+html[data-theme] .system-status{--hd:var(--st-ok)}
+html[data-theme] .system-status[data-health="warn"]{--hd:var(--st-warn)}
+html[data-theme] .system-status[data-health="down"]{--hd:var(--st-down)}
+html[data-theme] .system-status .pulse-dot,html[data-theme] .system-status.telemetry-changed .pulse-dot{background:var(--hd)!important;transform:none!important;transition:background .4s ease!important;animation:hdBreath 3.2s ease-in-out infinite!important}
+@keyframes hdBreath{0%,100%{box-shadow:0 0 0 2px color-mix(in srgb,var(--hd) 16%,transparent)}50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--hd) 22%,transparent),0 0 10px color-mix(in srgb,var(--hd) 35%,transparent)}}
+@media (prefers-reduced-motion:reduce){html[data-theme] .system-status .pulse-dot{animation:none!important}}
+
+/* ===================== r41：滚动地基 / 全站骨架屏 / 设置页单列 ===================== */
+/* 滚动：侧栏固定，主内容随页面平滑纵向滚动；极简细滚动条，预留滚动条位置，切页时版面不左右跳 */
+html[data-theme]{--jd-scroll:rgba(36,44,72,.2);--jd-scroll-hot:rgba(36,44,72,.36);--jd-skel:rgba(36,44,80,.075)}
+html[data-theme="dark"]{--jd-scroll:rgba(255,255,255,.16);--jd-scroll-hot:rgba(255,255,255,.3);--jd-skel:rgba(255,255,255,.075)}
+html{scroll-behavior:smooth;scrollbar-gutter:stable}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+html[data-theme],html[data-theme] *{scrollbar-width:thin;scrollbar-color:var(--jd-scroll) transparent}
+html[data-theme] ::-webkit-scrollbar{width:6px;height:6px}
+html[data-theme] ::-webkit-scrollbar-track{background:transparent}
+html[data-theme] ::-webkit-scrollbar-thumb{background:var(--jd-scroll);border:0;border-radius:999px}
+html[data-theme] ::-webkit-scrollbar-thumb:hover{background:var(--jd-scroll-hot)}
+html[data-theme] .sidebar{position:fixed!important}
+
+/* 骨架屏：原位呼吸灰条，浅色深色各一套底色 */
+@keyframes jdBreath{0%,100%{opacity:.45}50%{opacity:1}}
+html[data-theme] .page>.page-async-state.failed{position:static!important;inset:auto!important;width:auto!important;margin:0 0 16px!important;box-shadow:none!important;z-index:auto!important}
+html[data-theme] .async-state.loading.jd-skel{display:grid!important;align-content:start;justify-items:start;gap:12px;min-height:180px;padding:20px 6px!important;text-align:left;background:none!important;border:0!important}
+html[data-theme] .jd-skel>i{display:block;height:12px;width:80%;border-radius:999px;background:var(--jd-skel);animation:jdBreath 1.6s ease-in-out infinite}
+html[data-theme] .jd-skel>i:nth-child(1){width:38%;height:16px}
+html[data-theme] .jd-skel>i:nth-child(2){width:92%;animation-delay:.12s}
+html[data-theme] .jd-skel>i:nth-child(3){width:84%;animation-delay:.24s}
+html[data-theme] .jd-skel>i:nth-child(4){width:66%;animation-delay:.36s}
+html[data-theme] .jd-skel>i:nth-child(5){width:74%;animation-delay:.48s}
+html[data-theme] .protection-loading.jd-skel,html[data-theme] .client-access-loading.jd-skel{display:grid!important;place-content:initial!important;align-content:start!important;justify-items:start!important;gap:12px;padding:6px 0!important;color:transparent}
+html[data-theme] .client-access-loading.jd-skel{padding:24px!important}
+html[data-theme] .visual-loading{color:transparent!important;background:var(--card)!important;animation:jdBreath 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){html[data-theme] .jd-skel>i,html[data-theme] .visual-loading{animation:none}}
+
+/* 设置页：居中单列，卡片高度贴合内容 */
+html[data-theme] #protection#protection#protection.active{display:block!important;max-width:900px;margin-inline:auto}
+html[data-theme] #protection>.set-col.l{display:flex;flex-direction:column;gap:16px}
+html[data-theme] #protection .look-pv{aspect-ratio:16/6.4}
+html[data-theme] #protection#protection#protection .set-col>.software-update-card{gap:6px}
+html[data-theme] #protection#protection#protection .set-col>.software-update-card .ui-update-notice__actions>button{width:auto;padding:0 22px!important}
+/* r44：工作区与设置一样居中单列，最宽 900 像素 */
+html[data-theme] #workspace#workspace#workspace .workspace-hub{max-width:900px;margin-inline:auto}
+html[data-theme] #workspace#workspace#workspace .knowledge-base-summary>div>*{white-space:normal;word-break:break-all;text-overflow:clip}

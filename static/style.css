@@ -481,7 +481,6 @@ html{scroll-padding-top:24px}.page{scroll-margin-top:24px}
 @media(max-width:1100px){.archive-list-controls{grid-template-columns:minmax(0,1fr)}.archive-list-controls .archive-query-field,.archive-list-controls .archive-result-count{grid-column:1}}
 .hermes-archive-actions{display:flex;align-items:center;gap:14px;margin-top:16px}.hermes-archive-actions button{flex:none;min-height:42px}.hermes-archive-actions small{color:var(--muted);line-height:1.5}.hermes-archive-actions button:focus-visible{outline:2px solid #9acbc5;outline-offset:2px}@media(max-width:720px){.hermes-archive-actions{align-items:stretch;flex-direction:column}}
 .async-state{display:grid;place-content:center;justify-items:center;gap:10px;min-height:180px;padding:24px;text-align:center;color:var(--muted)}
-.async-state.loading>span{width:26px;height:26px;border:2px solid #394958;border-top-color:#b9d8e7;border-radius:50%;animation:protection-spin .8s linear infinite}
 .async-state b{color:var(--text)}.async-state p{max-width:560px;margin:0;line-height:1.65}.async-state.error{border:1px dashed rgba(210,126,126,.35);border-radius:10px;background:rgba(160,62,62,.06)}
 .page-async-state{position:sticky;top:8px;z-index:12;margin:0 0 12px;background:var(--panel,#152a33);box-shadow:0 10px 30px rgba(0,0,0,.2)}.page-async-state .async-state{min-height:72px;padding:12px}
 .knowledge-object-hub[data-protection-off="true"] .knowledge-object-select{display:none}
@@ -508,7 +507,6 @@ html{scroll-padding-top:24px}.page{scroll-margin-top:24px}
 .home-quick-start .home-start-actions button:hover,.home-quick-start .home-start-actions button:focus-visible,.home-quick-start [data-home-workspace]:hover{background:rgba(167,201,197,.07);border-color:var(--line);color:var(--accent)}
 .home-quick-start>p{margin:0;max-width:520px;color:var(--muted);font-size:12px;line-height:1.6}.home-count-scope{grid-column:1/-1;margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.6}
 .detail-refresh-note{padding:8px 12px;margin:0 0 12px;color:var(--muted);border-left:2px solid var(--accent);font-size:13px;line-height:1.5}
-.page-async-state.refreshing{position:relative;top:auto;background:transparent;box-shadow:none;margin-bottom:6px}.page-async-state.refreshing .async-state.loading{min-height:0;padding:5px 0;display:flex;justify-content:flex-start;font-size:12px;color:var(--muted);background:none}.page-async-state.refreshing .async-state.loading>span{width:14px;height:14px}.page-async-state.refreshing .async-state.loading>b{font-weight:400;color:var(--muted)}
 @media(max-width:800px){.home-quick-start{gap:6px;margin-bottom:12px}.home-quick-start>p{width:100%;max-width:none}.home-quick-start .home-start-actions{gap:2px}.home-quick-start .home-start-actions button{padding:7px 9px}}
 @media(max-width:1050px){.boundary-overview{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto;gap:16px}.boundary-overview>.boundary-stage,.boundary-overview>.instrument-cluster,.boundary-overview>.system-panel,.boundary-overview>.layer-panel{grid-column:1;grid-row:auto;margin-top:0}.boundary-overview>.boundary-stage{width:100%;min-height:380px}.boundary-overview>.instrument-cluster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));min-height:150px}.boundary-overview>.instrument-cluster .metric{padding:20px 16px;border-bottom:0}.boundary-overview>.instrument-cluster .metric+ .metric{border-left:1px solid var(--line-soft)}}
 .suggestion-overview{display:flex;align-items:baseline;gap:16px;margin:14px 0 22px;color:var(--text)}.suggestion-overview strong{font-size:24px;font-weight:500}.suggestion-overview small{color:var(--muted);font-size:13px}
@@ -593,7 +591,6 @@ html{scroll-padding-top:24px}.page{scroll-margin-top:24px}
 .page>.page-async-state,.page>.page-async-state.refreshing{position:fixed;right:28px;bottom:24px;top:auto;z-index:40;width:min(420px,calc(100vw - 64px));margin:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px #0003}
 .page>.page-async-state[hidden]{display:none!important}
 .page>.page-async-state .async-state,.page>.page-async-state.refreshing .async-state.loading{min-height:0;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;background:none;color:var(--text-2)}
-.page>.page-async-state .async-state.loading>span{width:16px;height:16px;flex:none}
 .page>.page-async-state.failed .async-state{display:block}.page>.page-async-state.failed p{line-height:1.6;font-size:13px}
 @media(prefers-reduced-motion:reduce){.page{animation:none}}
 

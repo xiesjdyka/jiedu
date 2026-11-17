@@ -1,0 +1,270 @@
+/* =====================================================================
+   界渡 · 全站第二层：晨雾质感回归 / 自定义下拉框 / 分组容器 / 展开不崩
+   ===================================================================== */
+
+/* ---------- 1. 晨雾浅色：温润通透的珠光玻璃，多层柔和氛围光 ---------- */
+html[data-theme="mist"]{
+  --bg:#f4f5fa;
+  --surface:rgba(255,255,255,.64);--surface-2:rgba(244,245,252,.78);--surface-3:rgba(232,235,248,.9);
+  --card:rgba(255,255,255,.58);--card-line:rgba(255,255,255,.9);
+  --line:rgba(98,108,160,.16);--line-soft:rgba(98,108,160,.1);--line-hot:rgba(88,101,242,.4);
+  --text:#1b2033;--text-2:#4a5168;--muted:#868ca6;
+  --btn-bg:rgba(255,255,255,.72);--btn-hover:rgba(255,255,255,.95);--input-bg:rgba(255,255,255,.72);
+  --dialog-bg:rgba(250,251,255,.86);
+  --shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.45),0 0 0 1px rgba(70,80,140,.05),0 2px 6px -2px rgba(70,80,140,.08),0 18px 40px -22px rgba(70,80,150,.28);
+  --aurora-1:rgba(160,176,255,.55);--aurora-2:rgba(255,190,222,.46);--aurora-3:rgba(170,232,212,.42);--aurora-4:rgba(255,222,178,.4);
+  --face:radial-gradient(circle at 50% 38%,rgba(255,255,255,.96),rgba(242,244,253,.6) 75%);
+  --face-shadow:inset 0 2px 0 #fff,inset 0 -10px 30px -12px rgba(88,101,242,.12),0 0 0 1px rgba(255,255,255,.9),0 0 0 2px rgba(70,80,140,.04),0 24px 56px -28px rgba(70,90,170,.4);
+  --tick:#cdd2e3;--tick-mid:#aab1c8;--leader:#ccd1e2}
+/* 背景：珍珠底 + 四团缓慢漂移的彩色晨雾 + 一层极淡的颗粒高光 */
+html[data-theme="mist"] body{background:radial-gradient(120% 90% at 50% -10%,#fbfbff 0%,#f4f5fa 46%,#eef0f8 100%) fixed!important}
+html[data-theme="mist"] body::after{opacity:.95}
+html[data-theme="mist"] body::before{content:""!important;position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(60% 40% at 50% 0%,rgba(255,255,255,.75),transparent 70%)}
+/* 玻璃卡：顶部一道珠光高光描边 */
+html[data-theme="mist"] :is(.studio-home .sh-search,.client-access-workspace,.local-chat-grid,.raw-session-console,.file-workspace,.pending-memory-console,.prompt-workflow-card,.software-update-card,.protection-hub>section,.workspace-hub>section,#archiveDiagnosticsHost>details,.search-console,.shared-result-shell,.sidebar){backdrop-filter:blur(28px) saturate(170%)!important;-webkit-backdrop-filter:blur(28px) saturate(170%)!important}
+html[data-theme="mist"] .sidebar{background:rgba(255,255,255,.55)!important;border:1px solid rgba(255,255,255,.85)!important;box-shadow:var(--shadow)!important}
+html[data-theme="mist"] .studio-home.twin{--grid-line:rgba(80,92,160,.06)}
+html[data-theme="mist"] .amb-glow.a{background:radial-gradient(closest-side,color-mix(in srgb,var(--glow) 15%,transparent),transparent)}
+html[data-theme="mist"] .amb-glow.b{background:radial-gradient(closest-side,rgba(255,170,210,.16),transparent)}
+
+/* ---------- 2. 自定义下拉框 ---------- */
+.s-select{position:relative;display:inline-flex;vertical-align:middle;min-width:140px;max-width:100%}
+.s-select.full{display:flex;width:100%}
+.s-select[hidden]{display:none!important}
+.s-select>select{position:absolute!important;inset:0;width:100%!important;height:100%!important;opacity:0!important;pointer-events:none!important;margin:0!important}
+.s-select-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:36px;padding:0 10px 0 12px;border:1px solid var(--line);border-radius:11px;background:var(--input-bg,var(--card));color:var(--text);font:inherit;font-size:13px;text-align:left;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.55);transition:border-color .15s,box-shadow .15s,background .15s}
+html[data-theme="dark"] .s-select-btn{box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.s-select-btn>span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-select-btn>i{flex:none;width:14px;height:14px;background:var(--muted);-webkit-mask:var(--chev) center/11px no-repeat;mask:var(--chev) center/11px no-repeat;transform:rotate(90deg);transition:transform .2s cubic-bezier(.2,.8,.2,1),background .15s}
+.s-select-btn:hover:not(:disabled){border-color:var(--line-hot)}
+.s-select-btn:hover:not(:disabled)>i{background:var(--text-2)}
+.s-select-btn.open,.s-select-btn:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.s-select-btn.open>i{transform:rotate(-90deg);background:var(--accent)}
+.s-select-btn:disabled{opacity:.5;cursor:not-allowed}
+.s-select-pop{position:fixed;z-index:10000;max-height:320px;overflow:auto;padding:6px;border:1px solid var(--card-line);border-radius:14px;background:var(--dialog-bg);box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 18px 48px -14px rgba(20,24,44,.35),0 0 0 1px rgba(20,24,44,.04);backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);opacity:0;transform:translateY(-4px) scale(.98);transform-origin:top center;transition:opacity .14s,transform .18s cubic-bezier(.2,.8,.2,1)}
+html[data-theme="dark"] .s-select-pop{background:rgba(26,26,30,.94);box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 20px 50px -12px #000}
+.s-select-pop.in{opacity:1;transform:none}
+.s-opt{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 10px;border-radius:9px;font-size:13px;color:var(--text);cursor:pointer;white-space:nowrap}
+.s-opt.act{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.s-opt.sel{font-weight:600}
+.s-opt.sel>i{width:14px;height:14px;background:var(--accent);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center/contain no-repeat}
+.s-opt.dis{opacity:.4;cursor:not-allowed}
+.s-group{padding:8px 10px 4px;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--muted)}
+/* 原来专门给下拉框画的箭头 / 边框不再需要 */
+html[data-theme] .s-select>select{background:none!important;border:0!important;box-shadow:none!important}
+
+/* ---------- 3. 分组容器：fieldset 不再有穿过标题的细线 ---------- */
+html[data-theme] :is(main,dialog) fieldset{min-width:0;margin:10px 0;padding:14px 16px 12px;border:0!important;border-radius:14px;background:color-mix(in srgb,var(--surface-2) 75%,transparent);box-shadow:inset 0 0 0 1px var(--line-soft,var(--line))}
+html[data-theme] :is(main,dialog) fieldset>legend{float:left;width:100%;margin:0 0 10px;padding:0;font-size:13px;font-weight:650;color:var(--text)}
+html[data-theme] :is(main,dialog) fieldset>legend+*{clear:both}
+html[data-theme] :is(main,dialog) fieldset label{display:flex;align-items:center;gap:9px;min-height:32px;padding:2px 8px;border-radius:9px;font-size:13px;color:var(--text-2);cursor:pointer;transition:background .15s,color .15s}
+html[data-theme] :is(main,dialog) fieldset label:hover{background:color-mix(in srgb,var(--accent) 7%,transparent);color:var(--text)}
+
+/* ---------- 4. 抽屉：收起是一行，展开后内容有节制的留白，不再层层叠加 ---------- */
+html[data-theme] :is(#troubleshooting,#memory,#workspace):is(#troubleshooting,#memory,#workspace) :is(.memory-hub>details,#archiveDiagnosticsHost>details)>:not(summary){padding:0 22px!important;margin:0!important}
+html[data-theme] :is(#troubleshooting,#memory,#workspace):is(#troubleshooting,#memory,#workspace) :is(.memory-hub>details,#archiveDiagnosticsHost>details)[open]>summary+*{padding-top:16px!important}
+html[data-theme] :is(#troubleshooting,#memory,#workspace):is(#troubleshooting,#memory,#workspace) :is(.memory-hub>details,#archiveDiagnosticsHost>details)[open]>:last-child{padding-bottom:18px!important}
+/* 抽屉里的子抽屉：一行一条，细线分隔 */
+html[data-theme] :is(#troubleshooting,#memory,#workspace):is(#troubleshooting,#memory,#workspace) :is(.memory-hub>details,#archiveDiagnosticsHost>details,.workspace-hub>section) details{margin:0!important;padding:0!important;border:0!important;border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] :is(#troubleshooting,#memory,#workspace):is(#troubleshooting,#memory,#workspace) :is(.memory-hub>details,#archiveDiagnosticsHost>details,.workspace-hub>section) details>summary{min-height:38px;padding:0!important;font-size:13.5px}
+html[data-theme] :is(#troubleshooting,#memory,#workspace):is(#troubleshooting,#memory,#workspace) :is(.memory-hub>details,#archiveDiagnosticsHost>details,.workspace-hub>section) details[open]{padding-bottom:6px!important}
+html[data-theme] :is(#troubleshooting,#memory,#workspace):is(#troubleshooting,#memory,#workspace) :is(.memory-hub>details,#archiveDiagnosticsHost>details,.workspace-hub>section) details>:not(summary){margin-top:0!important;margin-bottom:8px!important}
+html[data-theme] :is(#troubleshooting,#memory,#workspace):is(#troubleshooting,#memory,#workspace) :is(.memory-hub>details,#archiveDiagnosticsHost>details) :is(section,article,div)[class]:not(.knowledge-base-summary):not(.knowledge-base-summary>div){margin-top:0;margin-bottom:0}
+html[data-theme] :is(#troubleshooting,#memory,#workspace):is(#troubleshooting,#memory,#workspace) :is(.memory-hub>details,#archiveDiagnosticsHost>details) .prompt-workflow-card{padding:14px 0!important;border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] :is(#troubleshooting,#memory,#workspace) details p{margin:6px 0;font-size:12.5px;line-height:1.6;color:var(--text-2)}
+
+/* ---------- 5. 故障排查：抽屉卡始终满宽，展开时不再横向暴涨；数字卡固定三列 ---------- */
+html[data-theme] #troubleshooting#troubleshooting .memory-hub,html[data-theme] #troubleshooting#troubleshooting #archiveDiagnosticsHost{width:100%;max-width:1040px;align-items:stretch}
+html[data-theme] #troubleshooting#troubleshooting #archiveDiagnosticsHost>details{width:100%;box-sizing:border-box}
+html[data-theme] #troubleshooting#troubleshooting .knowledge-base-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+html[data-theme] #troubleshooting#troubleshooting .knowledge-base-summary strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px}
+html[data-theme] #troubleshooting#troubleshooting .knowledge-base-summary span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:1100px){html[data-theme] #troubleshooting#troubleshooting .knowledge-base-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+/* ---------- 6. 整理知识：「交给 Codex 整理」改成上下结构，预览指令在下方整宽展开 ---------- */
+html[data-theme] #memory#memory .wiki-guide{display:flex!important;flex-direction:column;align-items:stretch;gap:10px}
+html[data-theme] #memory#memory .wiki-guide>h2{margin:0}
+html[data-theme] #memory#memory .wiki-guide-prompt-option{display:flex!important;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:4px 0 0!important;justify-content:flex-start}
+html[data-theme] #memory#memory .wiki-guide-prompt-option>.primary{order:1}
+html[data-theme] #memory#memory .wiki-guide-prompt-preview{order:2;flex:1 1 auto;margin:0!important;padding:0!important;border:0!important}
+html[data-theme] #memory#memory .wiki-guide-prompt-preview[open]{flex-basis:100%}
+html[data-theme] #memory#memory .wiki-guide-prompt-preview pre{max-height:360px;overflow:auto;margin:10px 0 0;padding:16px 18px;border-radius:14px;background:color-mix(in srgb,var(--surface-2) 80%,transparent)!important;border:1px solid var(--line-soft,var(--line))!important;font:12.5px/1.7 var(--mono,ui-monospace);white-space:pre-wrap;color:var(--text)}
+
+/* ---------- 7. 工作区抽屉 ---------- */
+html[data-theme] #workspace#workspace #knowledgeBaseStatus>details,html[data-theme] #workspace#workspace .initialization-console details{margin:0!important}
+html[data-theme] #workspace#workspace #knowledgeBaseStatus>details:first-of-type{margin-top:14px!important}
+html[data-theme] #workspace#workspace .studio-drawer>*:not(summary){margin-top:8px!important}
+html[data-theme] #workspace#workspace textarea{width:100%;min-height:160px;padding:12px 14px;font:12.5px/1.7 var(--mono,ui-monospace)}
+/* r21 · 导入弹窗节奏 */
+html[data-theme] #knowledgeObjectDialog #knowledgeObjectDialogBody>label{display:flex;flex-direction:column;gap:8px;margin:18px 0 0!important}
+html[data-theme] #knowledgeObjectDialog .knowledge-path-picker{display:flex;gap:8px;align-items:stretch}
+html[data-theme] #knowledgeObjectDialog .knowledge-path-picker>input{flex:1;min-height:40px!important;height:40px}
+html[data-theme] #knowledgeObjectDialog .knowledge-path-picker>button{height:40px!important;flex:none}
+html[data-theme] #knowledgeObjectDialog .form-feedback:empty{min-height:0!important;margin:0!important}
+html[data-theme] #knowledgeObjectDialog .dialog-actions{margin-top:24px!important}
+html[data-theme] #knowledgeObjectDialog .dialog-head{margin-bottom:16px!important}
+html[data-theme] .system-mark.vector::before,html[data-theme] .system-mark.vector::after{content:none!important;display:none!important}
+/* r21 · 连接 AI 空态文字 */
+html[data-theme] #access#access :is(.pending-confirmations,.client-access-audit) p:not([class]){font-size:12.5px!important;font-weight:400!important;color:var(--muted)!important;margin:10px 0 4px 22px!important}
+/* r21 · 整理知识「高级与手动操作」抽屉：统一内边距与缩进 */
+html[data-theme] #memory#memory#memory .organize-tools{padding:0 24px 10px!important}
+html[data-theme] #memory#memory#memory .organize-tools>summary{padding:0!important;margin:0 -24px 0!important;padding-left:24px!important;padding-right:24px!important}
+html[data-theme] #memory#memory#memory .organize-tools>#continuousTasks{padding:0!important}
+html[data-theme] #memory#memory#memory .organize-tools details>:not(summary){margin-left:22px!important}
+html[data-theme] #memory#memory#memory .organize-tools details details>:not(summary){margin-left:22px!important}
+html[data-theme] #memory#memory#memory .organize-tools details>summary{min-height:44px}
+html[data-theme] #memory#memory#memory .organize-tools>details+details,html[data-theme] #memory#memory#memory .organize-tools>#continuousTasks+details{border-top:1px solid var(--line-soft,var(--line))}
+/* 原始档案工具条 */
+html[data-theme] #memory#memory#memory .original-archive-toolbar{display:flex!important;align-items:center;gap:12px;padding:10px 12px!important;border-radius:12px}
+html[data-theme] #memory#memory#memory .original-archive-toolbar>span{margin:0!important;flex:1;min-width:0;color:var(--muted);font-size:12.5px}
+html[data-theme] #memory#memory#memory .original-archive-panel>summary{display:flex!important;justify-content:flex-start!important;gap:10px}
+html[data-theme] #memory#memory#memory .original-archive-panel>summary>span{display:inline-flex!important;align-items:center;gap:6px;justify-content:flex-start;text-align:left;flex:1}
+html[data-theme] #memory#memory#memory .original-archive-panel>summary>strong{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600}
+html[data-theme] #memory#memory#memory :is(.original-archive-list,.extraction-session-list){border-radius:12px!important;padding:10px 12px!important}
+html[data-theme] #memory#memory#memory .extraction-list-title{border-radius:8px;padding:6px 10px!important;background:var(--surface-2)!important}
+html[data-theme] #memory#memory#memory .extraction-list-title>span{margin-left:auto;font-size:12px;color:var(--muted)}
+html[data-theme] #memory#memory#memory .extraction-session-list>p,html[data-theme] #memory#memory#memory .deferred-session-list>p,html[data-theme] #memory#memory#memory .pending-empty{font-size:12.5px;color:var(--muted);margin:6px 0 2px!important;padding:0 2px!important}
+html[data-theme] #memory#memory#memory #manualExtraction>*+*{margin-top:10px!important}
+html[data-theme] #memory#memory#memory .extraction-selection{border-radius:12px;padding:12px 14px!important}
+html[data-theme] #memory#memory#memory .manual-actions{flex-wrap:wrap;gap:8px!important;padding:10px 0 4px!important;align-items:center}
+html[data-theme] #memory#memory#memory .manual-actions>.execute{height:34px!important;min-height:34px!important}
+html[data-theme] #memory#memory#memory .manual-dropzone{display:flex;flex-direction:column;align-items:stretch!important;gap:10px;padding:14px!important;border-radius:12px;border-style:dashed!important;min-height:0!important;height:auto!important}
+html[data-theme] #memory#memory#memory .manual-dropzone>button{align-self:flex-start}
+html[data-theme] #memory#memory#memory .manual-dropzone details>:not(summary){margin-left:22px!important}
+html[data-theme] #memory#memory#memory .provider-config-grid{padding:6px 0 12px!important;gap:14px!important}
+html[data-theme] #memory#memory#memory .provider-actions{justify-content:flex-start!important;gap:8px}
+html[data-theme] #memory#memory#memory #organizationProviderResult:empty{display:none}
+html[data-theme] #memory#memory#memory .organize-tools #motherDistillation{margin:0!important;padding:16px 0 8px!important;border-top:1px solid var(--line-soft,var(--line))!important;border-left:0!important;border-right:0!important;border-bottom:0!important;background:transparent!important}
+html[data-theme] #memory#memory#memory #motherDistillation h2{font-size:14px!important}
+html[data-theme] #memory#memory#memory #motherDistillation .prompt-workflow-actions{margin-top:12px;gap:8px}
+html[data-theme] #memory#memory#memory .original-archive-list{border:0!important;padding:2px 0 0!important;background:transparent!important}
+html[data-theme] #memory#memory#memory .original-archive-list .pending-empty{text-align:left!important}
+html[data-theme] #memory#memory#memory .organize-tools details{padding-bottom:8px!important}
+html[data-theme] #memory#memory#memory .organize-tools details:not([open]){padding-bottom:0!important}
+html[data-theme] #memory#memory#memory #originalArchiveManager{margin-bottom:4px!important}
+html[data-theme] #memory#memory#memory .review-sync-status{font-size:12.5px;color:var(--muted);margin:4px 0 0!important}
+html[data-theme] #memory#memory#memory .organize-tools details details>summary,html[data-theme] #memory#memory#memory .organize-tools>details>summary{background:transparent!important;box-shadow:none!important}
+html[data-theme] #memory#memory#memory .organize-tools details>summary:hover{color:var(--accent)}
+html[data-theme] #memory#memory#memory .deferred-session-list{margin-top:0!important}
+html[data-theme] #memory#memory#memory .deferred-extraction-pool>summary{min-height:38px!important}
+html[data-theme] #memory#memory#memory .organize-tools details>:not(summary){max-width:calc(100% - 22px);box-sizing:border-box}
+html[data-theme] #memory#memory#memory .organize-tools details>textarea{width:calc(100% - 22px)!important;resize:vertical}
+/* r21 · 设置页：本机设置合成一张卡 */
+html[data-theme] #protection#protection#protection .protection-hub{flex-direction:column;gap:0!important;background:var(--card)!important;border:1px solid var(--line)!important;border-radius:20px!important;box-shadow:var(--card-shadow,var(--shadow))!important;overflow:hidden;-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2)}
+html[data-theme] #protection#protection#protection .protection-hub>section{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none;margin:0!important}
+html[data-theme] #protection#protection#protection .protection-hero{padding:20px 24px 14px!important}
+html[data-theme] #protection#protection#protection .protection-panel{padding:4px 24px 20px!important;border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #protection#protection#protection .protection-card{width:auto!important;padding:0!important}
+html[data-theme] #protection#protection#protection .protection-step{padding:14px 0 6px;align-items:center;gap:10px}
+html[data-theme] #protection#protection#protection .protection-form{max-width:440px;gap:14px!important}
+html[data-theme] #protection#protection#protection .protection-form .form-feedback:empty{display:none}
+html[data-theme] #protection#protection#protection .protection-form>button{width:auto!important;justify-self:start;height:36px!important;min-height:36px!important;padding:0 20px!important}
+html[data-theme] #protection#protection#protection .advanced-protection>:not(summary){margin-left:22px!important}
+html[data-theme] #protection#protection#protection .advanced-protection>p{color:var(--muted);font-size:12.5px;margin-top:0!important}
+html[data-theme] #protection#protection#protection .protection-card>details{margin-top:6px!important;padding-top:0!important;border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #protection#protection#protection .protection-step{padding-bottom:14px!important}
+/* r21 · 故障排查：指标格去掉框中框，改为一张细线表格 */
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .knowledge-base-summary{gap:0!important;border:1px solid var(--line-soft,var(--line));border-radius:14px;overflow:hidden;background:transparent!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .knowledge-base-summary>div{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;border-right:1px solid var(--line-soft,var(--line))!important;border-bottom:1px solid var(--line-soft,var(--line))!important;padding:12px 16px!important;min-width:0}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .knowledge-base-summary>div:nth-child(3n){border-right:0!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .knowledge-base-summary>div:nth-last-child(-n+3):nth-child(3n+1),html[data-theme] #troubleshooting#troubleshooting#troubleshooting .knowledge-base-summary>div:nth-last-child(-n+3):nth-child(3n+1)~div{border-bottom:0!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .knowledge-base-summary>div:hover{background:var(--surface-2)!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .knowledge-base-actions{display:flex!important;flex-wrap:wrap;gap:8px!important;justify-content:flex-start!important;margin-top:14px!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .knowledge-base-actions>button{flex:none!important;width:auto!important;height:34px!important;min-height:34px!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .interface-list details{margin-top:6px!important;border-top:1px solid var(--line-soft,var(--line))}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .interface-list details:first-of-type{margin-top:16px!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .interface-list details>summary{min-height:42px}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .interface-list details>:not(summary){margin-left:22px!important;max-width:calc(100% - 22px)}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .interface-list details>p{font-size:12.5px;color:var(--muted)}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .interface-list>:last-child{margin-bottom:0!important}
+/* 展开/收起时滚动条出现导致宽度跳动：预留滚动条槽位 */
+html{scrollbar-gutter:stable}
+/* r21 · 故障排查「服务维护与诊断」：单列 + 细线指标表 */
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .access-compatibility-body{display:block!important;padding:4px 24px 18px!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .access-compatibility-body>*{width:auto!important;margin:0!important;padding:18px 0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .access-compatibility-body>*+*{border-top:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .access-compatibility-body .memory-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .access-compatibility-body h2{font-size:14px!important;font-weight:650;margin:0!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting :is(.ai-bridge-summary,.local-ai-security){display:grid!important;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important;gap:0!important;border:1px solid var(--line-soft,var(--line));border-radius:12px;overflow:hidden;background:transparent!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting :is(.ai-bridge-summary,.local-ai-security)>div{margin:0 -1px -1px 0!important;padding:12px 14px!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:inset -1px 0 0 var(--line-soft,var(--line)),inset 0 -1px 0 var(--line-soft,var(--line))!important;min-width:0;writing-mode:horizontal-tb}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting :is(.ai-bridge-summary,.local-ai-security)>div>span{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting :is(.ai-bridge-summary,.local-ai-security)>div>b{display:block;margin-top:4px;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .local-ai-security>div>small{display:block;margin-top:3px;font-size:11px;color:var(--muted);opacity:.8}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .local-ai-security>div>small:empty{display:none}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .local-config-controls{display:flex!important;align-items:flex-end;flex-wrap:wrap;gap:12px!important;padding:16px 0 0!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .local-config-controls>label{display:flex!important;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .local-config-controls>label>.s-select{width:160px}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .local-config-controls input{height:36px!important;width:96px}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .local-config-controls>button{height:36px!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .bridge-lifecycle-actions{display:flex!important;align-items:center;gap:8px}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .bridge-lifecycle-actions>strong{flex:1;font-size:13px;font-weight:500;color:var(--text-2,var(--muted))}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #bridgeLifecycleState{border:0!important;border-radius:999px!important;padding:3px 10px!important;font-size:12px;background:color-mix(in srgb,var(--st-ok) 14%,transparent)!important;color:var(--st-ok)!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .diagnostic-record>summary{min-height:42px}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting .diagnostic-record>#liveAcceptance{margin-left:22px!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #liveAcceptance .interface-row{display:flex;align-items:flex-start;gap:16px;padding:12px 0!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #liveAcceptance .interface-row>div{flex:1;min-width:0}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #liveAcceptance .interface-row>details{flex:none;max-width:45%}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #liveAcceptance b{font-size:13px}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting :is(.ai-bridge-summary,.local-ai-security){grid-template-columns:repeat(3,minmax(0,1fr))!important}
+@media (min-width:1500px){html[data-theme] #troubleshooting#troubleshooting#troubleshooting :is(.ai-bridge-summary,.local-ai-security){grid-template-columns:repeat(6,minmax(0,1fr))!important}}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #liveAcceptance .interface-row>div>*{font-family:inherit!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting #liveAcceptance .interface-row>div>small{display:block;margin-top:3px;font-size:12px;color:var(--muted)}
+/* r21 · 工作区：指标表 + 抽屉缩进 */
+html[data-theme] #workspace#workspace#workspace .knowledge-base-summary{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:0!important;border:1px solid var(--line-soft,var(--line));border-radius:12px;overflow:hidden;background:transparent!important}
+html[data-theme] #workspace#workspace#workspace .knowledge-base-summary>div{margin:0 -1px -1px 0!important;padding:12px 14px!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:inset -1px 0 0 var(--line-soft,var(--line)),inset 0 -1px 0 var(--line-soft,var(--line))!important;min-width:0}
+html[data-theme] #workspace#workspace#workspace .knowledge-base-summary>div>*{overflow:hidden;text-overflow:ellipsis}
+html[data-theme] #workspace#workspace#workspace .knowledge-base-summary>div>span{font-size:11.5px;color:var(--muted)}
+html[data-theme] #workspace#workspace#workspace .knowledge-base-summary>div>small{font-size:11.5px;color:var(--muted)}
+html[data-theme] #workspace#workspace#workspace .knowledge-base-summary>div:hover{background:var(--surface-2)!important}
+html[data-theme] #workspace#workspace#workspace #buildKnowledgeIndex{height:36px!important;min-height:36px!important;margin-top:14px}
+html[data-theme] #workspace#workspace#workspace details>:not(summary){margin-left:22px!important;max-width:calc(100% - 22px);box-sizing:border-box}
+html[data-theme] #workspace#workspace#workspace details>summary{min-height:42px}
+html[data-theme] #workspace#workspace#workspace details>p{font-size:12.5px;color:var(--muted)}
+html[data-theme] #workspace#workspace#workspace .card details,html[data-theme] #workspace#workspace#workspace section details{border-top:1px solid var(--line-soft,var(--line));margin-top:12px!important}
+/* r21 · 统一复选框（替代原生）：16×16 圆角方块 + 勾 */
+html[data-theme] :is(main,dialog) input[type=checkbox]:not(.butler-check input):not([role=switch]){-webkit-appearance:none;appearance:none;flex:none;width:16px!important;height:16px!important;min-width:16px!important;min-height:0!important;margin:0;padding:0!important;border:1.5px solid var(--line-hot,var(--line))!important;border-radius:5px!important;background:var(--input-bg,var(--card))!important;box-shadow:none!important;display:inline-grid;place-content:center;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s;vertical-align:-3px}
+html[data-theme] :is(main,dialog) input[type=checkbox]:not(.butler-check input):not([role=switch])::before{content:"";width:10px;height:10px;background:#fff;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center/10px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center/10px no-repeat;transform:scale(0);transition:transform .15s cubic-bezier(.2,.8,.2,1)}
+html[data-theme] :is(main,dialog) input[type=checkbox]:not(.butler-check input):not([role=switch]):checked{background:var(--accent)!important;border-color:var(--accent)!important}
+html[data-theme] :is(main,dialog) input[type=checkbox]:not(.butler-check input):not([role=switch]):checked::before{transform:scale(1)}
+html[data-theme] :is(main,dialog) input[type=checkbox]:not(.butler-check input):not([role=switch]):hover{border-color:var(--accent)!important}
+html[data-theme] :is(main,dialog) input[type=checkbox]:not(.butler-check input):not([role=switch]):focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)!important}
+html[data-theme] :is(main,dialog) input[type=checkbox]:not(.butler-check input):not([role=switch]):disabled{opacity:.45;cursor:not-allowed}
+/* 工作区核心文件选择 */
+html[data-theme] #workspace#workspace#workspace .core-file-options label{display:flex!important;align-items:center;gap:10px;min-height:0!important;height:auto!important;padding:10px 12px!important;border-radius:10px;cursor:pointer}
+html[data-theme] #workspace#workspace#workspace .core-file-options label>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
+html[data-theme] #workspace#workspace#workspace .core-file-options label:has(input:checked){box-shadow:inset 0 0 0 1px var(--accent)!important}
+html[data-theme] #workspace#workspace#workspace .knowledge-workspace-switch>details{margin-bottom:0!important}
+html[data-theme] #workspace#workspace#workspace details>details:last-child,html[data-theme] #workspace#workspace#workspace details>:last-child{margin-bottom:4px!important}
+html[data-theme] :is(main,dialog) input[type=checkbox]:not(.butler-check input):not([role=switch]):not(:checked){border-color:color-mix(in srgb,var(--text) 28%,transparent)!important}
+html[data-theme] #workspace#workspace#workspace .studio-drawer :is(h2,h3){font-size:14px!important;font-weight:650;margin:0 0 4px!important}
+/* r22 · 界面控件不可拖选；只有真正要复制的内容可选 */
+html[data-theme] :where(body,dialog) :where(*){-webkit-user-select:none!important;user-select:none!important}
+html[data-theme] :is(input,textarea,select,[contenteditable],[contenteditable] *,pre,pre *,code,kbd,
+  .selectable,.selectable *,.copyable,.copyable *,
+  .md-view,.md-view *,.msg,.msg *,.butler-message-body,.butler-message-body *,.butler-thought-content,.butler-thought-content *,
+  .result-body,.result-body *,.file-path,.source-path,.chunk-id,.client-config-path,.recovery-key,
+  .candidate-body,.candidate-body *,.candidate-evidence,.candidate-evidence *,.candidate-diff,.inspector-content,
+  .context-message p,.memory-answer p,.suggestion-card>p,.reorganization-content,.reorganization-content *,
+  #butlerSnapshotBody dl,#butlerSnapshotBody dl *){-webkit-user-select:text!important;user-select:text!important}
+html[data-theme] ::selection{background:color-mix(in srgb,var(--accent) 26%,transparent)}
+html[data-theme] :is(button,summary,label,[role=tab],[role=switch],.s-select-btn,.s-opt){-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none}
+/* r22 · 顶栏：滚动后变成磨砂玻璃条，内容不再从标题下面透出来 */
+html[data-theme] body .topbar:not(.is-stuck){background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;transition:background-color .2s ease,box-shadow .2s ease}
+html[data-theme] body .topbar.is-stuck{background:color-mix(in srgb,var(--bg) 74%,transparent)!important;-webkit-backdrop-filter:blur(22px) saturate(1.6)!important;backdrop-filter:blur(22px) saturate(1.6)!important;box-shadow:0 1px 0 var(--line-soft,var(--line)),0 12px 24px -20px rgba(20,30,80,.35)!important}
+html[data-theme="dark"] body .topbar.is-stuck{background:color-mix(in srgb,var(--bg) 80%,transparent)!important;box-shadow:0 1px 0 var(--line),0 12px 24px -20px rgba(0,0,0,.8)!important}
+/* r22 · 晨雾真正透出来：渐变放到 html 上（body 的背景会盖住 z-index:-1 的极光层） */
+html[data-theme="mist"]{background:radial-gradient(120% 90% at 50% -10%,#fcfcff 0%,#f4f5fa 46%,#edeff8 100%) fixed #f4f5fa!important}
+html[data-theme="mist"] body{background:transparent!important}
+html[data-theme="mist"] body::after{opacity:1!important;filter:saturate(1.05)}
+/* 一层极细的珠光颗粒，让大面积留白不再是"平涂白" */
+html[data-theme="mist"] body::before{background:
+  radial-gradient(60% 40% at 50% 0%,rgba(255,255,255,.8),transparent 70%),
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .38 0 0 0 0 .6 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")!important}
+/* 卡片：自上而下的珠光渐层 + 顶边高光，取代平的半透明白 */
+html[data-theme="mist"] main :is(.card,section.card,.client-access-workspace,.local-chat-collectors,.raw-session-console,.file-workspace,.pending-memory-console,.protection-hub,.software-update-card,.workspace-hub>section,.memory-hub>section,.search-panel){background:linear-gradient(180deg,rgba(255,255,255,.78) 0%,rgba(255,255,255,.56) 60%,rgba(250,250,255,.5) 100%)!important;border-color:rgba(255,255,255,.9)!important}
+html[data-theme] #protection#protection#protection .protection-step>span{font-size:12px!important;color:var(--muted);letter-spacing:0}
+html[data-theme] #protection#protection#protection .protection-step>h3{font-size:14px!important}
+html[data-theme="mist"] #troubleshooting#troubleshooting#troubleshooting :is(.access-compatibility,.raw-session-console,#archiveDiagnosticsHost>*){background:linear-gradient(180deg,rgba(255,255,255,.78) 0%,rgba(255,255,255,.56) 60%,rgba(250,250,255,.5) 100%)!important;border:1px solid rgba(255,255,255,.9)!important;box-shadow:var(--shadow)!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting :is(.archive-diagnostics,.access-compatibility)>summary{background:transparent!important;box-shadow:none!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting :is(.archive-diagnostics,.access-compatibility)[open]>summary{border-bottom:1px solid var(--line-soft,var(--line))!important}
+html[data-theme] #troubleshooting#troubleshooting#troubleshooting :is(.archive-diagnostics,.access-compatibility)>summary:hover{background:color-mix(in srgb,var(--text) 2.5%,transparent)!important}

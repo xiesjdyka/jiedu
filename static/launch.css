@@ -1,0 +1,85 @@
+/* 界渡 · 开场「次元光隙」（第 32 轮，第 33 轮微调：光隙去掉所有硬边，云海改为预渲染贴图首帧就位）
+   层级（后 → 前）：天空 / 深空底色 → 背景云海（预合成单张贴图）→ 次元光隙（光晕 + 炽亮裂缝 + 横向星芒）
+   → 流光能量丝 → 星尘 canvas → 前景云（单张贴图）→ 余晖层 → 白光 → 提示。灭点由 JS 写入 --vx / --vy。
+   所有会动的层只改 transform / opacity。 */
+#studioLaunch{position:fixed;inset:0;z-index:2147483000;overflow:hidden;outline:none;opacity:1;--vx:63%;--vy:43%;
+  --st0:#d9862c;--st1:#ffe2a6;
+  /* 浅色晨雾：干净的微透天青蓝 → 极淡霞光，灭点处一团暖晨光 */
+  background:radial-gradient(22vmax 30vmax at var(--vx) var(--vy),rgba(255,244,222,.9),rgba(255,232,200,.32) 46%,transparent 76%),
+    linear-gradient(180deg,#a7d1ee 0%,#c4e1f3 30%,#e3eff4 52%,#f6efe8 70%,#eef3f6 100%)}
+html[data-theme="dark"] #studioLaunch{--st0:#7f6cff;--st1:#e8eeff;
+  background:radial-gradient(30vmax 26vmax at var(--vx) var(--vy),rgba(150,150,255,.32),rgba(70,70,190,.12) 48%,transparent 76%),
+    radial-gradient(50vmax 40vmax at 8% 6%,rgba(30,120,140,.35),transparent 70%),
+    linear-gradient(165deg,#0b1438 0%,#101a4c 30%,#151548 52%,#0b0b26 78%,#05050f 100%)}
+#studioLaunch,#studioLaunch *{cursor:default!important;user-select:none;-webkit-user-select:none}
+#studioLaunch>*{position:absolute;pointer-events:none}
+
+/* ---------- 云海（Worker 预合成的两张静态贴图，只做 GPU 漂移）---------- */
+#studioLaunch .lx-cloud{left:-8%;top:-8%;width:116%;height:116%;max-width:none;display:block;object-fit:cover;will-change:transform,opacity}
+#studioLaunch .lx-cloud.back{z-index:1;animation:lxDriftA 40s ease-in-out infinite alternate}
+#studioLaunch .lx-cloud.near{z-index:6;animation:lxDriftC 24s ease-in-out infinite alternate}
+@keyframes lxDriftA{from{transform:translate3d(-1.1%,.5%,0) scale(1)}to{transform:translate3d(1.3%,-.7%,0) scale(1.03)}}
+@keyframes lxDriftC{from{transform:translate3d(-1.8%,.9%,0) scale(1.02)}to{transform:translate3d(2%,-1.1%,0) scale(1.055)}}
+
+/* ---------- 次元光隙：中心炽亮、向外柔和弥散 + 横向细腻星芒 ---------- */
+#studioLaunch .lx-rift{inset:0;z-index:3;transform-origin:var(--vx) var(--vy);will-change:transform,opacity}
+#studioLaunch .lx-rift>i{position:absolute;left:var(--vx);top:var(--vy);display:block;transform:translate(-50%,-50%)}
+#studioLaunch .lx-rift .haze{width:46vmin;height:118vh;border-radius:50%;background:radial-gradient(50% 50% at 50% 50%,rgba(255,240,214,.62),rgba(255,222,186,.24) 38%,transparent 72%);animation:lxBreathe 5.2s ease-in-out infinite}
+#studioLaunch .lx-rift .glow{width:18vmin;height:56vh;border-radius:50%;background:radial-gradient(50% 50% at 50% 50%,rgba(255,252,244,.95),rgba(255,236,204,.55) 32%,rgba(255,220,170,.14) 62%,transparent 76%);animation:lxBreathe 4.4s ease-in-out infinite reverse}
+#studioLaunch .lx-rift .knot{width:16vmin;height:16vmin;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(255,252,244,.92) 12%,rgba(255,236,206,.5) 30%,rgba(255,226,190,.16) 52%,transparent 70%);animation:lxBreathe 3.6s ease-in-out infinite}
+#studioLaunch .lx-rift .glint{width:0;height:0;opacity:.8}
+#studioLaunch .lx-rift .glint::before,#studioLaunch .lx-rift .glint::after{content:"";position:absolute;left:0;top:0;transform:translate(-50%,-50%)}
+#studioLaunch .lx-rift .glint::before{width:30vmin;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9) 50%,transparent)}
+#studioLaunch .lx-rift .glint::after{width:1px;height:10vmin;background:linear-gradient(180deg,transparent,rgba(255,255,255,.75) 50%,transparent)}
+#studioLaunch .lx-rift .flare{width:220vmin;height:1px;background:linear-gradient(90deg,transparent,rgba(255,236,206,.45) 30%,rgba(255,250,240,.95) 49%,#fff 50%,rgba(255,250,240,.95) 51%,rgba(255,236,206,.45) 70%,transparent);animation:lxFlare 6s ease-in-out infinite}
+#studioLaunch .lx-rift .flare2{width:150vmin;height:34px;border-radius:50%;background:radial-gradient(50% 50% at 50% 50%,rgba(255,232,196,.42),transparent 70%)}
+html[data-theme="dark"] #studioLaunch .lx-rift .haze{background:radial-gradient(50% 50% at 50% 50%,rgba(186,176,255,.62),rgba(120,108,245,.26) 40%,transparent 72%)}
+html[data-theme="dark"] #studioLaunch .lx-rift .glow{background:radial-gradient(50% 50% at 50% 50%,rgba(250,248,255,.95),rgba(214,206,255,.6) 30%,rgba(150,136,255,.18) 60%,transparent 76%)}
+html[data-theme="dark"] #studioLaunch .lx-rift .knot{background:radial-gradient(circle,#fff 0%,rgba(246,244,255,.92) 12%,rgba(200,190,255,.5) 30%,rgba(150,136,255,.16) 52%,transparent 70%)}
+html[data-theme="dark"] #studioLaunch .lx-rift .flare{background:linear-gradient(90deg,transparent,rgba(200,196,255,.4) 30%,rgba(244,242,255,.95) 49%,#fff 50%,rgba(244,242,255,.95) 51%,rgba(200,196,255,.4) 70%,transparent)}
+html[data-theme="dark"] #studioLaunch .lx-rift .flare2{background:radial-gradient(50% 50% at 50% 50%,rgba(200,170,255,.38),transparent 70%)}
+@keyframes lxBreathe{0%,100%{opacity:.82}50%{opacity:1}}
+@keyframes lxFlare{0%,100%{opacity:.75}50%{opacity:1}}
+
+/* ---------- 流光能量丝 ---------- */
+#studioLaunch .lx-strands{inset:0;z-index:4;transform-origin:var(--vx) var(--vy);will-change:transform,opacity}
+#studioLaunch .lx-strands svg{width:100%;height:100%;display:block}
+#studioLaunch .lx-strands path{fill:none;stroke:url(#lxSt);stroke-linecap:round;vector-effect:non-scaling-stroke}
+#studioLaunch .lx-strands .glow path{stroke-width:7;opacity:.3}
+#studioLaunch .lx-strands .line path{filter:drop-shadow(0 0 3px rgba(255,190,90,.6))}
+html[data-theme="dark"] #studioLaunch .lx-strands .line path{filter:none}
+#studioLaunch .lx-strands svg{shape-rendering:geometricPrecision}
+#studioLaunch .lx-strands .soft path{stroke-width:2.4;opacity:.22}
+#studioLaunch .lx-strands .line path{stroke-width:1.3}
+#studioLaunch .lx-strands .line .s1{stroke-width:.8;opacity:.75}
+#studioLaunch .lx-strands .line .s2{stroke-width:1;opacity:.6}
+
+/* ---------- 星尘 ---------- */
+#studioLaunch canvas.lx-space{inset:0;width:100%;height:100%;display:block;z-index:5;will-change:opacity}
+
+/* ---------- 余晖层与白光（白光以小尺寸绘制，再放大绽放）---------- */
+#studioLaunch .lx-after{inset:0;z-index:8;opacity:0;background:radial-gradient(80% 90% at var(--vx) var(--vy),#fffcf6 0%,#f2f6f9 50%,#ecf1f6 100%)}
+html[data-theme="dark"] #studioLaunch .lx-after{background:radial-gradient(70% 80% at var(--vx) var(--vy),#4c4090 0%,#2a2258 28%,#15122a 62%,#0b0a12 100%)}
+#studioLaunch .lx-flash{left:var(--vx);top:var(--vy);width:60vmax;height:60vmax;z-index:9;opacity:0;border-radius:50%;transform:translate(-50%,-50%) scale(.08);will-change:transform,opacity;
+  background:radial-gradient(circle,#fffdf6 0%,#fff9ec 20%,rgba(255,244,222,.95) 30%,rgba(255,232,196,.62) 42%,rgba(255,226,190,.22) 56%,transparent 68%)}
+html[data-theme="dark"] #studioLaunch .lx-flash{background:radial-gradient(circle,rgba(242,240,255,.98) 0%,rgba(214,206,255,.94) 12%,rgba(168,152,250,.86) 24%,rgba(112,92,214,.72) 36%,rgba(62,48,150,.55) 48%,rgba(30,24,80,.3) 60%,transparent 70%)}
+
+/* ---------- 底部引导条：居中对称、向左右自然渐隐的通透呼吸光带 ---------- */
+#studioLaunch .lx-enter{left:50%;bottom:6.8vh;z-index:10;width:min(70vw,820px);height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transform:translateX(-50%);animation:lxHint 1.2s ease-out .6s both;will-change:transform,opacity}
+#studioLaunch .lx-enter>*{position:relative;display:block}
+#studioLaunch .lx-enter .band{position:absolute;left:0;top:50%;width:100%;height:78px;margin-top:-46px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(255,255,255,.62),rgba(255,250,240,.3) 46%,rgba(255,250,240,.08) 74%,transparent);animation:lxBand 3.6s ease-in-out 1.8s infinite;will-change:transform,opacity}
+html[data-theme="dark"] #studioLaunch .lx-enter .band{background:radial-gradient(closest-side,rgba(150,140,255,.26),rgba(120,110,240,.12) 50%,rgba(120,110,240,.03) 76%,transparent)}
+#studioLaunch .lx-enter b{font-size:19px;font-weight:600;letter-spacing:.56em;padding-left:.56em;color:#24304a;text-shadow:0 1px 14px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.8);animation:lxBreath 3.6s ease-in-out 1.8s infinite}
+html[data-theme="dark"] #studioLaunch .lx-enter b{color:#f3f0fb;text-shadow:0 0 18px rgba(170,150,255,.7),0 0 2px rgba(255,255,255,.4)}
+#studioLaunch .lx-enter i{width:100%;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(217,134,44,.25) 18%,#d98a2e 50%,rgba(217,134,44,.25) 82%,transparent);animation:lxLine 3.6s ease-in-out 1.8s infinite;will-change:transform,opacity}
+html[data-theme="dark"] #studioLaunch .lx-enter i{background:linear-gradient(90deg,transparent,rgba(170,156,255,.25) 18%,#cfc6ff 50%,rgba(170,156,255,.25) 82%,transparent)}
+#studioLaunch .lx-enter .tap{position:absolute;left:50%;top:44%;width:340px;height:110px;margin:-55px 0 0 -170px;border-radius:50%;opacity:0;
+  background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(255,236,200,.55) 38%,rgba(255,226,180,.14) 66%,transparent);will-change:transform,opacity}
+html[data-theme="dark"] #studioLaunch .lx-enter .tap{background:radial-gradient(closest-side,rgba(255,255,255,.9),rgba(206,196,255,.55) 38%,rgba(150,136,255,.16) 66%,transparent)}
+@keyframes lxHint{0%{opacity:0;transform:translate(-50%,8px)}100%{opacity:1;transform:translate(-50%,0)}}
+@keyframes lxBreath{0%,100%{opacity:.62}50%{opacity:1}}
+@keyframes lxBand{0%,100%{opacity:.55;transform:scaleX(.86)}50%{opacity:1;transform:scaleX(1)}}
+@keyframes lxLine{0%,100%{transform:scaleX(.62);opacity:.45}50%{transform:scaleX(1);opacity:1}}
+
+@media (prefers-reduced-motion:reduce){#studioLaunch *{animation:none!important}}

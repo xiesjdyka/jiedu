@@ -1,0 +1,771 @@
+/* 自动生成：把旧深色样式里写死的颜色映射到晨雾设计变量（浅色深色共用）（逐页精修在 pages-mist.css） */
+html[data-theme] .test-environment-banner{background:var(--card);color:var(--text);border-bottom:1px solid var(--line)}
+html[data-theme] .pulse-dot{box-shadow:none}
+html[data-theme] .primary-readout,html[data-theme] .system-panel,html[data-theme] .layer-panel,html[data-theme] .rail-panel,html[data-theme] .content-panel{background:var(--card)}
+html[data-theme] .primary-readout:after{border:1px solid var(--line);box-shadow:none}
+html[data-theme] .readout-value{color:var(--text)}
+html[data-theme] .readout-axis{color:var(--muted)}
+html[data-theme] .metric-index{color:var(--text)}
+html[data-theme] .metric strong{color:var(--text)}
+html[data-theme] .metric small{color:var(--muted)}
+html[data-theme] .panel-title small{color:var(--muted)}
+html[data-theme] .detail-grid label{color:var(--muted)}
+html[data-theme] .detail-grid span{color:var(--text-2)}
+html[data-theme] .layer-row label{color:var(--text-2)}
+html[data-theme] .layer-track{background:var(--card)}
+html[data-theme] .layer-row b{color:var(--muted)}
+html[data-theme] .file:hover{background:var(--card)}
+html[data-theme] .file.selected{background:var(--card)}
+html[data-theme] .file-path{color:var(--text-2)}
+html[data-theme] .file small{color:var(--muted)}
+html[data-theme] .chunk:before{border:1px solid var(--line)}
+html[data-theme] .meta-token{color:var(--muted)}
+html[data-theme] .chunk pre{color:var(--text-2)}
+html[data-theme] .copy-button{background:var(--card);color:var(--muted)}
+html[data-theme] .copy-button:hover{background:var(--card)}
+html[data-theme] .query-shell input::placeholder{color:var(--text)}
+html[data-theme] .query-shell input::selection{background:var(--card);color:var(--text)}
+html[data-theme] .clear-query{color:var(--muted)}
+html[data-theme] .query-shell select{background:var(--card);color:var(--text-2)}
+html[data-theme] .execute{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .execute:hover{background:var(--card);border-color:var(--line)}
+html[data-theme] .execute kbd{color:var(--text-2)}
+html[data-theme] .search-meta{color:var(--muted)}
+html[data-theme] .result:hover{background:var(--surface-2)}
+html[data-theme] .result-rank{color:var(--muted)}
+html[data-theme] .result-section{color:var(--muted)}
+html[data-theme] .method-badge{background:var(--card);color:var(--text-2);border:1px solid var(--line)}
+html[data-theme] .score{color:var(--text-2)}
+html[data-theme] .source-path,html[data-theme] .chunk-id{color:var(--muted)}
+html[data-theme] .visual-shell{background:var(--card)}
+html[data-theme] .viz-toolbar{background:var(--card)}
+html[data-theme] .viz-toolbar b{color:var(--text-2)}
+html[data-theme] .viz-toolbar span{color:var(--muted)}
+html[data-theme] .viz-toolbar select{background:var(--card);color:var(--text-2)}
+html[data-theme] .inspector{background:var(--card)}
+html[data-theme] .inspector-section{color:var(--muted)}
+html[data-theme] .inspector-grid label{color:var(--muted)}
+html[data-theme] .inspector-grid span{color:var(--text-2)}
+html[data-theme] .inspector-content{color:var(--text-2)}
+html[data-theme] .inspector-empty,html[data-theme] .empty{color:var(--text)}
+html[data-theme] .inspector-empty p,html[data-theme] .empty p{color:var(--text)}
+html[data-theme] .legend{color:var(--muted)}
+html[data-theme] .folder-dot{background:var(--card);border:1px solid var(--line)}
+html[data-theme] dialog{background:var(--card);border:1px solid var(--line);box-shadow:0 10px 30px -18px rgba(110,85,60,.25)}
+html[data-theme] dialog label{color:var(--muted)}
+html[data-theme] dialog input{background:var(--card)}
+html[data-theme] dialog p{color:var(--muted)}
+html[data-theme] .secondary{color:var(--muted)}
+html[data-theme] .primary{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] #toast{background:var(--card);color:var(--text-2)}
+html[data-theme] .pulse-dot{background:var(--accent);color:var(--on-accent);box-shadow:none}
+html[data-theme] .eyebrow{color:var(--muted)}
+html[data-theme] .overview-grid{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .primary-readout{border-right:1px solid var(--line)}
+html[data-theme] .primary-readout:after{border-color:var(--line);box-shadow:none}
+html[data-theme] .readout-label{color:var(--text-2)}
+html[data-theme] .readout-value{color:var(--text)}
+html[data-theme] .primary-readout p{color:var(--muted)}
+html[data-theme] .readout-axis{color:var(--muted)}
+html[data-theme] .metric-rail{background:var(--card);border-bottom:1px solid var(--line)}
+html[data-theme] .metric{border-color:var(--line)}
+html[data-theme] .metric span{color:var(--muted)}
+html[data-theme] .metric strong{color:var(--text)}
+html[data-theme] .metric small{color:var(--muted)}
+html[data-theme] .system-panel{border-right:1px solid var(--line)}
+html[data-theme] .panel-title{border-color:var(--line)}
+html[data-theme] .panel-title small{color:var(--muted)}
+html[data-theme] .detail-grid label{color:var(--muted)}
+html[data-theme] .detail-grid span{color:var(--text-2)}
+html[data-theme] .layer-row label{color:var(--text-2)}
+html[data-theme] .layer-track{background:var(--card)}
+html[data-theme] .layer-track i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .layer-row b{color:var(--text-2)}
+html[data-theme] .workspace-grid{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .file-list{border-right:1px solid var(--line)}
+html[data-theme] .file.selected{border-color:var(--line)}
+html[data-theme] .file-path{color:var(--text-2)}
+html[data-theme] .file small{color:var(--muted)}
+html[data-theme] .reader-head{border-color:var(--line)}
+html[data-theme] .reader-summary{color:var(--muted)}
+html[data-theme] .chunk{border-color:var(--line)}
+html[data-theme] .chunk:before{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .meta-token{color:var(--muted)}
+html[data-theme] .chunk pre{color:var(--text-2)}
+html[data-theme] .copy-button{background:var(--card);color:var(--text-2);border-color:var(--line)}
+html[data-theme] .copy-button:hover{background:var(--card);color:var(--text);border-color:var(--line)}
+html[data-theme] .search-console{background:var(--card);border-color:var(--line)}
+html[data-theme] .query-prefix{color:var(--text-2)}
+html[data-theme] .query-shell select{background:var(--card);color:var(--text-2);border-color:var(--line)}
+html[data-theme] .execute{background:var(--surface);color:var(--text);border-color:var(--line)}
+html[data-theme] .execute:hover{background:var(--accent);color:var(--on-accent);border-color:var(--line)}
+html[data-theme] .execute kbd{color:var(--muted)}
+html[data-theme] .search-meta{color:var(--muted);border-color:var(--line)}
+html[data-theme] .result-stream{border-color:var(--line)}
+html[data-theme] .result{border-color:var(--line)}
+html[data-theme] .result-rank{color:var(--muted)}
+html[data-theme] .result-section{color:var(--muted)}
+html[data-theme] .method-badge{background:var(--card);color:var(--text-2);border-color:var(--line)}
+html[data-theme] .score{color:var(--text-2)}
+html[data-theme] .source-path,html[data-theme] .chunk-id{color:var(--muted)}
+html[data-theme] .visual-shell{background:var(--card);border-color:var(--line)}
+html[data-theme] .viz-toolbar{background:var(--card);border-color:var(--line)}
+html[data-theme] .viz-toolbar b{color:var(--text-2)}
+html[data-theme] .viz-toolbar span{color:var(--muted)}
+html[data-theme] .viz-toolbar select{background:var(--card);color:var(--text-2);border-color:var(--line)}
+html[data-theme] .inspector{background:var(--card);border-color:var(--line)}
+html[data-theme] .inspector-kicker{color:var(--text-2)}
+html[data-theme] .inspector-section{color:var(--text-2)}
+html[data-theme] .inspector-grid{border-color:var(--line)}
+html[data-theme] .inspector-grid label{color:var(--muted)}
+html[data-theme] .inspector-grid span{color:var(--text-2)}
+html[data-theme] .inspector-content{color:var(--text-2)}
+html[data-theme] .inspector-empty span,html[data-theme] .empty span{color:var(--muted)}
+html[data-theme] .inspector-empty p,html[data-theme] .empty p{color:var(--muted)}
+html[data-theme] .folder-dot{background:var(--card);border-color:var(--line)}
+html[data-theme] .doc-dot{background:var(--accent);color:var(--on-accent)}
+html[data-theme] dialog{background:var(--card);border-color:var(--line)}
+html[data-theme] dialog input{background:var(--card);border-color:var(--line)}
+html[data-theme] dialog input:focus{border-color:var(--line)}
+html[data-theme] .primary{background:var(--surface);color:var(--text);border-color:var(--line)}
+html[data-theme] .secondary{color:var(--text-2);border-color:var(--line)}
+html[data-theme] #toast{background:var(--card);color:var(--text);border-color:var(--line)}
+html[data-theme] .layer-panel{border-top:1px solid var(--line)}
+html[data-theme] .eyebrow{color:var(--text-2)}
+html[data-theme] .overview-grid{background:var(--card);border-color:var(--line);box-shadow:none}
+html[data-theme] .primary-readout{border-color:var(--line)}
+html[data-theme] .readout-label{color:var(--text)}
+html[data-theme] .instrument-stage p{color:var(--text-2)}
+html[data-theme] .dial-orbit{background:var(--accent);color:var(--on-accent);border:1px solid var(--line)}
+html[data-theme] .dial-core{border:1px solid var(--line);box-shadow:none}
+html[data-theme] .dial-core .readout-value{color:var(--text)}
+html[data-theme] .dial-core span{color:var(--text-2)}
+html[data-theme] .readout-axis{color:var(--text-2)}
+html[data-theme] .readout-axis i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .metric-rail{background:var(--card);border-color:var(--line)}
+html[data-theme] .metric{border-color:var(--line)}
+html[data-theme] .metric:after{border:1px solid var(--line);box-shadow:none}
+html[data-theme] .metric-signal{border:1px solid var(--line);box-shadow:none}
+html[data-theme] .metric-signal i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .metric span{color:var(--text)}
+html[data-theme] .metric strong{color:var(--text)}
+html[data-theme] .metric small{color:var(--text-2)}
+html[data-theme] .metric em{color:var(--text-2)}
+html[data-theme] .system-panel,html[data-theme] .layer-panel{background:var(--surface-2)}
+html[data-theme] .system-panel{border-color:var(--line)}
+html[data-theme] .panel-title{border-color:var(--line)}
+html[data-theme] .panel-title small{color:var(--text-2)}
+html[data-theme] .detail-grid label{color:var(--text-2)}
+html[data-theme] .detail-grid span{color:var(--text)}
+html[data-theme] .layer-row label{color:var(--text-2)}
+html[data-theme] .layer-track{background:var(--card)}
+html[data-theme] .layer-track i{background:var(--accent);color:var(--on-accent);box-shadow:none}
+html[data-theme] .layer-row b{color:var(--text)}
+html[data-theme] .workspace-grid{background:var(--card);border-color:var(--line)}
+html[data-theme] .file-list{background:var(--card);border-color:var(--line)}
+html[data-theme] .file:hover{background:var(--surface-2)}
+html[data-theme] .file.selected{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .file-path{color:var(--text)}
+html[data-theme] .file small{color:var(--text-2)}
+html[data-theme] .chunk:before{background:var(--accent);color:var(--on-accent);box-shadow:none}
+html[data-theme] .meta-token{color:var(--text-2)}
+html[data-theme] .chunk pre{color:var(--text)}
+html[data-theme] .copy-button{background:var(--card);color:var(--text);border-color:var(--line)}
+html[data-theme] .copy-button:hover{color:var(--text);border-color:var(--line)}
+html[data-theme] .search-console{background:var(--card);border-color:var(--line);box-shadow:none}
+html[data-theme] .query-prefix{color:var(--text)}
+html[data-theme] .query-shell input{color:var(--text)}
+html[data-theme] .query-shell input::placeholder{color:var(--text-2)}
+html[data-theme] .query-shell select{background:var(--card);color:var(--text);border-color:var(--line)}
+html[data-theme] .execute{background:var(--accent);color:var(--on-accent);border-color:var(--line)}
+html[data-theme] .execute:hover{background:var(--accent);color:var(--on-accent);border-color:var(--line)}
+html[data-theme] .search-meta{color:var(--text-2)}
+html[data-theme] .result-stream{border-color:var(--line)}
+html[data-theme] .result{border-color:var(--line)}
+html[data-theme] .result:hover{background:var(--surface-2)}
+html[data-theme] .result-rank{color:var(--text-2)}
+html[data-theme] .result-section{color:var(--text-2)}
+html[data-theme] .method-badge{color:var(--text);border-color:var(--line)}
+html[data-theme] .score{color:var(--text)}
+html[data-theme] .source-path,html[data-theme] .chunk-id{color:var(--text-2)}
+html[data-theme] .empty span,html[data-theme] .inspector-empty span{color:var(--text-2)}
+html[data-theme] .empty p,html[data-theme] .inspector-empty p{color:var(--text-2)}
+html[data-theme] .visual-shell{background:var(--card);border-color:var(--line)}
+html[data-theme] .visual-shell:before{background:var(--surface-2)}
+html[data-theme] .viz-toolbar{background:var(--card);border-color:var(--line)}
+html[data-theme] .viz-toolbar b{color:var(--text)}
+html[data-theme] .viz-toolbar span{color:var(--text-2)}
+html[data-theme] .viz-toolbar select{background:var(--card);color:var(--text);border-color:var(--line)}
+html[data-theme] .legend{color:var(--text)}
+html[data-theme] .inspector{background:var(--card);border-color:var(--line)}
+html[data-theme] .inspector-close{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .inspector-close:hover{background:var(--surface-2)}
+html[data-theme] .inspector-kicker{color:var(--text)}
+html[data-theme] .inspector-section{color:var(--text-2)}
+html[data-theme] .inspector-grid{border-color:var(--line)}
+html[data-theme] .inspector-grid label{color:var(--text-2)}
+html[data-theme] .inspector-grid span{color:var(--text)}
+html[data-theme] .inspector-content{color:var(--text)}
+html[data-theme] .folder-dot{border-color:var(--line)}
+html[data-theme] .doc-dot{background:var(--accent);color:var(--on-accent)}
+html[data-theme] dialog{background:var(--card);border-color:var(--line)}
+html[data-theme] dialog label{color:var(--text)}
+html[data-theme] dialog input{background:var(--card);border-color:var(--line)}
+html[data-theme] dialog p{color:var(--text-2)}
+html[data-theme] #toast{background:var(--card);color:var(--text);border-color:var(--line)}
+html[data-theme] button:focus-visible,html[data-theme] input:focus-visible,html[data-theme] select:focus-visible{outline:3px solid var(--line)}
+html[data-theme] button:focus-visible,html[data-theme] input:focus-visible,html[data-theme] select:focus-visible{outline:1px solid var(--line);box-shadow:none}
+html[data-theme] .query-shell:focus-within{background:var(--surface-2);border-color:var(--line);box-shadow:none}
+html[data-theme] .copy-button:focus-visible,html[data-theme] .execute:focus-visible,html[data-theme] .clear-query:focus-visible{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] dialog input:focus{border-color:var(--line);box-shadow:none}
+html[data-theme] .instrument-stage.telemetry-changed .orbit-a{border-color:var(--line)}
+html[data-theme] .instrument-cluster.telemetry-changed .metric strong{color:var(--text)}
+html[data-theme] .instrument-cluster.telemetry-changed .metric-signal{background:var(--accent);color:var(--on-accent);box-shadow:none}
+html[data-theme] .project-dot{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .overview-grid:before{background:var(--surface-2)}
+html[data-theme] .dial-core:after{background:var(--accent);color:var(--on-accent)}
+html[data-theme] #map .chart:after,html[data-theme] #graph .chart:after{background:var(--surface-2)}
+html[data-theme] .visual-shell:hover{box-shadow:none}
+html[data-theme] #search .search-console:after{background:var(--surface-2)}
+html[data-theme] #search.searching .query-prefix,html[data-theme] #search.searching #searchState{color:var(--text)}
+html[data-theme] .memory-hub>section{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .memory-layers{background:var(--surface-2)}
+html[data-theme] .memory-layer{background:var(--card)}
+html[data-theme] .memory-layer i{background:var(--surface);box-shadow:none}
+html[data-theme] .memory-layer i.ready{background:var(--accent);color:var(--on-accent);box-shadow:none}
+html[data-theme] .memory-layer i.draft{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .memory-layer i.offline{background:var(--surface)}
+html[data-theme] .memory-layer small{color:var(--text-2)}
+html[data-theme] .memory-metrics>div{border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+html[data-theme] .memory-metrics span{color:var(--text-2)}
+html[data-theme] .memory-section-head p{color:var(--text-2)}
+html[data-theme] .memory-section-head>strong{color:var(--text)}
+html[data-theme] .memory-tabs{border-bottom:1px solid var(--line)}
+html[data-theme] .memory-tabs button{color:var(--text-2)}
+html[data-theme] .memory-tabs button.active{background:var(--surface-2);color:var(--text);border-color:var(--line)}
+html[data-theme] .memory-doc-meta{color:var(--text-2)}
+html[data-theme] .memory-doc-meta.source-focus{background:var(--surface-2)}
+html[data-theme] .memory-state{border:1px solid var(--line)}
+html[data-theme] .memory-state.draft{color:var(--text);border-color:var(--line)}
+html[data-theme] .memory-state.written{color:var(--text);border-color:var(--line)}
+html[data-theme] .memory-state.rejected{color:var(--text-2);border-color:var(--line)}
+html[data-theme] .project-memory-grid{border:1px solid var(--line)}
+html[data-theme] .memory-project-list{border-right:1px solid var(--line)}
+html[data-theme] .memory-project-list button{color:var(--text)}
+html[data-theme] .memory-project-list button:hover,html[data-theme] .memory-project-list button.active{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .memory-project-list small{color:var(--text-2)}
+html[data-theme] .project-status{color:var(--text)}
+html[data-theme] .project-detail-head span{color:var(--text)}
+html[data-theme] .project-detail-head p{color:var(--text-2)}
+html[data-theme] .project-facts{background:var(--surface-2)}
+html[data-theme] .project-facts>div{background:var(--card)}
+html[data-theme] .project-facts label{color:var(--text-2)}
+html[data-theme] .project-facts p{color:var(--text)}
+html[data-theme] .project-source{color:var(--text-2)}
+html[data-theme] .memory-project-detail details{border-top:1px solid var(--line)}
+html[data-theme] .memory-project-detail summary{color:var(--text)}
+html[data-theme] .memory-project-detail details pre{color:var(--text)}
+html[data-theme] .interface-list{border-top:1px solid var(--line)}
+html[data-theme] .interface-row{border-bottom:1px solid var(--line)}
+html[data-theme] .interface-row small{color:var(--text-2)}
+html[data-theme] .interface-row.master{background:var(--surface-2)}
+html[data-theme] .switch{background:var(--card);color:var(--text-2);border:1px solid var(--line)}
+html[data-theme] .switch i:after{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .switch.on{color:var(--text);border-color:var(--line)}
+html[data-theme] .switch.on i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .memory-test-query input{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .memory-chain-result{border-top:1px solid var(--line)}
+html[data-theme] .chain-step{border:1px solid var(--line)}
+html[data-theme] .chain-step i{background:var(--surface)}
+html[data-theme] .chain-step.ok i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .chain-step.bad i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .chain-step small{color:var(--text-2)}
+html[data-theme] .chain-hit article{border-top:1px solid var(--line)}
+html[data-theme] .chain-hit article span,html[data-theme] .raw-meta{color:var(--text-2)}
+html[data-theme] .chain-hit article p{color:var(--text)}
+html[data-theme] .raw-hit pre{background:var(--card)}
+html[data-theme] .pending-empty{color:var(--text-2);border:1px dashed var(--line)}
+html[data-theme] .wide-dialog textarea{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .project-diff{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .interface-master-notice{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .interface-master-notice.active{background:var(--surface-2);color:var(--text);border-color:var(--line)}
+html[data-theme] .interface-tech-name,html[data-theme] .interface-usage{color:var(--text-2)}
+html[data-theme] .interface-tech-name{color:var(--text-2)}
+html[data-theme] .interface-effect-note{color:var(--text-2)}
+html[data-theme] .memory-project-list{border-bottom:1px solid var(--line)}
+html[data-theme] .weight-hub>section{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .weight-session-grid{background:var(--surface-2)}
+html[data-theme] .weight-session-grid>div{background:var(--card)}
+html[data-theme] .weight-session-grid span{color:var(--text-2)}
+html[data-theme] .weight-hint{color:var(--text-2)}
+html[data-theme] .weight-settings label,html[data-theme] .weight-settings span{color:var(--text)}
+html[data-theme] .weight-settings select{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .local-ai-security small{color:var(--text-2)}
+html[data-theme] .memory-tabs button small{color:var(--text-2)}
+html[data-theme] .memory-tabs button.active small{color:var(--text-2)}
+html[data-theme] .memory-awareness-grid{background:var(--surface-2);border:1px solid var(--line)}
+html[data-theme] .awareness-block{background:var(--card)}
+html[data-theme] .awareness-block h3{color:var(--text)}
+html[data-theme] .awareness-block li{color:var(--text)}
+html[data-theme] .awareness-block .awareness-source{color:var(--text-2)}
+html[data-theme] .awareness-project{border:1px solid var(--line)}
+html[data-theme] .awareness-project span{color:var(--text-2)}
+html[data-theme] .memory-unknown-head p{color:var(--text-2)}
+html[data-theme] .memory-gap{background:var(--surface-2);border-left:2px solid var(--line)}
+html[data-theme] .memory-gap b{color:var(--text)}
+html[data-theme] .memory-gap span{color:var(--text-2)}
+html[data-theme] .memory-test-empty{color:var(--text-2)}
+html[data-theme] .memory-test-empty p{color:var(--muted)}
+html[data-theme] .pending-workspace{border:1px solid var(--line)}
+html[data-theme] .pending-list{border-right:1px solid var(--line)}
+html[data-theme] .pending-list button{color:var(--text)}
+html[data-theme] .pending-list button:hover,html[data-theme] .pending-list button.active{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .pending-list span{color:var(--text-2)}
+html[data-theme] .candidate-meta{color:var(--text-2)}
+html[data-theme] .candidate-evidence{color:var(--text)}
+html[data-theme] .candidate-evidence{color:var(--text-2);border-left:2px solid var(--line)}
+html[data-theme] .candidate-edit{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .candidate-diff{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .attachment-metrics{background:var(--surface-2)}
+html[data-theme] .attachment-metrics>div{background:var(--card)}
+html[data-theme] .attachment-metrics span{color:var(--text-2)}
+html[data-theme] .permission-group-title{color:var(--text);border-bottom:1px solid var(--line)}
+html[data-theme] .pending-list{border-bottom:1px solid var(--line)}
+html[data-theme] .search-telemetry{background:var(--surface-2);border:1px solid var(--line)}
+html[data-theme] .search-telemetry span{background:var(--card);color:var(--text-2)}
+html[data-theme] .search-telemetry b{color:var(--text)}
+html[data-theme] .context-panel{background:var(--card);border-left:2px solid var(--line)}
+html[data-theme] .context-message{border-bottom:1px solid var(--line)}
+html[data-theme] .context-message.core{background:var(--surface-2);border-left:2px solid var(--line)}
+html[data-theme] .context-message b{color:var(--text-2)}
+html[data-theme] .viz-toolbar em{color:var(--text)}
+html[data-theme] .vector-tooltip{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .vector-tooltip span{color:var(--text)}
+html[data-theme] .vector-tooltip small{color:var(--text-2)}
+html[data-theme] .map-zoom{color:var(--text)}
+html[data-theme] .local-ai-security{background:var(--surface-2)}
+html[data-theme] .local-ai-security>div{background:var(--card)}
+html[data-theme] .local-ai-security span{color:var(--text-2)}
+html[data-theme] .local-ai-client{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .local-ai-client small{color:var(--text-2)}
+html[data-theme] .client-state{color:var(--text-2)}
+html[data-theme] .client-state.ready{color:var(--text)}
+html[data-theme] .client-state.blocked{color:var(--text)}
+html[data-theme] .local-ai-client dt{color:var(--text-2)}
+html[data-theme] .access-hub>section{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .local-config-controls{border-top:1px solid var(--line)}
+html[data-theme] .local-config-controls label{color:var(--text-2)}
+html[data-theme] .local-config-controls select,html[data-theme] .local-config-controls input{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .local-config-controls p{color:var(--text-2)}
+html[data-theme] .cadence-control{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .cadence-control select,html[data-theme] .cadence-control input{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .cadence-control select:focus-visible,html[data-theme] .cadence-control input:focus-visible{border-color:var(--line);box-shadow:none}
+html[data-theme] .setting-switch{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .setting-switch small{color:var(--text-2)}
+html[data-theme] .setting-switch i:after{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .setting-switch input:checked+i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .setting-switch:focus-within{border-color:var(--line)}
+html[data-theme] .weight-settings-note{color:var(--text-2)}
+html[data-theme] .cadence-presets button{background:var(--card);color:var(--text-2);border:1px solid var(--line)}
+html[data-theme] .cadence-presets button:hover,html[data-theme] .cadence-presets button:focus-visible{background:var(--card);color:var(--text);border-color:var(--line)}
+html[data-theme] .cadence-presets button.active{color:var(--text);border-color:var(--line);box-shadow:none}
+html[data-theme] .client-access-switch{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .client-access-switch small{color:var(--text-2)}
+html[data-theme] .client-access-switch i:after{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .client-access-switch input:checked+i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .client-access-switch:focus-within{border-color:var(--line)}
+html[data-theme] .client-mode-control{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .client-mode-control select{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .client-mode-control small{color:var(--text-2)}
+html[data-theme] .client-config-path{color:var(--text-2)}
+html[data-theme] .connection-gate-note{background:var(--surface-2);color:var(--text);border-left:2px solid var(--line)}
+html[data-theme] .config-target span{color:var(--text-2)}
+html[data-theme] .config-target code{color:var(--text)}
+html[data-theme] .client-config-diff{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .raw-conversation section{background:var(--card);border-left:2px solid var(--line)}
+html[data-theme] .raw-conversation section>b{color:var(--text)}
+html[data-theme] .raw-conversation pre{color:var(--text)}
+html[data-theme] .owner-capability-note{background:var(--surface-2);color:var(--text-2);border:1px dashed var(--line)}
+html[data-theme] .raw-session-console .memory-project-list{border-bottom:1px solid var(--line)}
+html[data-theme] .raw-attachment-card{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .raw-attachment-card img{border:1px solid var(--line)}
+html[data-theme] .core-preview{border-top:1px solid var(--line)}
+html[data-theme] .core-preview summary{color:var(--text)}
+html[data-theme] .core-preview div{color:var(--text-2)}
+html[data-theme] .core-preview pre{background:var(--card);color:var(--text)}
+html[data-theme] .provider-config-grid input,html[data-theme] .provider-config-grid select{background:var(--card)}
+html[data-theme] .provider-config-grid input:focus,html[data-theme] .provider-config-grid select:focus{box-shadow:none}
+html[data-theme] .manual-metrics>div{background:var(--card)}
+html[data-theme] .manual-next{background:var(--surface-2);border-left:2px solid var(--line)}
+html[data-theme] .manual-dropzone{border:1px dashed var(--line)}
+html[data-theme] .manual-dropzone.active,html[data-theme] .manual-dropzone:focus-within{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .manual-dropzone textarea{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .manual-history-row:hover{background:var(--surface-2)}
+html[data-theme] .extraction-session-list>label{background:var(--card)}
+html[data-theme] .weight-session-picker select{background:var(--card)}
+html[data-theme] .extraction-session-list>label:hover{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .extraction-session-list>label.selected{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .extraction-selection{background:var(--surface-2);border-left:2px solid var(--line)}
+html[data-theme] .disabled-reason{color:var(--text-2)}
+html[data-theme] .candidate-actions button:hover{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .weight-client-controls{background:var(--card)}
+html[data-theme] .weight-client-controls select{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .weight-session-cards button{background:var(--card)}
+html[data-theme] .weight-session-cards button:hover{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .weight-session-cards button.selected{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .weight-client-controls .select-shell:after{color:var(--text-2)}
+html[data-theme] .weight-session-facts{background:var(--surface-2)}
+html[data-theme] .weight-session-facts>div{background:var(--card)}
+html[data-theme] .weight-session-facts span{color:var(--text-2)}
+html[data-theme] .raw-session-console .raw-history-controls{background:var(--card)}
+html[data-theme] .weight-client-controls select{background:var(--card)}
+html[data-theme] .shared-result-shell{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .visual-loading{background:var(--card)}
+html[data-theme] .memory-test-tabs button.active{background:var(--surface-2)}
+html[data-theme] .memory-answer{background:var(--surface-2);border-left:2px solid var(--line)}
+html[data-theme] .memory-chain-details summary,html[data-theme] .memory-evidence-details summary{color:var(--text)}
+html[data-theme] .memory-evidence-details article{border-top:1px solid var(--line)}
+html[data-theme] .eyebrow{color:var(--muted)}
+html[data-theme] .boundary-stage{background:var(--card);box-shadow:none}
+html[data-theme] .boundary-stage:before{background:var(--surface-2)}
+html[data-theme] .domain-plane>span{color:var(--text)}
+html[data-theme] .domain-plane>small{color:var(--muted)}
+html[data-theme] .domain-nodes i{background:var(--accent);color:var(--on-accent);box-shadow:none}
+html[data-theme] .domain-nodes:before,html[data-theme] .domain-nodes:after{border:1px solid var(--line)}
+html[data-theme] .agent-signal i{border:1px solid var(--line)}
+html[data-theme] .agent-signal i:nth-child(1){background:var(--surface-2)}
+html[data-theme] .gateway-core .dial-core small{color:var(--text)}
+html[data-theme] .boundary-flow{background:var(--surface-2)}
+html[data-theme] .boundary-flow i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .readout-axis{color:var(--muted)}
+html[data-theme] .readout-axis b{background:var(--surface-2)}
+html[data-theme] .instrument-cluster{background:var(--card);box-shadow:none}
+html[data-theme] .metric span{color:var(--text-2)}
+html[data-theme] .metric strong{color:var(--text)}
+html[data-theme] .metric em{color:var(--muted)}
+html[data-theme] .system-panel,html[data-theme] .layer-panel{background:var(--card);box-shadow:none}
+html[data-theme] .panel-title small{color:var(--muted)}
+html[data-theme] .layer-track{background:var(--surface-2)}
+html[data-theme] .layer-track i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .rail-panel,html[data-theme] .content-panel,html[data-theme] .memory-hub>section,html[data-theme] .access-hub>section,html[data-theme] .weight-hub>section,html[data-theme] .raw-session-console,html[data-theme] .attachment-console,html[data-theme] .local-ai-console,html[data-theme] .data-security-console,html[data-theme] .write-permission-console,html[data-theme] .weight-session-console,html[data-theme] .weight-status-console,html[data-theme] .weight-settings-console{background:var(--card) !important;box-shadow:none !important}
+html[data-theme] .file:hover,html[data-theme] .file.selected{background:var(--surface-2) !important}
+html[data-theme] .memory-layer,html[data-theme] .memory-metrics>div,html[data-theme] .awareness-block,html[data-theme] .project-facts>div{background:var(--card) !important}
+html[data-theme] .project-memory-grid{background:var(--surface-2)}
+html[data-theme] .memory-test-tabs{background:var(--surface-2)}
+html[data-theme] .memory-test-tabs button.active{background:var(--surface-2)}
+html[data-theme] .search-console{background:var(--card);box-shadow:none}
+html[data-theme] .query-shell{background:var(--surface-2)}
+html[data-theme] .query-shell:focus-within{box-shadow:none}
+html[data-theme] .shared-result-shell{background:var(--card);box-shadow:none}
+html[data-theme] .execute{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .execute:hover{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .visual-shell{background:var(--card);box-shadow:none}
+html[data-theme] .visual-shell:before{background:var(--surface-2)}
+html[data-theme] .viz-toolbar{background:var(--card)}
+html[data-theme] .inspector{background:var(--card)}
+html[data-theme] .boundary-stage{background:var(--card);box-shadow:none}
+html[data-theme] .domain-plane>small{color:var(--muted)}
+html[data-theme] .domain-nodes:before{border-color:var(--line)}
+html[data-theme] .domain-nodes i{background:var(--accent);color:var(--on-accent);box-shadow:none}
+html[data-theme] .agent-signal i{border-color:var(--line)}
+html[data-theme] .gateway-core{box-shadow:none}
+html[data-theme] .gateway-core:before,html[data-theme] .gateway-core:after{border:1px solid var(--line)}
+html[data-theme] .gateway-core:after{border-color:var(--line)}
+html[data-theme] .gateway-core .dial-orbit{border-color:var(--line)}
+html[data-theme] .gateway-core .dial-core{box-shadow:none}
+html[data-theme] .boundary-flow{background:var(--surface-2)}
+html[data-theme] .boundary-flow i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .readout-axis{color:var(--text-2)}
+html[data-theme] .readout-axis b{background:var(--surface-2)}
+html[data-theme] .system-panel,html[data-theme] .layer-panel,html[data-theme] .instrument-cluster,html[data-theme] .search-console,html[data-theme] .shared-result-shell,html[data-theme] .visual-shell,html[data-theme] .memory-hub>section,html[data-theme] .access-hub>section,html[data-theme] .weight-hub>section{box-shadow:none !important}
+html[data-theme] details>summary:hover{color:var(--text)}
+html[data-theme] .boundary-flow{background:var(--surface-2)}
+html[data-theme] .boundary-flow i{background:var(--accent) !important;color:var(--on-accent) !important}
+html[data-theme] .guide-steps p,html[data-theme] .guide-advanced p{color:var(--text-2)}
+html[data-theme] .guide-steps section{background:var(--card);box-shadow:none}
+html[data-theme] .guide-steps em{color:var(--muted)}
+html[data-theme] .guide-advanced{background:var(--card)}
+html[data-theme] .guide-advanced summary{color:var(--text-2)}
+html[data-theme] .knowledge-base-console{background:var(--card) !important;box-shadow:none !important}
+html[data-theme] .knowledge-base-summary>div{background:var(--card)}
+html[data-theme] .knowledge-base-summary code{color:var(--text-2)}
+html[data-theme] .knowledge-base-actions input,html[data-theme] .knowledge-base-create input{background:var(--card)}
+html[data-theme] .knowledge-base-create,html[data-theme] .knowledge-core-config{background:var(--surface-2)}
+html[data-theme] .core-file-options label{background:var(--surface-2);color:var(--text-2)}
+html[data-theme] .hash-truth{color:var(--muted)}
+html[data-theme] .extraction-provider{background:var(--card)}
+html[data-theme] .knowledge-base-state{background:var(--surface-2)}
+html[data-theme] .knowledge-base-state small{color:var(--muted)}
+html[data-theme] .weight-technical-facts{background:var(--surface-2)}
+html[data-theme] .weight-technical-facts>div{background:var(--card)}
+html[data-theme] .domain-private:before,html[data-theme] .domain-agent:before{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .gateway-orbits:before{background:var(--surface-2)}
+html[data-theme] .gateway-orbits i{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .extraction-session-card{background:var(--surface-2)}
+html[data-theme] .extraction-session-card:hover{background:var(--surface-2)}
+html[data-theme] .extraction-session-card.selected{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .deferred-extraction-pool{background:var(--surface-2)}
+html[data-theme] .extraction-list-title{background:var(--card)}
+html[data-theme] .manual-history-recent>span{background:var(--surface-2)}
+html[data-theme] .pending-list{border:1px solid var(--line)}
+html[data-theme] .candidate-review-panel{background:var(--surface-2)}
+html[data-theme] .segmented-extraction-method{background:var(--surface-2)}
+html[data-theme] .segmented-extraction-method label:hover{background:var(--surface-2)}
+html[data-theme] .segmented-extraction-method label:has(input:checked){background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .segmented-extraction-method label:has(input:focus-visible){box-shadow:none}
+html[data-theme] .ai-extraction-config{background:var(--surface-2)}
+html[data-theme] .provider-config-grid textarea{background:var(--card)}
+html[data-theme] .provider-config-grid textarea:focus{box-shadow:none}
+html[data-theme] .governance-controls>div,html[data-theme] .owner-trust-control,html[data-theme] .project-change-suggestions{background:var(--card)}
+html[data-theme] .governance-source-switches label:hover{background:var(--surface-2)}
+html[data-theme] .project-change-suggestions article.verified_change{border-color:var(--line)}
+html[data-theme] .protection-cancel small{color:var(--text-2)}
+html[data-theme] .knowledge-lifecycle>div{background:var(--card)}
+html[data-theme] .knowledge-lifecycle .ready b{color:var(--text)}
+html[data-theme] .knowledge-lifecycle .waiting b{color:var(--text-2)}
+html[data-theme] .knowledge-structure{background:var(--surface-2)}
+html[data-theme] .knowledge-structure>summary{color:var(--text-2)}
+html[data-theme] .knowledge-structure span{background:var(--surface-2)}
+html[data-theme] .original-archive-panel{background:var(--card)}
+html[data-theme] .original-archive-row{background:var(--surface-2)}
+html[data-theme] .original-archive-row:hover{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .original-archive-toolbar{background:var(--surface-2)}
+html[data-theme] .chatgpt-real-diagnostics{background:var(--surface-2);border:1px solid var(--line)}
+html[data-theme] .chatgpt-real-diagnostics span{color:var(--text-2)}
+html[data-theme] .chatgpt-real-diagnostics p{color:var(--text)}
+html[data-theme] .chatgpt-connection-warning{background:var(--surface-2);color:var(--text);border-left:2px solid var(--line)}
+html[data-theme] .chatgpt-bridge-test label{color:var(--text-2)}
+html[data-theme] .chatgpt-bridge-test input{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .chatgpt-bridge-test pre{background:var(--card);color:var(--text-2)}
+html[data-theme] .ai-bridge-summary{background:var(--surface-2)}
+html[data-theme] .ai-bridge-summary>div{background:var(--card)}
+html[data-theme] .ai-bridge-summary span{color:var(--text-2)}
+html[data-theme] .bridge-source-note{color:var(--text-2)}
+html[data-theme] .bridge-service-console details>summary{color:var(--text)}
+html[data-theme] .danger-button{background:var(--surface-2);color:var(--text-2);border:1px solid var(--line)}
+html[data-theme] .danger-button:hover{background:var(--surface-2)}
+html[data-theme] .ai-chat-compose,html[data-theme] .ai-chat-result{background:var(--card)}
+html[data-theme] .ai-chat-question textarea{background:var(--card)}
+html[data-theme] .ai-chat-question textarea:focus{box-shadow:none}
+html[data-theme] .ai-chat-facts>div{background:var(--card)}
+html[data-theme] .ai-chat-evidence>summary{color:var(--text)}
+html[data-theme] .ai-chat-evidence article p{color:var(--text-2)}
+html[data-theme] .memory-state.ready{color:var(--text);border-color:var(--line)}
+html[data-theme] .ai-chat-provider-config{background:var(--surface-2)}
+html[data-theme] .ai-chat-provider-grid input,html[data-theme] .ai-chat-provider-grid select{background:var(--card)}
+html[data-theme] .ai-chat-provider-grid input:focus,html[data-theme] .ai-chat-provider-grid select:focus{box-shadow:none}
+html[data-theme] .bridge-status-console,html[data-theme] .bridge-test-console,html[data-theme] .bridge-debug-details{background:var(--card)}
+html[data-theme] .bridge-status-metrics>div{background:var(--card)}
+html[data-theme] .bridge-client-support span{color:var(--text)}
+html[data-theme] .bridge-client-support i{color:var(--text-2)}
+html[data-theme] .bridge-route{background:var(--card);color:var(--text-2)}
+html[data-theme] .bridge-test-form input,html[data-theme] .bridge-test-form select{background:var(--card)}
+html[data-theme] .bridge-test-form input:focus,html[data-theme] .bridge-test-form select:focus{box-shadow:none}
+html[data-theme] .bridge-test-result{background:var(--card)}
+html[data-theme] .bridge-test-summary>div{background:var(--card)}
+html[data-theme] .bridge-source-list code{color:var(--text-2)}
+html[data-theme] .bridge-tools-list code{color:var(--text-2)}
+html[data-theme] #protection button:focus-visible,html[data-theme] #protection input:focus-visible,html[data-theme] #protection textarea:focus-visible,html[data-theme] #protection select:focus-visible,html[data-theme] #protection summary:focus-visible{outline:2px solid var(--line)}
+html[data-theme] .protection-hero,html[data-theme] .protection-panel,html[data-theme] .protection-truth{background:var(--card)}
+html[data-theme] .protection-kicker{color:var(--text-2)}
+html[data-theme] .protection-hero p{color:var(--text-2)}
+html[data-theme] .protection-state{color:var(--text)}
+html[data-theme] .protection-state.state-unlocked{background:var(--surface-2);color:var(--text);border-color:var(--line)}
+html[data-theme] .protection-state.state-locked{background:var(--surface-2);color:var(--text);border-color:var(--line)}
+html[data-theme] .protection-state.state-error{background:var(--surface-2);color:var(--text-2);border-color:var(--line)}
+html[data-theme] .protection-loading{color:var(--text-2)}
+html[data-theme] .protection-step>span,html[data-theme] .protection-unlocked-head span{color:var(--text-2)}
+html[data-theme] .protection-step p,html[data-theme] .protection-unlocked-head p{color:var(--text-2)}
+html[data-theme] .protection-form label{color:var(--text)}
+html[data-theme] .protection-form label small{color:var(--text-2)}
+html[data-theme] .protection-form input,html[data-theme] .protection-form textarea,html[data-theme] .protection-session-grid select{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .protection-form input:hover,html[data-theme] .protection-form textarea:hover,html[data-theme] .protection-session-grid select:hover{border-color:var(--line)}
+html[data-theme] .protection-form input:focus,html[data-theme] .protection-form textarea:focus,html[data-theme] .protection-session-grid select:focus{border-color:var(--line);box-shadow:none}
+html[data-theme] .protection-warning{background:var(--surface-2);color:var(--text);border-left:3px solid var(--line)}
+html[data-theme] .form-feedback{color:var(--text-2)}
+html[data-theme] .recovery-key{background:var(--card);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .recovery-confirm{color:var(--text)}
+html[data-theme] .recovery-unlock>summary,html[data-theme] .change-passphrase>summary{color:var(--text)}
+html[data-theme] .protection-session-grid>label,html[data-theme] .protection-session-grid>div{background:var(--card)}
+html[data-theme] .protection-session-grid span,html[data-theme] .protection-session-grid label{color:var(--text-2)}
+html[data-theme] .protection-session-grid small{color:var(--text-2)}
+html[data-theme] .protection-truth>div,html[data-theme] .protection-truth>details{background:var(--card)}
+html[data-theme] .protection-truth b,html[data-theme] .protection-truth summary{color:var(--text)}
+html[data-theme] .protection-truth p{color:var(--text-2)}
+html[data-theme] #access button:focus-visible,html[data-theme] #access input:focus-visible,html[data-theme] #access select:focus-visible,html[data-theme] #access summary:focus-visible,html[data-theme] #pairClientDialog button:focus-visible,html[data-theme] #pairClientDialog input:focus-visible,html[data-theme] #pairClientDialog select:focus-visible,html[data-theme] #clientSecretDialog button:focus-visible,html[data-theme] #clientActionDialog button:focus-visible{outline:2px solid var(--line)}
+html[data-theme] .client-access-console{background:var(--card) !important}
+html[data-theme] .access-kicker{color:var(--text-2)}
+html[data-theme] .client-access-head p{color:var(--text-2)}
+html[data-theme] .client-access-journey li{background:var(--card);color:var(--text-2)}
+html[data-theme] .client-access-journey i{color:var(--text);border:1px solid var(--line)}
+html[data-theme] .client-identity-list{background:var(--card)}
+html[data-theme] .client-identity-card{background:var(--card)}
+html[data-theme] .client-identity-card.selected{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .status-authenticated{color:var(--text)}
+html[data-theme] .status-paired_not_seen{color:var(--text)}
+html[data-theme] .status-legacy_unverified{color:var(--text-2)}
+html[data-theme] .status-revoked{color:var(--text-2)}
+html[data-theme] .owner-session-notice{background:var(--surface-2);color:var(--text);border-left:3px solid var(--line)}
+html[data-theme] .client-permission-head span{color:var(--text-2)}
+html[data-theme] .permission-scope-picker{background:var(--card)}
+html[data-theme] .permission-scope-picker select,html[data-theme] .permission-scope-picker input,html[data-theme] .permission-row select,html[data-theme] #pairClientDialog input,html[data-theme] #pairClientDialog select{background:var(--card)}
+html[data-theme] .permission-groups details,html[data-theme] .pending-confirmations,html[data-theme] .client-access-audit{background:var(--surface-2)}
+html[data-theme] .client-access-boundary{color:var(--text-2)}
+html[data-theme] .access-compatibility{background:var(--card)}
+html[data-theme] .owner-confirmation-action{box-shadow:none !important}
+html[data-theme] .owner-confirmation-action:focus-visible{outline:3px solid var(--line)}
+html[data-theme] .source-capability-grid span{background:var(--surface-2)}
+html[data-theme] .recovery-record-note{background:var(--surface-2);color:var(--text);border-left:3px solid var(--line)}
+html[data-theme] .protection-access-grid>div{background:var(--card)}
+html[data-theme] .protection-access-grid span{color:var(--text-2)}
+html[data-theme] .protection-access-grid strong{color:var(--text)}
+html[data-theme] .protection-access-grid small{color:var(--text-2)}
+html[data-theme] .advanced-protection>summary{color:var(--text)}
+html[data-theme] .owner-reauth>p{color:var(--text-2)}
+html[data-theme] .client-gate-status{background:var(--card)}
+html[data-theme] .client-gate-status b{color:var(--text)}
+html[data-theme] .client-gate-status small{color:var(--text-2)}
+html[data-theme] .client-gate-status.gate-locked{background:var(--surface-2);border-left:3px solid var(--line)}
+html[data-theme] .client-onboarding-main>span{color:var(--text-2)}
+html[data-theme] .client-onboarding-main p{color:var(--text-2)}
+html[data-theme] .legacy-connections{background:var(--surface-2)}
+html[data-theme] .legacy-connections>summary small{color:var(--text-2)}
+html[data-theme] .client-access-console button:disabled,html[data-theme] .client-permission-panel select:disabled{color:var(--text-2)}
+html[data-theme] .client-access-empty p,html[data-theme] .client-access-boundary{color:var(--text-2)}
+html[data-theme] .owner-reauth button[type=submit]{background:var(--accent);color:var(--on-accent);box-shadow:none}
+html[data-theme] .owner-reauth button[type=submit]:hover{background:var(--accent);color:var(--on-accent)}
+html[data-theme] .pairing-config-summary>div{background:var(--card)}
+html[data-theme] .pairing-config-summary span{color:var(--text-2)}
+html[data-theme] .pairing-config-summary code,html[data-theme] .pairing-config-summary small{color:var(--text)}
+html[data-theme] .pairing-permission-preview,html[data-theme] .pairing-secret-advanced{background:var(--surface-2)}
+html[data-theme] .pairing-permission-preview>summary,html[data-theme] .pairing-secret-advanced>summary{color:var(--text)}
+html[data-theme] .pairing-permission-preview>div>div span{color:var(--text-2)}
+html[data-theme] .pairing-permission-preview>div>div b{color:var(--text)}
+html[data-theme] .pairing-permission-preview>div>p{color:var(--text-2)}
+html[data-theme] .status-authenticated,html[data-theme] .status-read_verified{color:var(--text)}
+html[data-theme] .status-paired_not_seen,html[data-theme] .status-awaiting_configuration{color:var(--text)}
+html[data-theme] .status-configuration_failed,html[data-theme] .status-revoked{color:var(--text-2)}
+html[data-theme] .connection-step{background:var(--card)}
+html[data-theme] .connection-step i{color:var(--text-2);border:1px solid var(--line)}
+html[data-theme] .connection-step.done i{background:var(--surface-2);color:var(--text);border-color:var(--line)}
+html[data-theme] .pairing-advanced,html[data-theme] #genericReadChoices{background:var(--surface-2)}
+html[data-theme] #genericReadChoices legend{color:var(--text)}
+html[data-theme] #genericReadChoices>p{color:var(--text-2)}
+html[data-theme] #genericReadChoices label small,html[data-theme] #pairClientDialog label small{color:var(--text-2)}
+html[data-theme] .knowledge-object-toolbar{background:var(--card)}
+html[data-theme] .knowledge-object-metrics>div{background:var(--card)}
+html[data-theme] .knowledge-object-metrics .protected strong{color:var(--text)}
+html[data-theme] .knowledge-object-metrics .pending strong{color:var(--text)}
+html[data-theme] .knowledge-object-filters button.active{background:var(--surface-2)}
+html[data-theme] .knowledge-object-select span{background:var(--card)}
+html[data-theme] .knowledge-object-select input:checked+span{background:var(--accent);color:var(--on-accent);border-color:var(--line);box-shadow:0 10px 30px -18px rgba(110,85,60,.25)}
+html[data-theme] .knowledge-policy{color:var(--text)}
+html[data-theme] .knowledge-policy.protected{background:var(--surface-2);color:var(--text);border-color:var(--line)}
+html[data-theme] .knowledge-policy.pending{background:var(--surface-2);color:var(--text);border-color:var(--line)}
+html[data-theme] .knowledge-locked-row{background:var(--surface-2);border:1px dashed var(--line)}
+html[data-theme] .knowledge-object-dialog label{color:var(--text)}
+html[data-theme] .knowledge-object-dialog input,html[data-theme] .knowledge-object-dialog select{background:var(--card)}
+html[data-theme] .knowledge-import-intro{background:var(--surface-2);border-left:3px solid var(--line)}
+html[data-theme] .knowledge-import-intro.safe{background:var(--surface-2);border-color:var(--line)}
+html[data-theme] .knowledge-preview-summary>div{background:var(--card)}
+html[data-theme] .knowledge-preview-list .has-conflict{background:var(--surface-2)}
+html[data-theme] .knowledge-job-progress{background:var(--card)}
+html[data-theme] .knowledge-job-progress>span{background:var(--surface-2)}
+html[data-theme] .knowledge-source-safety.complete{color:var(--text)}
+html[data-theme] .archive-intro{background:var(--card)}
+html[data-theme] .page[aria-busy="true"]:after{background:var(--card)}
+html[data-theme] .skeleton-line{background:var(--surface-2)}
+html[data-theme] .archive-list-controls,html[data-theme] .archive-list-pages{background:var(--card)}
+html[data-theme] .archive-list-controls select{background:var(--card)}
+html[data-theme] .memory-project-list [data-raw-session]:focus-visible{outline:2px solid var(--line)}
+html[data-theme] .initialization-welcome{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .initialization-welcome em{background:var(--surface-2)}
+html[data-theme] .knowledge-result{border-bottom:1px solid var(--line)}
+html[data-theme] .knowledge-result p,html[data-theme] .knowledge-source-safety{color:var(--text)}
+html[data-theme] .knowledge-object-main[role=button]:focus-visible{outline:2px solid var(--line)}
+html[data-theme] .branded-connect{background:var(--card)}
+html[data-theme] .branded-connect-overlay{background:var(--card);border:1px solid var(--line);box-shadow:0 10px 30px -18px rgba(110,85,60,.25)}
+html[data-theme] .branded-connect-overlay p{color:var(--text-2)}
+html[data-theme] .branded-connect-overlay label{color:var(--text)}
+html[data-theme] .branded-connect-overlay select{background:var(--card)}
+html[data-theme] .pair-flow-form .dialog-head small{color:var(--text)}
+html[data-theme] .pair-flow-form>.dialog-actions{background:var(--card)}
+html[data-theme] .pair-flow-form>.dialog-actions .primary{background:var(--accent);color:var(--on-accent);border-color:var(--line)}
+html[data-theme] .archive-list-controls input{background:var(--card)}
+html[data-theme] .archive-list-controls label{color:var(--text-2)}
+html[data-theme] .archive-list-controls .archive-result-count{color:var(--text-2)}
+html[data-theme] .archive-list-controls select:focus-visible,html[data-theme] .archive-list-controls input:focus-visible{outline:2px solid var(--line)}
+html[data-theme] .archive-collector-overview{background:var(--surface-2)}
+html[data-theme] .archive-collector-overview>p{color:var(--text-2)}
+html[data-theme] .archive-collector-overview summary{color:var(--text)}
+html[data-theme] .archive-collector-overview details p{color:var(--text-2)}
+html[data-theme] .archive-collector-overview summary:focus-visible{outline:2px solid var(--line)}
+html[data-theme] .hermes-archive-actions button:focus-visible{outline:2px solid var(--line)}
+html[data-theme] .async-state.error{background:var(--surface-2);border:1px dashed var(--line)}
+html[data-theme] .home-start-actions button,html[data-theme] .home-start [data-home-workspace]{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .home-start-actions button:hover,html[data-theme] .home-start-actions button:focus-visible{background:var(--card);border-color:var(--line)}
+html[data-theme] .home-diagnostics summary{color:var(--text)}
+html[data-theme] .candidate-source-roles{background:var(--surface-2)}
+html[data-theme] .home-quick-start .home-start-actions button:hover,html[data-theme] .home-quick-start .home-start-actions button:focus-visible,html[data-theme] .home-quick-start [data-home-workspace]:hover{background:var(--surface-2)}
+html[data-theme] .pending-list .suggestion-tabs button[aria-pressed="true"]{background:var(--surface-2)}
+html[data-theme] .suggestion-toolbar select{background:var(--card)}
+html[data-theme] .suggestion-card{background:var(--surface-2)}
+html[data-theme] .suggestion-card>p{color:var(--text)}
+html[data-theme] .candidate-save-state{background:var(--surface-2)}
+html[data-theme] .candidate-review-panel .suggestion-full-content{background:var(--surface-2)}
+html[data-theme] .suggestion-recovery-notice{background:var(--surface-2)}
+html[data-theme] .pending-list .suggestion-recovery-actions button.primary{color:var(--text)}
+html[data-theme] #reorganizationInstruction{background:var(--card)}
+html[data-theme] #reorganizationDialog{background:var(--card)}
+html[data-theme] #reorganizationDialog>.primary{color:var(--text)}
+html[data-theme] .home-onboarding>summary,html[data-theme] .search-advanced>summary{color:var(--text)}
+html[data-theme] .starting-paths p{color:var(--text-2)}
+html[data-theme] .search-advanced>div{background:var(--card);border:1px solid var(--line)}
+html[data-theme] .import-content-note,html[data-theme] .pair-acquisition-note{color:var(--text-2)}
+html[data-theme] .archive-collector-row small{color:var(--text-2)}
+html[data-theme] .connection-check-guide pre{background:var(--surface-2)}
+html[data-theme] #wikiHub .wiki-welcome{background:var(--card)}
+html[data-theme] #wikiHub .primary{color:var(--text)}
+html[data-theme] .wiki-steps .complete>span{background:var(--card)}
+html[data-theme] #wikiHub .wiki-group-card{background:var(--card)}
+html[data-theme] .wiki-recovery{background:var(--card)}
+html[data-theme] #wikiHub .wiki-welcome>p,html[data-theme] #wikiHub .wiki-steps small,html[data-theme] #wikiHub .wiki-footnote{color:var(--text-2)}
+html[data-theme] .wiki-group-card small,html[data-theme] .wiki-group-card>span,html[data-theme] .wiki-statusbar,html[data-theme] .wiki-collection-heading>span{color:var(--text-2)}
+html[data-theme] #wikiHub .wiki-text-button{color:var(--text-2)}
+html[data-theme] .wiki-entity-summary{background:var(--surface-2)}
+html[data-theme] .wiki-citation{border-left:2px solid var(--line)}
+html[data-theme] .wiki-evidence-quote{background:var(--surface-2)}
+html[data-theme] .wiki-evidence-context div{border-left:2px solid var(--line)}
+html[data-theme] .source-paragraph:focus{outline:1px solid var(--line)}
+html[data-theme] .archive-progress-overview{background:var(--card)}
+html[data-theme] .archive-progress-card{background:var(--surface-2)}
+html[data-theme] .archive-progress-card label{color:var(--text)}
+html[data-theme] .archive-progress-counts b{color:var(--text)}
+html[data-theme] .hermes-history-confirm{box-shadow:0 10px 30px -18px rgba(110,85,60,.25)}
+html[data-theme] .hermes-history-confirm::backdrop{background:var(--card)}
+html[data-theme] .update-summary-guide{background:var(--card)}
+html[data-theme] .update-summary-check{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+html[data-theme] .update-summary-list{color:var(--text)}
+html[data-theme] .update-summary-facts p{background:var(--surface-2);color:var(--text);border-left:3px solid var(--line)}
+html[data-theme] .update-summary-prompt{border-top:1px solid var(--line)}
+html[data-theme] .update-summary-prompt p{color:var(--text-2)}
+html[data-theme] .update-summary-details{color:var(--text-2)}
+html[data-theme] .update-summary-card #updateNoticeSaveState{color:var(--text-2)}
+html[data-theme] .update-notice-settings{background:var(--surface-2)}
+html[data-theme] .wiki-guide-prompt-preview pre{background:var(--card)}
+html[data-theme] .quick-connect-card{background:var(--card)}
+html[data-theme] .quick-connect-feedback{color:var(--text)}
+html[data-theme] .manual-pairing-entry{background:var(--surface-2)}
+html[data-theme] .manual-pairing-entry>summary{color:var(--text)}
+html[data-theme] .organize-simple-steps{background:var(--surface-2)}
+html[data-theme] .candidate-source-panel{background:var(--surface-2)}
+html[data-theme] .local-chat-details summary{color:var(--text)}
+html[data-theme] .local-chat-details summary:focus-visible{outline:2px solid var(--line)}
+html[data-theme] .local-chat-issue{color:var(--text-2)}
+html[data-theme] dialog{box-shadow:0 10px 30px -18px rgba(110,85,60,.25)}
+html[data-theme] #butler #butlerDeleteCommit{background:var(--card);color:var(--text);border-color:var(--line)}
+html[data-theme] #butler #butlerDeleteCommit:hover:not(:disabled){background:var(--card)}
+html[data-theme] .mobile-nav-open>.workspace-navigation-shade{background:var(--card)}
+html[data-theme] #butler #butlerDeleteConfirm #butlerDeleteCommit{color:var(--text-2)}
+html[data-theme] #butler #butlerDeleteConfirm #butlerDeleteCommit:hover:not(:disabled){color:var(--text)}
+html[data-theme] #butler .butler-drawer-backdrop{background:var(--card)}

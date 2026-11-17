@@ -1,0 +1,74 @@
+/* 界渡 · 故障排查页（第 41 轮）——总览栏 / 状态卡片网格 / 联动详情 */
+#troubleshooting .diag{--g-ok:var(--st-ok);--g-warn:var(--st-warn);--g-down:var(--st-down);--g-idle:var(--st-idle);display:grid;gap:16px;max-width:1180px;margin:0 auto}
+#troubleshooting .diag [data-tone="ok"]{--t:var(--g-ok)}
+#troubleshooting .diag [data-tone="warn"]{--t:var(--g-warn)}
+#troubleshooting .diag [data-tone="down"]{--t:var(--g-down)}
+#troubleshooting .diag [data-tone="idle"],#troubleshooting .diag [data-tone="off"]{--t:var(--g-idle)}
+
+/* 顶部总览栏 */
+#troubleshooting .diag-bar{display:flex;align-items:center;gap:14px;padding:18px 22px;border-radius:20px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow)}
+#troubleshooting .diag-bar .db-dot{width:12px;height:12px;border-radius:50%;flex:none;background:var(--t,var(--g-idle));box-shadow:0 0 0 5px color-mix(in srgb,var(--t,var(--g-idle)) 16%,transparent)}
+#troubleshooting .diag-bar .db-text{display:grid;gap:3px;min-width:0;flex:1}
+#troubleshooting .diag-bar b{font-size:17px;font-weight:650;color:var(--text)}
+#troubleshooting .diag-bar small{font-size:12.5px;color:var(--muted)}
+#troubleshooting .diag-bar .db-side{display:flex;align-items:center;gap:14px;flex:none}
+#troubleshooting .diag-bar .db-side small{font-variant-numeric:tabular-nums}
+#troubleshooting .diag-bar .db-side button{height:36px;padding:0 18px;border-radius:12px}
+/* 骨架：颜色与呼吸来自全站 .jd-skel / .jd-bar，这里只定尺寸 */
+#troubleshooting .db-bar{width:180px;height:14px}
+#troubleshooting .db-bar.short{width:320px;height:10px;margin-top:4px}
+
+/* 筛选 */
+#troubleshooting .diag-filters{display:flex;gap:8px;flex-wrap:wrap;min-height:32px}
+#troubleshooting .diag-chip{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .18s,color .18s,border-color .18s}
+#troubleshooting .diag-chip span{min-width:18px;padding:0 6px;border-radius:999px;font-size:11.5px;line-height:18px;text-align:center;background:color-mix(in srgb,var(--text) 7%,transparent);font-variant-numeric:tabular-nums}
+#troubleshooting .diag-chip:hover{color:var(--text)}
+#troubleshooting .diag-chip[aria-pressed="true"]{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 9%,transparent)}
+#troubleshooting .diag-chip[aria-pressed="true"] span{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+
+/* 卡片网格 + 详情 */
+#troubleshooting .diag-body{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+#troubleshooting .diag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+#troubleshooting .diag-card{position:relative;display:grid;align-content:start;gap:8px;min-height:92px;padding:14px 16px 14px 18px;border-radius:16px;border:1px solid var(--line);background:var(--card);box-shadow:none;color:var(--text);font:inherit;text-align:left;cursor:pointer;overflow:hidden;transition:border-color .18s,box-shadow .18s,transform .18s}
+#troubleshooting .diag-card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--t,var(--g-idle));opacity:.85}
+#troubleshooting .diag-card[data-tone="idle"]::before,#troubleshooting .diag-card[data-tone="off"]::before{opacity:.35}
+#troubleshooting .diag-card:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--t,var(--accent)) 40%,var(--line))}
+#troubleshooting .diag-card[aria-pressed="true"]{border-color:color-mix(in srgb,var(--t,var(--accent)) 60%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--t,var(--accent)) 14%,transparent)}
+#troubleshooting .diag-card.is-service{grid-column:1/-1;min-height:76px;background:linear-gradient(120deg,color-mix(in srgb,var(--t,var(--g-ok)) 7%,var(--card)),var(--card) 55%)}
+#troubleshooting .diag-card[hidden]{display:none}
+#troubleshooting .diag-card .dc-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#troubleshooting .diag-card b{font-size:15px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#troubleshooting .diag-card small{font-size:12px;color:var(--muted);line-height:1.5}
+#troubleshooting .dc-pill{flex:none;display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:999px;font-style:normal;font-size:11.5px;font-weight:600;color:var(--t,var(--muted));background:color-mix(in srgb,var(--t,var(--g-idle)) 12%,transparent)}
+#troubleshooting .dc-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+#troubleshooting [data-tone="idle"] .dc-pill,#troubleshooting [data-tone="off"] .dc-pill{color:var(--muted)}
+#troubleshooting .diag-empty{margin:18px 4px;color:var(--muted);font-size:13px}
+
+#troubleshooting .diag-detail{position:sticky;top:96px;min-height:320px;padding:20px 22px;border-radius:20px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow)}
+#troubleshooting .dd-head{display:flex;align-items:center;gap:12px;padding-bottom:14px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+#troubleshooting .dd-head>div{flex:1;min-width:0}
+#troubleshooting .dd-head small{font-size:11.5px;color:var(--muted)}
+#troubleshooting .dd-head h3{margin:2px 0 0;font-size:18px;font-weight:700}
+#troubleshooting .dd-dot{width:10px;height:10px;border-radius:50%;background:var(--t,var(--g-idle));box-shadow:0 0 0 4px color-mix(in srgb,var(--t,var(--g-idle)) 16%,transparent)}
+#troubleshooting .dd-rows{display:grid;margin:0}
+#troubleshooting .dd-rows>div{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px dashed color-mix(in srgb,var(--line) 80%,transparent)}
+#troubleshooting .dd-rows>div:last-child{border-bottom:0}
+#troubleshooting .dd-rows dt{font-size:12.5px;color:var(--muted)}
+#troubleshooting .dd-rows dd{margin:0;font-size:13px;line-height:1.55;color:var(--text);word-break:break-all}
+#troubleshooting .dd-rows code{font-size:12px;padding:1px 6px;border-radius:6px;background:color-mix(in srgb,var(--text) 6%,transparent)}
+#troubleshooting .dd-note{margin:10px 0 0;font-size:12px;color:var(--muted)}
+#troubleshooting .dd-actions{display:flex;justify-content:flex-end;margin-top:14px}
+#troubleshooting .dd-actions button{height:36px;padding:0 18px;border-radius:12px}
+#troubleshooting .dd-skel{display:grid;gap:14px}
+#troubleshooting .dd-skel i,#troubleshooting .diag-card.is-skel i{height:12px}
+#troubleshooting .dd-skel i:first-child{width:46%;height:18px;margin-bottom:6px}
+#troubleshooting .dd-skel i:nth-child(odd){width:82%}
+#troubleshooting .diag-card.is-skel{cursor:default}
+#troubleshooting .diag-card.is-skel::before{display:none}
+#troubleshooting .diag-card.is-skel i:first-child{width:52%;height:14px}
+#troubleshooting .diag-card.is-skel i:last-child{width:78%;height:10px;animation-delay:.15s}
+#troubleshooting .diag-card.is-skel:first-child{grid-column:1/-1;min-height:76px}
+#troubleshooting .diag-detail:not(.is-loading) .dd-skel{display:none}
+
+@media (max-width:1100px){#troubleshooting .diag-body{grid-template-columns:1fr}#troubleshooting .diag-detail{position:static}}
+@media (max-width:640px){#troubleshooting .diag-bar{flex-wrap:wrap}#troubleshooting .diag-bar .db-side{width:100%;justify-content:space-between}}
