@@ -523,8 +523,8 @@
     },
     {
       "path": "knowledge_bridge/core_bootstrap.py",
-      "bytes": 3191,
-      "sha256": "438da10fb5cc8b3671be0ab5aa42aa5552d49d9b970d1fc8b9b44f2a2f01ec4f"
+      "bytes": 5794,
+      "sha256": "36d18189a0294e9860e71a38db73f1b4f8159ad7b775c7861f94f5fd68e508ae"
     },
     {
       "path": "knowledge_bridge/cursor_source_adapter.py",
@@ -733,8 +733,8 @@
     },
     {
       "path": "knowledge_bridge/memory_control.py",
-      "bytes": 24089,
-      "sha256": "48787a7f0267669d32061ebda8e2f7de29195125f62a5aa774f4da94ba514158"
+      "bytes": 23564,
+      "sha256": "38487f581595a544bb90c110d57b8137370a4829dd3e1a17d96d7819cd1425be"
     },
     {
       "path": "knowledge_bridge/memory_pipeline.py",
@@ -943,8 +943,8 @@
     },
     {
       "path": "knowledge_bridge/web.py",
-      "bytes": 195305,
-      "sha256": "c8ea325ac46d7fefbf3fdfff76a1252ede469cfdaeea0c58e4a4673defa2bbc2"
+      "bytes": 194768,
+      "sha256": "cf21da5a29e10cb10240af9f8338cff187dd20393a5e2b8a425c69bf38b8bb4e"
     },
     {
       "path": "knowledge_bridge/wiki_daily_runs.py",
@@ -1023,8 +1023,8 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 13558,
-      "sha256": "b283af5a8f7872e197cbd46b2ff60d297bae5b45c7bd716a2b32ca351239ff5a"
+      "bytes": 13583,
+      "sha256": "72ed3ecb88914c3ae18de45d28dce2b3be34636b04a9d16362c17b545aeaf137"
     },
     {
       "path": "pyproject.toml",
@@ -1112,6 +1112,11 @@
       "sha256": "5c0e83409e6d6c410d4acf6644131c99bff178abee72f1b1bb94891621098718"
     },
     {
+      "path": "static/brand/favicon.svg",
+      "bytes": 755,
+      "sha256": "8fdc0431eb40f6cefcbf1b7591e2ebab1c5d9ac999d41c08f9a0e20cd187dbe1"
+    },
+    {
       "path": "static/brand/jiedu-256.png",
       "bytes": 78398,
       "sha256": "b555b18fb8f377f23053875737c66b0a972502b9330a45d8a51d118021a9c2a4"
@@ -1183,8 +1188,8 @@
     },
     {
       "path": "static/index.html",
-      "bytes": 56065,
-      "sha256": "033252c50fcf00d5203562e104f8b85cf4b1278580132de80f99f4b537f62cb3"
+      "bytes": 56066,
+      "sha256": "a1ed9cded5934c2ef5fa812b58091cb64b3e1dbcf4185ea17de262ead9d37a3a"
     },
     {
       "path": "static/knowledge-studio.css",
@@ -1693,8 +1698,8 @@
     },
     {
       "path": "tests/test_core_bootstrap.py",
-      "bytes": 2218,
-      "sha256": "7632c3600d6dcc66de108b7282c26e16aad9de569aa1b62f0c6f3efb9dc5e26e"
+      "bytes": 4944,
+      "sha256": "b9e64c21a417bb4a85e470ac1ad1f78b415ac65595c1450bd73e54e46b702fed"
     },
     {
       "path": "tests/test_cursor_local_collector.py",

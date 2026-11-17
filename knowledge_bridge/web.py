@@ -25,7 +25,7 @@ from .bridge_settings import load_settings,save_settings,reminder_state
 from .session_manager import session_start,session_append,session_status,session_end,refresh_memory_context,list_sessions
 from .session_archive import list_archives,materialize,list_archive_summaries,materialize_page
 from .hermes_session_adapter import status as hermes_adapter_status
-from .core_bootstrap import current as current_core,versions as core_versions,rollback as rollback_core
+from .core_bootstrap import current as current_core,read_status as core_status,versions as core_versions,rollback as rollback_core
 from .provider_config import status as provider_status,save as save_provider,save_ai_chat as save_ai_chat_provider
 from .production_writer import preview as production_preview,apply as production_apply,undo as production_undo
 from .live_acceptance import load as live_acceptance
@@ -2436,13 +2436,7 @@ def api_writer_undo(version:str,request:OwnerConfirmRequest,mode:str="acceptance
 def api_memory_bootstrap(): return bootstrap_documents()
 @app.get("/api/memory/core-bootstrap")
 def api_core_bootstrap():
-    """会话刷新页读取正式 Core。尚未勾选核心背景文件、来源文件缺失或知识库刚切换时，
-    compile_core 会抛 ValueError；这是「还没准备好」的正常状态，不应变成 500。"""
-    try:return current_core()|{"ready":True}
-    except (ValueError,OSError) as e:
-        message=str(e) or "核心背景暂时无法读取"
-        return {"ready":False,"status":"尚未配置核心背景" if "尚未配置" in message else "核心背景暂不可用",
-                "message":message,"version":None,"content":"","characters":0,"source_files":[]}
+    return core_status()[0]
 @app.get("/api/memory/core-bootstrap/versions")
 def api_core_bootstrap_versions():return [{k:v for k,v in x.items() if k!="content"} for x in core_versions()]
 @app.post("/api/memory/core-bootstrap/rollback/{version}")

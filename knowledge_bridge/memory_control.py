@@ -120,11 +120,12 @@ def _file_info(path:Path):
 
 
 def bootstrap_documents():
-    from .core_bootstrap import current
-    try:
-        core=current();formal={"status":core["status"],"characters":core["characters"],"estimated_tokens":core["estimated_tokens"],"updated_at":core["compiled_at"],"source":"、".join(x["path"] for x in core["source_files"]),"content":core["content"],"version":core["version"]}
-    except ValueError:
-        formal={"status":"未初始化","characters":0,"estimated_tokens":0,"updated_at":None,"source":"尚未配置核心背景文件","content":"","version":None}
+    from .core_bootstrap import read_status
+    core,_=read_status()
+    formal={"status":core["status"] if core["ready"] else "未初始化",
+            "characters":core["characters"],"estimated_tokens":core["estimated_tokens"],
+            "updated_at":core["compiled_at"],"source":"、".join(x["path"] for x in core["source_files"]) or core["message"],
+            "content":core["content"],"version":core["version"]}
     return {"stable_core":formal,"live_context":{"status":"不属于Core","characters":0,"estimated_tokens":0,"updated_at":None,"source":"项目状态按需读取","content":""},"bootstrap":formal}
 
 
@@ -224,11 +225,6 @@ def memory_status():
       "interfaces":interfaces,"pending_memory":{"count":len(list_candidates("pending")),"status":"自动记忆写入尚未启用"},"attachments":build_attachment_manifest()}
 
 
-def _markdown_section(text:str, heading:str):
-    match=re.search(rf"(?ms)^##+\s+{re.escape(heading)}\s*$\n(.*?)(?=^##+\s+|\Z)",text)
-    return match.group(1).strip() if match else ""
-
-
 def _meaningful_lines(text:str,limit:int=12):
     lines=[]
     for raw in text.splitlines():
@@ -241,19 +237,20 @@ def _meaningful_lines(text:str,limit:int=12):
 
 def memory_awareness():
     """Return only facts that already exist in the current memory sources."""
-    docs=bootstrap_documents()
-    from .core_bootstrap import current
-    core=current();source_docs={Path(x["path"]).stem:(VAULT/x["path"]).read_text("utf-8") for x in core["source_files"]}
-
-    def first_section(document:str,names:tuple[str,...],limit:int):
-        for name in names:
-            section=_markdown_section(document,name)
-            if section: return _meaningful_lines(section,limit)
-        return []
-
-    known={"user_profile":_meaningful_lines(source_docs["我的长期画像"],60),"collaboration_rules":_meaningful_lines(source_docs["AI协作规则"],80),"ai_lessons":_meaningful_lines(source_docs["AI错误与教训"],100),"knowledge_principles":_meaningful_lines(source_docs["知识库规则"],80),"sources":{"user_profile":"00_系统/我的长期画像.md","collaboration_rules":"00_系统/AI协作规则.md","ai_lessons":"00_系统/AI错误与教训.md","knowledge_principles":"00_系统/知识库规则.md","bootstrap":docs["bootstrap"]["source"]}}
+    from .core_bootstrap import read_status
+    core,source_docs=read_status()
+    fields={"user_profile":("我的长期画像",60),"collaboration_rules":("AI协作规则",80),
+            "ai_lessons":("AI错误与教训",100),"knowledge_principles":("知识库规则",80)}
+    bootstrap_source="、".join(source_docs)
+    known={"sources":{"bootstrap":bootstrap_source}}
+    for key,(stem,limit) in fields.items():
+        path=next((name for name in source_docs if Path(name).stem==stem),None)
+        known[key]=_meaningful_lines(source_docs[path],limit) if path else []
+        known["sources"][key]=path
 
     gaps=[]
+    if not core["ready"]:
+        gaps.append({"type":core["status"],"detail":core["message"],"count":0})
     project_rows=projects();pending=[p for p in project_rows if p["status"]=="待确认"]
     if pending: gaps.append({"type":"待确认状态","detail":"、".join(p["project"] for p in pending),"count":len(pending)})
     project_dirs=[p for p in PROJECT_ROOT.iterdir() if p.is_dir()] if PROJECT_ROOT.exists() else []
@@ -267,7 +264,9 @@ def memory_awareness():
     if ref_count:
         gaps.append({"type":"图片引用尚无视觉理解","detail":f"原始聊天记录了 {ref_count} 个图片引用；附件目录现有 {attachment_count} 个文件，当前系统未执行图片视觉理解。","count":ref_count})
     gaps.append({"type":"自动记忆写入尚未开放","detail":"新记忆不会自动写回知识财富，仍需人工确认流程。","count":0})
-    return {"known":known,"unknown":gaps,"bootstrap":{"status":docs["bootstrap"]["status"],"characters":docs["bootstrap"]["characters"],"source":docs["bootstrap"]["source"],"has_content":bool(core["content"].strip())}}
+    bootstrap={key:core[key] for key in ("ready","reason","message","status","characters")}
+    bootstrap.update(source=bootstrap_source,has_content=bool(core["content"]))
+    return {"known":known,"unknown":gaps,"bootstrap":bootstrap}
 
 
 def _timed_call(calls,name,fn):

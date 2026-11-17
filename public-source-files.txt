@@ -220,6 +220,7 @@ static/app.js
 static/archives-studio.css
 static/boot-pulse.css
 static/boot-pulse.js
+static/brand/favicon.svg
 static/brand/jiedu-256.png
 static/brand/jiedu-32.png
 static/brand/jiedu-mark.png
