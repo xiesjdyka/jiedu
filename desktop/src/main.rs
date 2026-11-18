@@ -31,7 +31,7 @@ fn version_report(product: Option<&str>, error: Option<&str>) -> serde_json::Val
         "native_build_version":NATIVE_BUILD_VERSION,"package_version":env!("CARGO_PKG_VERSION"),
         "windows_file_version":env!("JIEDU_WINDOWS_FILE_VERSION"),"about_message":about_message(product),
         "tray_tooltip":tray_tooltip(product,"后台服务已连接 · 单击打开"),"version_source":"program metadata validated by knowledge_bridge.release_version; native version compiled from VERSION",
-        "brand":"v1-door","window_icon_size":[32,32],"tray_icon_size":[16,16],"app_user_model_id":APP_USER_MODEL_ID,
+        "brand":"favicon","window_icon_size":[32,32],"tray_icon_size":[16,16],"app_user_model_id":APP_USER_MODEL_ID,
         "cooperative_update_stop_format":"jiedu-update-stop-v1"});
     if let Some(error)=error {result["version_error"]=serde_json::Value::String(error.into());}
     result
@@ -97,7 +97,7 @@ fn show_main(app:&tauri::AppHandle) {
             let program=app.state::<Mutex<PathBuf>>().lock().unwrap().clone();
             let _=w.navigate(format!("http://127.0.0.1:{}/",port(&program)).parse().unwrap());
         }
-        let _=w.show();let _=w.unminimize();let _=w.set_focus();
+        let _=w.show();let _=w.unminimize();let _=w.maximize();let _=w.set_focus();
     }
 }
 fn main(){
@@ -160,10 +160,36 @@ fn main(){
         app.manage(Mutex::new(version));
         app.manage(Acceptance::default());
         let is_test=acceptance.is_some();
+        let console_origin=format!("http://127.0.0.1:{}",port(&program));
+        app.add_capability(serde_json::json!({
+            "identifier": "console-window-theme",
+            "local": false,
+            "remote": {"urls": [format!("{console_origin}/*")]},
+            "webviews": ["main"],
+            "permissions": ["core:window:allow-set-theme"]
+        }).to_string().as_str())?;
+        let theme_script=format!(r#"
+            if (location.origin === {}) {{
+                addEventListener('DOMContentLoaded', () => {{
+                    const root = document.documentElement;
+                    let current;
+                    function syncTitleBar() {{
+                        const theme = root.dataset.theme === 'dark' ? 'dark' : 'light';
+                        if (current === theme) return;
+                        current = theme;
+                        window.__TAURI_INTERNALS__.invoke('plugin:window|set_theme', {{label: 'main', value: theme}})
+                            .catch(() => {{ if (current === theme) current = undefined }});
+                    }}
+                    new MutationObserver(syncTitleBar).observe(root, {{attributes: true, attributeFilter: ['data-theme']}});
+                    syncTitleBar();
+                }}, {{once: true}});
+            }}
+        "#,serde_json::to_string(&console_origin)?);
         let window=WebviewWindowBuilder::new(app,"main",WebviewUrl::App("index.html".into()))
             .title("界渡 · 私人知识工作区").inner_size(1320.,880.).min_inner_size(960.,640.)
-            .theme(Some(tauri::Theme::Dark)).background_color(tauri::window::Color(17,27,32,255))
+            .maximized(true).theme(Some(tauri::Theme::Dark)).background_color(tauri::window::Color(17,27,32,255))
             .visible(!background).focused(!background)
+            .initialization_script(theme_script)
             .initialization_script(if is_test { "document.addEventListener('DOMContentLoaded',()=>{if(location.hostname==='127.0.0.1' && document.querySelector('#brandSequence')) document.title='JIEDU_ACCEPTANCE_LOADED';});" } else { "" })
             .on_document_title_changed(move|w,title|{
                 if is_test && title=="JIEDU_ACCEPTANCE_LOADED" {w.app_handle().state::<Acceptance>().loaded.store(true,Ordering::SeqCst);}

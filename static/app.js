@@ -30,9 +30,12 @@ function attachmentReferenceLines(item){
   if(stats.unavailable_references)lines.push(`未取得原件的引用涉及 ${stats.unique_unavailable_sources} 个不同路径或链接`);
   return lines.length?lines:['没有文件引用'];
 }
-function attachmentReferenceSummary(item){return attachmentReferenceLines(item).join(' · ')}
-function attachmentReferenceMarkup(item){const lines=attachmentReferenceLines(item).filter(line=>!/[：:]\s*0\s*(次|个)\s*$/.test(line));return lines.length?`<span class="archive-file-summary">${lines.map(line=>`<span>${esc(line)}</span>`).join('')}</span>`:''}
-function archiveStatusTag(item){const full=archiveCompletenessLabel(item)||'状态待核对',warn=/待核对|缺失|尚未取得|失败|异常/.test(full)&&!/历史是否齐全/.test(full);return `<span class="archive-session-status ${warn?'warn':''}" title="${esc(full)}">${warn?'需核对':''}</span>`}
+function archiveFileSummary(item){
+  const stats=item.attachment_references;
+  const count=Number(stats?.reference_count??item.attachment_count??0).toLocaleString('zh-CN');
+  const unavailable=Number(stats?.unavailable_references??item.missing_attachment_count??0).toLocaleString('zh-CN');
+  return `<span class="archive-file-summary" title="${esc(attachmentReferenceLines(item).join(' · '))}">文件引用 ${count} 次 · 未取得原件 ${unavailable} 次</span>`;
+}
 function missingReferenceLabel(row){const ref=String(row.source_reference||row.reference||'');return ref.startsWith('delivery:')?'交付文件 · 尚未从记录的位置取得原件':ref.startsWith('...')||ref.startsWith('…')?'正文引用 · 定位器不完整':'文件引用 · 原件未定位，需核对来源'}
 function loadPrefs(){try{return {...defaultPrefs,...JSON.parse(localStorage.getItem(PREF_KEY)||'{}')}}catch{return {...defaultPrefs}}}
 function savePrefs(){localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}
@@ -731,7 +734,7 @@ async function loadRawSessions(){
   try{
     const data=await api('/api/session-archives?'+params.toString(),{ttl:0,force:true});if(sequence!==archiveListSequence||activePage!=='archives')return;
     const rows=data.items||[],controls=`<div class="archive-list-controls"><label class="archive-query-field"><span>搜索对话</span><input id="archiveQuery" type="search" value="${esc(archiveListState.query)}" placeholder="搜索标题或会话编号"></label><label class="archive-filter-field"><span>来源</span><select id="archiveClientFilter"><option value="all">全部来源</option><option value="codex">Codex</option><option value="chatgpt">ChatGPT Web</option><option value="hermes">Hermes</option><option value="dsh">DSH</option><option value="claude">Claude</option><option value="cursor">Cursor</option><option value="workbuddy">WorkBuddy</option><option value="opencode">OpenCode</option><option value="zcode">ZCode</option>${hiddenClientTypes.has('kimi')?'':'<option value="kimi">Kimi Work</option>'}</select></label><label class="archive-filter-field"><span>状态</span><select id="archiveStatusFilter"><option value="all">全部状态</option><option value="complete">已归档</option><option value="attention">需要关注</option></select></label><span class="archive-result-count">${data.total||0} 个会话</span></div>`;
-    const items=rows.map(x=>`<button type="button" data-raw-session="${esc(x.session_id)}" title="打开 ${esc(archiveDisplayName(x))}" aria-label="打开会话 ${esc(archiveDisplayName(x))}"><b>${esc(archiveTitleOnly(x))}</b><small>${esc(x.client==='codex'?'Codex':x.client==='chatgpt'?'ChatGPT Web':x.client==='hermes'?'Hermes':x.client==='dsh'?'DSH':x.client||'未知来源')} · ${esc(formatTime(x.updated_at||x.started_at))}</small><span class="archive-message-count">${Number(x.message_count||0).toLocaleString('zh-CN')} 条</span>${attachmentReferenceMarkup(x)}${archiveStatusTag(x)}</button>`).join('')||'<div class="memory-test-empty"><span>没有找到会话</span><p>换个关键词或来源试试</p></div>';
+    const items=rows.map(x=>`<button type="button" data-raw-session="${esc(x.session_id)}" title="打开 ${esc(archiveDisplayName(x))}" aria-label="打开会话 ${esc(archiveDisplayName(x))}"><b>${esc(archiveTitleOnly(x))}</b><small>${esc(x.client==='codex'?'Codex':x.client==='chatgpt'?'ChatGPT Web':x.client==='hermes'?'Hermes':x.client==='dsh'?'DSH':x.client||'未知来源')} · ${esc(formatTime(x.updated_at||x.started_at))}</small><span class="archive-message-count">${Number(x.message_count||0).toLocaleString('zh-CN')} 条</span></button>`).join('')||'<div class="memory-test-empty"><span>没有找到会话</span><p>换个关键词或来源试试</p></div>';
     const start=data.total?archiveListState.offset+1:0,pages=`<div class="archive-list-pages"><button id="archivePrev" type="button" class="copy-button" ${archiveListState.offset===0?'disabled':''}>上一页</button><span>${start}–${Math.min(archiveListState.offset+archiveListState.limit,data.total||0)} / ${data.total||0}</span><button id="archiveNext" type="button" class="copy-button" ${data.has_more?'':'disabled'}>下一页</button></div>`;
     const priorScroll=host.querySelector('.archive-session-items')?.scrollTop||0,priorFocus=host.contains(document.activeElement)?document.activeElement.id:'',priorSelection=priorFocus==='archiveQuery'?[document.activeElement.selectionStart,document.activeElement.selectionEnd]:null;
     host.innerHTML=controls+'<div class="archive-session-items">'+items+'</div>'+pages;$('#archiveClientFilter').value=archiveListState.client;$('#archiveStatusFilter').value=archiveListState.status;host.querySelector('.archive-session-items').scrollTop=priorScroll;if(priorFocus){const focus=document.getElementById(priorFocus);focus?.focus({preventScroll:true});if(priorSelection&&focus?.type==='search'){try{focus.setSelectionRange(...priorSelection)}catch{}}}
@@ -766,7 +769,7 @@ async function loadHermesArchiveStatus(){
   }catch(error){if(isRequestCancelled(error))return;if(isRequestCancelled(error))return;box.innerHTML=errorState('Hermes 归档状态暂时无法读取',error);box.querySelector('[data-async-retry]')?.addEventListener('click',loadHermesArchiveStatus)}
 }
 $('#refreshHermesArchive')?.addEventListener('click',loadHermesArchiveStatus);
-async function openRawSession(id,node){const x=await api('/api/session-archives/'+encodeURIComponent(id));$$('[data-raw-session]').forEach(b=>b.classList.toggle('active',b.dataset.rawSession===id));$('#rawSessionDetail').innerHTML=`<div class="candidate-head"><div><h3>${esc(x.session_title||fallbackSessionName(x))}</h3><small>${esc(x.client==='hermes'?'Hermes':x.client)} · ${esc(formatTime(x.started_at))}</small><div class="candidate-meta">${x.turn_count}轮 · Token ${x.messages.some(m=>m.token_status==='actual')?'真实':'估算'} · ${esc(attachmentReferenceSummary(x))} · ${esc(archiveCompletenessLabel(x))}</div></div><span class="memory-state">已归档 · 尚未进入长期检索索引</span></div><div class="raw-conversation">${x.messages.map(m=>`<section><b>${esc(m.role.toUpperCase())}</b><pre class="selectable">${esc(m.original_text)}</pre>${(m.attachments||[]).map(a=>(['mapped','available'].includes(a.status)&& (a.archived_path||a.stored_path))?`<a class="raw-attachment-card" href="/api/session-attachment/${encodeURIComponent(x.session_id)}/${encodeURIComponent((a.archived_path||a.stored_path).split(/[\\/]/).pop())}" target="_blank"><img src="/api/session-attachment/${encodeURIComponent(x.session_id)}/${encodeURIComponent((a.archived_path||a.stored_path).split(/[\\/]/).pop())}" alt="${esc(a.original_name)}"><span><b>${esc(a.original_name)}</b><small>${esc(a.mime||'未知类型')} · SHA-256 ${esc(a.sha256)}</small></span></a>`:`<div class="raw-attachment-card missing"><span><b>${esc(a.original_name||a.reference)}</b><small>${esc(missingReferenceLabel(a))}</small></span></div>`).join('')}</section>`).join('')}</div><details><summary>技术信息</summary><pre class="candidate-diff selectable">${esc(JSON.stringify({session_id:x.session_id,hash:x.hash,archive_path:x.archive_path,sync_status:x.sync_status,messages:x.messages.map(m=>({message_id:m.message_id,hash:m.hash,message_order:m.message_order,attachment_refs:m.attachment_refs,attachments:m.attachments}))},null,2))}</pre></details>`}
+
 function ownerCapability(name,title,description,on,risky=false,available=true){if(!available)return `<div class="interface-row"><div class="interface-copy"><b>${title}</b><small>${description}</small></div><div class="owner-capability-note">待实现 / 依赖项未就绪</div></div>`;return `<div class="interface-row"><div class="interface-copy"><b>${title}</b><small>${description}</small>${risky?'<em class="interface-effect-note">高风险能力，首次开启需要Owner二次确认。</em>':''}</div><button class="switch ${on?'on':''}" data-interface="${name}" data-risky="${risky}" aria-pressed="${on}"><i></i><span>${on?'开启':'关闭'}</span></button></div>`}
 function renderAccessPermissions(){const state=memoryStatus.interfaces;$('#memoryReadInterfaces').innerHTML=`<div class="interface-master-notice ${state.mcp_enabled?'active':''}">${state.mcp_enabled?'AI记忆访问总开关已开启。':'AI当前无法访问你的长期记忆。'}</div><div class="interface-row master"><div><b>AI记忆访问总开关</b><small>客户端还需要独立获得访问权限。</small></div><button class="switch ${state.mcp_enabled?'on':''}" data-interface="mcp" aria-pressed="${state.mcp_enabled}"><i></i><span>${state.mcp_enabled?'允许AI访问':'关闭'}</span></button></div><p class="permission-drilldown-note">具体工具权限请进入对应客户端卡片的“查看权限”设置。</p>`;$('#memoryWriteInterfaces').innerHTML=ownerCapability('save_raw_conversation','原始会话自动归档','真实归档能力；关闭停止新增，历史档案不删除。',state.interfaces.save_raw_conversation.enabled)+ownerCapability('create_candidate','记忆候选自动提炼','能力可用；候选必须经过Owner审核。',state.interfaces.create_candidate.enabled)+ownerCapability('memory_writer','正式记忆自动应用','正式写入必须经过Diff与Owner二次确认。',state.memory_writer_enabled,true,true);$$('#access .switch:not(:disabled)').forEach(btn=>btn.onclick=()=>toggleMemoryInterface(btn))}
 const clientPermissionGroups=[
@@ -786,25 +789,9 @@ async function clientAccessPost(url,body={}){
 }
 function clientPolicyValue(client,scope,operation,selector={}){const rows=(client.policies||[]).filter(item=>item.scope===scope&&item.operation===operation),canonical=JSON.stringify(selector||{}),row=rows.find(item=>JSON.stringify(item.selector||{})===canonical)||rows.find(item=>JSON.stringify(item.selector||{})==='{}');if(row)return row.decision;const fallback=(clientAccessState?.default_policies||[]).find(item=>item.scope===scope&&item.operation===operation);return fallback?.decision||'deny'}
 function clientSelector(){const kind=$('#clientScopeKind')?.value||'all',value=$('#clientScopeValue')?.value.trim()||'';return kind==='all'?{}:(value?{[`${kind}_id`]:value}:{});}
-function clientRecentRead(client){if(window.jieduAiState)return window.jieduAiState.recentRead(client);return client?.status!=='revoked'&&client?.read_verification_current===true&&client.configuration_current!==false&&client.configuration_present!==false&&client.installation_state!=='absent'&&!['missing','mismatch','invalid','unreadable','disabled'].includes(client.configuration_state)}
-function clientConfigurationLabel(client){
-  const state=client.configuration_state;
-  if(state==='bundle_prepared')return '扩展包已准备';
-  if(state==='disabled')return '配置已停用';
-  if(state==='unreadable')return '配置无法核对';
-  if(state==='invalid')return '配置格式需检查';
-  if(state==='missing'||client.configuration_present===false)return '配置未检出';
-  if(state==='mismatch')return '配置不匹配';
-  if(client.configuration_current===true)return '配置有效';
-  if(client.configuration_current===false)return '配置需检查';
-  return '配置待核对';
-}
-function clientReadLabel(client){
-  if(client.status==='revoked')return '已撤销';
-  if(client.installation_state==='absent')return '程序未检出';
-  if(clientRecentRead(client))return '最近读取成功';
-  return clientConfigurationLabel(client);
-}
+function clientRecentRead(client){return window.jieduAiState.recentRead(client)}
+function clientConfigurationLabel(client){return window.jieduAiState.configurationLabel(client)}
+function clientReadLabel(client){return window.jieduAiState.connection(client).label}
 function clientReadEvidence(client){return clientRecentRead(client)?'最近成功读取：'+formatTime(client.last_read_at)+'。验证对应当前权限，不代表实时在线。':client.last_read_at?'历史成功读取：'+formatTime(client.last_read_at)+'。仅保留为历史记录，当前读取尚未验证。':'尚无成功读取记录；配置、安装和进程状态不能代替读取验证。'}
 
 function clientAccessCard(client){const selected=clientAccessSelected===client.internal_id?' selected':'',label=clientReadLabel(client);return `<button type="button" class="client-identity-card${selected}" data-select-client="${esc(client.internal_id)}"><span class="identity-status ${clientRecentRead(client)?'status-read_verified':''}">${esc(label)}</span><b>${esc(client.display_name)}</b><small>${esc(client.claimed_id)} · ${esc(client.transport||'未知连接')}</small></button>`}
@@ -919,7 +906,8 @@ function clientAccessRefreshNotice(error=''){
   let notice=$('#clientAccessRefreshStatus');const root=$('#clientAccessControl');if(!root)return;
   if(!notice){notice=document.createElement('div');notice.id='clientAccessRefreshStatus';notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');root.before(notice)}
   notice.hidden=!error;
-  notice.innerHTML=error?`<p>状态未更新，保留上次信息。${esc(protectionMessage(error,'请检查界渡服务后重试'))}</p><button type="button" class="secondary" id="retryClientAccess">重试更新</button>`:'';
+  const markup=error?`<p>状态未更新，保留上次信息。${esc(protectionMessage(error,'请检查界渡服务后重试'))}</p><button type="button" class="secondary" id="retryClientAccess">重试更新</button>`:'';
+  if(notice.dataset.markup!==markup){notice.innerHTML=markup;notice.dataset.markup=markup}
   if(error)$('#retryClientAccess').onclick=()=>loadClientAccessControl({quiet:true});
 }
 function clientAccessViewKey(node){return [node.className,node.querySelector(':scope > summary b')?.textContent||node.querySelector(':scope > summary')?.textContent||''].join(':')}
@@ -932,7 +920,7 @@ document.addEventListener('focusout',event=>{if($('#clientAccessControl')?.conta
 document.addEventListener('close',event=>{if(event.target?.matches?.('dialog'))setTimeout(()=>{if(clientAccessRefreshVisible())loadClientAccessControl({quiet:true,automatic:true})},0)},true);
 function resolveSelectedClient(){const rows=clientAccessState?.registered||[];return clientAccessSelected.startsWith('preset:')?rows.find(row=>row.client_type===clientAccessSelected.slice(7)&&row.status!=='revoked'):rows.find(row=>row.internal_id===clientAccessSelected)}
 function brandedClientCard(kind,client,legacy){
-  const state=client?clientReadLabel(client):legacy?'需要处理':'等待接入';
+  const state=window.jieduAiState.connection(client,legacy).label;
   const selected=clientAccessSelected===`preset:${kind}`||clientAccessSelected===client?.internal_id?' selected':'';
   return `<button type="button" class="client-identity-card preset${selected}" data-select-client="preset:${kind}" aria-pressed="${!!selected}"><span class="identity-status ${clientRecentRead(client)?'status-read_verified':''}">${state}</span><b>${brandedClientNames[kind]}</b><small>${clientRecentRead(client)?'查看读取时间与权限；不代表实时在线':client?'查看配置、权限与历史记录':legacy?'查看现有配置与记录':'选择后查看接入步骤'}</small></button>`;
 }
@@ -977,7 +965,7 @@ async function bindBrandedConnect(){
    客户端切换用委托在容器上的一次性点击监听，列表不再被整块销毁，点击不会被吞掉。 */
 function patchClientAccess(root,html){
   const tpl=document.createElement('template');tpl.innerHTML=html;const c=tpl.content;
-  const nGate=c.querySelector(':scope>.client-gate-status'),nList=c.querySelector(':scope>.client-identity-list'),nPanel=c.querySelector(':scope>.client-permission-panel');
+  const [nGate,nList,nPanel]=c.children;
   const oGate=root.querySelector(':scope>.client-gate-status'),oList=root.querySelector(':scope>.client-identity-list'),oPanel=root.querySelector(':scope>.client-permission-panel');
   if(!root._caDelegated){root._caDelegated=true;root.addEventListener('click',event=>{const card=event.target.closest?.('[data-select-client]');if(!card||!root.contains(card))return;const key=card.dataset.selectClient;if(key===clientAccessSelected&&card.getAttribute('aria-pressed')!=='false'&&card.classList.contains('selected'))return;clientAccessSelected=key;renderClientAccess()})}
   const keyOf=el=>el.matches?.('[data-select-client]')?'c:'+el.dataset.selectClient:el.matches?.('details')?'d:'+el.className:'s:'+el.className;
@@ -1090,7 +1078,7 @@ function loadClientAccessControl({quiet=false,automatic=false}={}){
           if(manual){clientAccessState={...status,pending,confirmed,audit,latency_ms:Math.round(performance.now()-started)};protectionStatus=protection;protectionCsrf=protection.csrf_token||''}
           continue;
         }
-        const fingerprint=JSON.stringify([status,pending,confirmed,audit,protection.state,protection.storage_enabled,protection.access_mode,protection.owner_session_active,protection.local_session_error]);
+        const fingerprint=window.jieduAiState.signature([status,pending,confirmed,audit,protection.state,protection.storage_enabled,protection.access_mode,protection.owner_session_active,protection.local_session_error]);
         protectionStatus=protection;protectionCsrf=protection.csrf_token||'';
         if(fingerprint!==clientAccessFingerprint||!clientAccessState){const view=captureClientAccessView();clientAccessState={...status,pending,confirmed,audit,latency_ms:Math.round(performance.now()-started)};renderClientAccess();restoreClientAccessView(view);clientAccessFingerprint=fingerprint}
         for(const kind of Object.keys(brandedClientNames)){const client=status.registered?.find(row=>row.client_type===kind&&row.status!=='revoked');if(!client||clientRecentRead(client))sessionStorage.removeItem(`jiedu.connect.sent.${kind}`)}
@@ -1198,7 +1186,7 @@ loadKnowledgeBase=async function(){await loadKnowledgeBaseContent();const d=awai
 $('#refreshKnowledgeBase').onclick=()=>loadKnowledgeBase().then(()=>showToast('知识库状态已刷新'));
 $('#auditKnowledgeBase').onclick=async()=>{await apiPost('/api/knowledge-base/audit',{});showToast('知识库扫描结果已刷新');await loadKnowledgeBase()};
 /* r46：旧「本机连接设置」读取 / 保存已随旧诊断栏移除 */
-async function openRawSessionPaged(id,node,limit=20){const x=await api('/api/session-archives/'+encodeURIComponent(id));rawSessionView={id,limit};$$('[data-raw-session]').forEach(b=>b.classList.toggle('active',b.dataset.rawSession===id));const rows=x.turn_count<=10?x.messages:x.messages.slice(-limit),hidden=x.messages.length-rows.length;const messageHtml=rows.map(m=>{const long=m.original_text.length>1600,attachments=(m.attachments||[]).map(a=>(['mapped','available'].includes(a.status)&& (a.archived_path||a.stored_path))?`<a class="raw-attachment-card" href="/api/session-attachment/${encodeURIComponent(x.session_id)}/${encodeURIComponent((a.archived_path||a.stored_path).split(/[\\/]/).pop())}" target="_blank"><img src="/api/session-attachment/${encodeURIComponent(x.session_id)}/${encodeURIComponent((a.archived_path||a.stored_path).split(/[\\/]/).pop())}" alt="${esc(a.original_name)}"><span><b>${esc(a.original_name)}</b><small>${esc(a.mime||'未知类型')} · SHA-256 ${esc(a.sha256)}</small></span></a>`:`<div class="raw-attachment-card missing"><span><b>${esc(a.original_name||a.reference)}</b><small>${esc(missingReferenceLabel(a))}</small></span></div>`).join('');return `<section><b>${esc(m.role.toUpperCase())}</b><pre class="selectable ${long?'raw-message-collapsed':''}">${esc(m.original_text)}</pre>${long?'<button class="copy-button toggle-message">展开全文</button>':''}${attachments}</section>`}).join('');$('#rawSessionDetail').innerHTML=`<div class="candidate-head"><div><h3>${esc(x.session_title||fallbackSessionName(x))}</h3><small>${esc(x.client==='hermes'?'Hermes':x.client)} · ${esc(formatTime(x.started_at))}</small><div class="candidate-meta">${x.turn_count}轮 · ${esc(attachmentReferenceSummary(x))} · ${esc(archiveCompletenessLabel(x))}</div></div></div>${hidden>0?`<div class="raw-history-controls">当前显示最近${Math.ceil(rows.length/2)}轮 · 还有${hidden}条消息 <button id="loadEarlierRaw" class="copy-button">加载更早10轮</button><button id="expandAllRaw" class="copy-button">展开全部</button></div>`:''}<div class="raw-conversation">${messageHtml}</div><details><summary>技术信息</summary><pre class="candidate-diff selectable">${esc(JSON.stringify({session_id:x.session_id,hash:x.hash,archive_path:x.archive_path,sync_status:x.sync_status},null,2))}</pre></details>`;$$('.toggle-message').forEach(b=>b.onclick=()=>{const p=b.previousElementSibling,collapsed=p.classList.toggle('raw-message-collapsed');b.textContent=collapsed?'展开全文':'收起'});$('#loadEarlierRaw')?.addEventListener('click',()=>openRawSessionPaged(id,node,limit+20));$('#expandAllRaw')?.addEventListener('click',()=>openRawSessionPaged(id,node,x.messages.length))}
+
 async function openRawSessionPage(id,node,before=null,includeAttachments=false,sequence=archiveDetailSequence){
   const key=detailCacheKey(id,before,includeAttachments),cached=archiveReadCache.get(key),host=$('#rawSessionDetail');
   if(cached&&sequence===archiveDetailSequence){renderRawSessionPage(cached,id,node,before,includeAttachments,sequence);host.insertAdjacentHTML('afterbegin','<p class="detail-refresh-note" role="status">已显示上次读取的这段对话，正在核对最新内容…</p>');host.querySelectorAll('[data-save-inbox-message]').forEach(button=>button.disabled=true)}
@@ -1207,7 +1195,70 @@ async function openRawSessionPage(id,node,before=null,includeAttachments=false,s
   if(sequence!==archiveDetailSequence)return;rememberDetail(archiveReadCache,key,x);renderRawSessionPage(x,id,node,before,includeAttachments,sequence);
 }
 function rawMessageCanSaveClue(message){return ['user','assistant'].includes(String(message.role||'').toLowerCase())&&(message.provenance||{}).knowledge_eligible!==false}
-function renderRawSessionPage(x,id,node,before,includeAttachments,sequence){if(sequence!==archiveDetailSequence)return;rawSessionView={id,before,includeAttachments};$$('[data-raw-session]').forEach(b=>b.classList.toggle('active',b.dataset.rawSession===id));const rows=x.messages||[],messageHtml=rows.map(m=>{const text=String(m.original_text||m.content||''),long=text.length>800,attachments=(m.attachments||[]).map(a=>(['mapped','available'].includes(a.status)&& (a.archived_path||a.stored_path))?`<a class="raw-attachment-card" href="/api/session-attachment/${encodeURIComponent(x.session_id)}/${encodeURIComponent((a.archived_path||a.stored_path).split(/[\\/]/).pop())}" target="_blank"><span><b>${esc(a.original_name)}</b><small>${esc(a.mime||'附件')}</small></span></a>`:`<div class="raw-attachment-card missing"><span><b>${esc(a.original_name||a.reference||'附件')}</b><small>${esc(missingReferenceLabel(a))}</small></span></div>`).join('');return `<section class="msg msg-${esc(String(m.role||'message').toLowerCase())}"><b>${esc(rawRoleLabel(m.role,x.client))}</b><pre class="selectable ${long?'raw-message-collapsed':''}">${esc(text)}</pre>${long?'<button class="copy-button toggle-message">展开全文</button>':''}${rawMessageCanSaveClue(m)?`<button type="button" class="copy-button" data-save-inbox-message="${esc(m.message_id||'')}" data-save-inbox-session="${esc(x.session_id||'')}" title="把这条消息存进 99_收件箱，原文仍留在这里">存为线索</button>`:''}${attachments||(!includeAttachments&&m.attachment_count?`<button class="copy-button load-raw-attachments">加载本页 ${m.attachment_count} 个文件/引用</button>`:'')}</section>`}).join('');const page=x.page||{},controls=`<div class="raw-history-controls"><span>第 ${Number(page.start||0)+1}–${page.end||0} 条 / 共 ${page.total||0} 条</span>${page.has_earlier?'<button id="loadEarlierRaw" class="copy-button">加载更早消息</button>':''}${Number(page.end||0)<Number(page.total||0)?'<button id="loadNewerRaw" class="copy-button">查看较新消息</button><button id="loadLatestRaw" class="copy-button">回到最新</button>':''}${!includeAttachments&&x.attachment_count?'<button id="loadRawAttachments" class="copy-button">加载本页文件/引用</button>':''}</div>`,relations=(x.related_projects||[]).length?`<p>内容关联（推定）：${x.related_projects.map(esc).join('、')}</p>`:'<p>尚未从当前可读内容推定项目关联。</p>',titleNote=x.title_origin==='content_inferred'?`<p>显示标题由首条有效用户内容推定；原名：${esc(x.original_title||'未命名')}。</p>`:'<p>显示标题来自原归档记录。</p>';if(sequence!==archiveDetailSequence)return;$('#rawSessionDetail').innerHTML=`<div class="candidate-head"><div><h3>${esc(x.display_title||x.session_title||fallbackSessionName(x))}</h3><small>${esc(x.client==='codex'?'Codex':x.client==='chatgpt'?'ChatGPT Web':x.client==='hermes'?'Hermes':x.client==='dsh'?'DSH':x.client||'未知来源')} · ${esc(formatTime(x.updated_at||x.started_at))}</small><div class="candidate-meta archive-detail-summary"><span>${Number(x.message_count||0).toLocaleString('zh-CN')} 条消息</span>${attachmentReferenceMarkup(x)}${archiveStatusTag(x)}</div></div></div>${controls}<div class="raw-conversation">${messageHtml}</div><details class="raw-advanced"><summary>高级详情</summary>${titleNote}${relations}<p>上传文件是对话中上传的附件；交付文件是 AI 回复里给出的文件链接。数量按引用次数统计。未取得原件不代表聊天正文丢失。</p><p>稳定会话身份：${esc(x.session_id||'未知')}。它用于同步、去重和排障，标题变化不会改变身份。</p></details>`;$$('.toggle-message').forEach(b=>b.onclick=()=>{const p=b.previousElementSibling,collapsed=p.classList.toggle('raw-message-collapsed');b.textContent=collapsed?'展开全文':'收起'});$('#loadEarlierRaw')?.addEventListener('click',()=>openRawSessionWithState(id,node,page.next_before,false));$('#loadNewerRaw')?.addEventListener('click',()=>openRawSessionWithState(id,node,Math.min(Number(page.total),Number(page.end)+Number(page.limit||12)),includeAttachments));$('#loadLatestRaw')?.addEventListener('click',()=>openRawSessionWithState(id,node,null,includeAttachments));$('#loadRawAttachments')?.addEventListener('click',()=>openRawSessionWithState(id,node,before,true));$$('.load-raw-attachments').forEach(b=>b.onclick=()=>openRawSessionWithState(id,node,before,true));$$('[data-save-inbox-message]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await clientAccessPost('/api/inbox/save-message',{session_key:b.dataset.saveInboxSession,message_id:b.dataset.saveInboxMessage});b.textContent='已保存线索';showToast('已保存到99_收件箱，原文与附件仍在原会话')}catch(error){if(isRequestCancelled(error))return;b.disabled=false;showToast(protectionMessage(error,'保存未完成，请确认主人身份'))}})}
+function rawSystemTask(message,text){
+  const role=String(message.role||'').toLowerCase();
+  const provenance=message.provenance||{};
+  if(['system','developer','tool'].includes(role))return true;
+  if(message.automation_id||provenance.automation_id||
+    ['legacy_heartbeat','system_notice','internal_message_channel','internal_message_recipient'].includes(provenance.display_semantics))return true;
+  const start=text.trimStart();
+  return /^(?:<(?:(?:system|automation|scheduled)[-_](?:prompt|task|instructions|reminder)|instructions|automation_id|heartbeat)(?=[\s>/])|(?:heartbeat|automation_id|instructions)\s*(?::|=)|\{\s*"(?:heartbeat|automation_id|instructions)"\s*:)/i.test(start);
+}
+
+function rawMessageMarkup(message,session,includeAttachments){
+  const text=String(message.original_text??message.content??'');
+  const role=String(message.role||'message').toLowerCase();
+  const label=rawRoleLabel(message.role,session.client);
+  const system=rawSystemTask(message,text);
+  const attachments=(message.attachments||[]).map(file=>{
+    const stored=file.archived_path||file.stored_path;
+    if(['mapped','available'].includes(file.status)&&stored){
+      const href=`/api/session-attachment/${encodeURIComponent(session.session_id)}/${encodeURIComponent(stored.split(/[\\/]/).pop())}`;
+      return `<a class="raw-attachment-card" href="${href}" target="_blank" rel="noopener"><span><b>${esc(file.original_name)}</b><small>${esc(file.mime||'附件')}</small></span></a>`;
+    }
+    return `<div class="raw-attachment-card missing"><span><b>${esc(file.original_name||file.reference||'附件')}</b><small>${esc(missingReferenceLabel(file))}</small></span></div>`;
+  }).join('');
+  const body=`<pre class="selectable">${esc(text)}</pre>${!system&&rawMessageCanSaveClue(message)?
+    `<button type="button" class="copy-button" data-save-inbox-message="${esc(message.message_id||'')}" data-save-inbox-session="${esc(session.session_id||'')}">存为线索</button>`:''}${attachments||
+    (!includeAttachments&&message.attachment_count?`<button type="button" class="copy-button load-raw-attachments">加载本页 ${esc(message.attachment_count)} 个文件/引用</button>`:'')}`;
+  if(system){
+    const source=role==='developer'?'开发者指令':['assistant','tool'].includes(role)?label:'';
+    return `<details class="msg msg-system-task"><summary>系统任务${source?' · '+esc(source):''}</summary><div class="raw-message-body">${body}</div></details>`;
+  }
+  return `<section class="msg msg-${esc(role)}"><b>${esc(label)}</b>${body}</section>`;
+}
+
+function renderRawSessionPage(x,id,node,before,includeAttachments,sequence){
+  if(sequence!==archiveDetailSequence)return;
+  rawSessionView={id,before,includeAttachments};
+  $$('[data-raw-session]').forEach(b=>b.classList.toggle('active',b.dataset.rawSession===id));
+  const page=x.page||{},total=Number(page.total??x.message_count??0);
+  const controls=`<div class="raw-history-controls"><span>${total?`第 ${Number(page.start||0)+1}–${page.end||0} 条 / 共 ${total} 条`:'没有消息'}</span>${page.has_earlier?'<button id="loadEarlierRaw" class="copy-button">加载更早消息</button>':''}${Number(page.end||0)<total?'<button id="loadNewerRaw" class="copy-button">查看较新消息</button><button id="loadLatestRaw" class="copy-button">回到最新</button>':''}${!includeAttachments&&x.attachment_count?'<button id="loadRawAttachments" class="copy-button">加载本页文件/引用</button>':''}</div>`;
+  const projects=(x.related_projects||[]).map(esc).join('、');
+  const titleNote=x.title_origin==='content_inferred'?`<p>显示标题由首条有效用户内容推定。原名为 ${esc(x.original_title||'未命名')}。</p>`:'';
+  const source={codex:'Codex',chatgpt:'ChatGPT Web',hermes:'Hermes',dsh:'DSH'}[x.client]||x.client||'未知来源';
+  const host=$('#rawSessionDetail');
+  host.innerHTML=`<div class="candidate-head"><div><h3>${esc(x.display_title||x.session_title||fallbackSessionName(x))}</h3><small>${esc(source)} · ${esc(formatTime(x.updated_at||x.started_at))}</small>
+    <div class="archive-detail-summary">${archiveFileSummary(x)}</div></div></div>${controls}
+    <div class="raw-conversation">${(x.messages||[]).map(m=>rawMessageMarkup(m,x,includeAttachments)).join('')}</div>
+    <details class="raw-advanced"><summary>高级详情</summary>${titleNote}${projects?`<p>推定关联项目 · ${projects}</p>`:''}
+    <p>${esc(archiveCompletenessLabel(x)||'')}</p><p>会话 ID · ${esc(x.session_id||'未知')}</p></details>`;
+  $('#loadEarlierRaw')?.addEventListener('click',()=>openRawSessionWithState(id,node,page.next_before,false));
+  $('#loadNewerRaw')?.addEventListener('click',()=>openRawSessionWithState(id,node,Math.min(total,Number(page.end)+Number(page.limit||12)),includeAttachments));
+  $('#loadLatestRaw')?.addEventListener('click',()=>openRawSessionWithState(id,node,null,includeAttachments));
+  $('#loadRawAttachments')?.addEventListener('click',()=>openRawSessionWithState(id,node,before,true));
+  host.querySelectorAll('.load-raw-attachments').forEach(button=>button.onclick=()=>openRawSessionWithState(id,node,before,true));
+  host.querySelectorAll('[data-save-inbox-message]').forEach(button=>button.onclick=async()=>{
+    button.disabled=true;
+    try{
+      await clientAccessPost('/api/inbox/save-message',{session_key:button.dataset.saveInboxSession,message_id:button.dataset.saveInboxMessage});
+      button.textContent='已保存线索';showToast('已保存到99_收件箱，原文与附件仍在原会话');
+    }catch(error){
+      if(isRequestCancelled(error))return;
+      button.disabled=false;showToast(protectionMessage(error,'保存未完成，请确认主人身份'));
+    }
+  });
+}
 
 
 function renderMemoryAwareness(data){

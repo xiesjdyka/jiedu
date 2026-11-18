@@ -1,5 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const ROOT=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(ROOT,'static/app.js'),'utf8');
+const shared=fs.readFileSync(path.join(ROOT,'static/client-state.js'),'utf8');
 // All rows are invented fixtures. No local status snapshot or previous checkout is read.
 const sample={registered:Object.entries({codex:[true,'valid','present'],hermes:[true,'valid','present'],
   opencode:[null,'unknown','present'],dsh:[false,'unknown','present'],cursor:[false,'missing','present'],
@@ -37,7 +38,7 @@ function environment(){
     pairingPolicyLabels:{},sessionStorage:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},
     esc:x=>String(x??''),formatTime:x=>String(x??''),protectionMessage:(e,f)=>e?.message||f,isRequestCancelled:e=>e?.name==='AbortError',
     $:s=>node(s.replace(/^#/,'')),$$:()=>[],document,
-    setTimeout:(fn,ms)=>{const id=++nextTimer;timers.set(id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),
+    setTimeout:(fn,ms)=>{const id=++nextTimer;timers.set(id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),setInterval(){},
     api:async(url,options)=>{calls.push({url,options});return context.respond(url)},
     respond:url=>url.includes('/api/protection/')?clone(prot):url.includes('/confirmations')?{pending:[],confirmed:[]}:url.includes('/audit')?{events:[]}:clone(context.status),
     readProtectionSession:async()=>clone(context.protection),protection:clone(prot),status:{registered:[]},
@@ -46,7 +47,11 @@ function environment(){
     clientAccessErrorMessage:()=>'',fetch:async()=>({ok:true,json:async()=>({synthetic:true})}),
     workspaceRuntime:null,navigationCleanup(){},pageScrollState:new Map(),detailsState:new Map(),clearPageFeedback(){},pages:{overview:['a','b','c']},
     withPageFeedback:(name,text,fn)=>fn(),loadOverview:()=>Promise.resolve(),window:{scrollY:0,scrollTo(){},closeWorkspaceNavigation(){}},requestAnimationFrame:fn=>fn(),showToast(){}};
-  node('access').id='access';vm.createContext(context);vm.runInContext(labels+daily+order+'\n'+card+polling+loader+post+navigation,context);
+  context.window.fetch=context.fetch;
+  node('access').id='access';vm.createContext(context);
+  const listen=document.addEventListener;document.addEventListener=()=>{};
+  vm.runInContext(shared,context);document.addEventListener=listen;
+  vm.runInContext(labels+daily+order+'\n'+card+polling+loader+post+navigation,context);
   function event(type,target){for(const fn of listeners.get(type)||[])fn({target})}
   function timer(ms=5000){const row=[...timers.entries()].find(([,r])=>r.ms===ms);assert.ok(row,'scheduled timer missing: '+ms);timers.delete(row[0]);return row[1].fn()}
   function get(name){return vm.runInContext(name,context)}
@@ -55,7 +60,7 @@ function environment(){
 const tests=[];function test(name,fn){tests.push([name,fn])}
 test('合成客户端记录区分当前配置与历史读取，不声称在线',()=>{
  const c=environment().c;
- const expected={codex:'配置有效',hermes:'配置有效',opencode:'配置待核对',dsh:'配置需检查',cursor:'配置未检出',workbuddy:'程序未检出',zcode:'程序未检出'};
+ const expected={codex:'配置有效',hermes:'配置有效',opencode:'配置待核对',dsh:'需处理',cursor:'未接入',workbuddy:'未接入',zcode:'未接入'};
  for(const client of sample.registered){const label=c.clientReadLabel(client);assert.notEqual(label,'已接入');assert.notEqual(label,'已连接');
    if(expected[client.client_type])assert.equal(label,expected[client.client_type]);
    assert.match(c.clientReadEvidence(client),/历史成功读取/);}
@@ -64,10 +69,12 @@ test('近期读取不冒充实时在线；配置破损、不可读、停用、�
  const c=environment().c,base={client_type:'codex',status:'read_verified',configuration_current:true,configuration_present:true,read_verification_current:true,last_read_at:'2026-11-01T10:00:00Z',installation_state:'present'};
  assert.equal(c.clientReadLabel(base),'最近读取成功');assert.match(c.clientReadEvidence(base),/不代表实时在线/);
  for(const [state,label] of Object.entries({invalid:'配置格式需检查',unreadable:'配置无法核对',disabled:'配置已停用',missing:'配置未检出',mismatch:'配置不匹配'})){
-   const client={...base,configuration_state:state,configuration_current:state==='unreadable'?null:false};assert.equal(c.clientReadLabel(client),label);assert.equal(c.clientRecentRead(client),false);assert.match(c.clientReadEvidence(client),/历史成功读取/);
+   const client={...base,configuration_state:state,configuration_current:state==='unreadable'?null:false};
+   assert.equal(c.clientConfigurationLabel(client),label);
+   assert.equal(c.clientReadLabel(client),state==='missing'?'未接入':'需处理');assert.equal(c.clientRecentRead(client),false);assert.match(c.clientReadEvidence(client),/历史成功读取/);
  }
  assert.equal(c.clientReadLabel({...base,read_verification_current:false}),'配置有效');
- assert.equal(c.clientReadLabel({...base,installation_state:'absent'}),'程序未检出');
+ assert.equal(c.clientReadLabel({...base,installation_state:'absent'}),'未接入');
  assert.equal(c.clientReadLabel({...base,status:'revoked'}),'已撤销');
 });
 test('排序只依据当前配置/近期验证，不把旧读取排为已接入',()=>{

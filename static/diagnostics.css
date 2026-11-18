@@ -13,7 +13,7 @@
 #troubleshooting .diag-bar small{font-size:12.5px;color:var(--muted)}
 #troubleshooting .diag-bar .db-side{display:flex;align-items:center;gap:14px;flex:none}
 #troubleshooting .diag-bar .db-side small{font-variant-numeric:tabular-nums}
-#troubleshooting .diag-bar .db-side button{height:36px;padding:0 18px;border-radius:12px}
+#troubleshooting .diag-bar .db-side button{height:36px;min-width:7.25rem;padding:0 18px;border-radius:12px;white-space:nowrap}
 /* 骨架：颜色与呼吸来自全站 .jd-skel / .jd-bar，这里只定尺寸 */
 #troubleshooting .db-bar{width:180px;height:14px}
 #troubleshooting .db-bar.short{width:320px;height:10px;margin-top:4px}

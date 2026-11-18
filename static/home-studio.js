@@ -65,7 +65,7 @@ async function loadModel(){
 function buildModel({kb,ov,objects,recent}){
   const idByPath=new Map((objects?.items||[]).map(x=>[x.logical_path,x.entry_id]));
   const cats=(kb?.structure||[]).filter(x=>x.kind==='folder'&&!/^[._]/.test(x.name)).map(x=>{const [label,hint]=FOLDER_NAMES[x.name]||[x.name.replace(/^\d+_/,''),'这个文件夹里的资料'];return {key:x.name,label,hint,count:Number(x.markdown_count)||0,kind:'cat'}});
-  const allAis=(window.jieduAiState?.list||[]).map(a=>({key:a.key,label:AI_NAMES[a.key]||a.label,hint:a.hint,state:a.state,order:a.order,kind:'ai',count:null}));
+  const allAis=(window.jieduAiState?.list||[]).map(a=>({...a,label:AI_NAMES[a.key]||a.label,kind:'ai',count:null}));
   /* r39：展示哪些、几个——与设置页共用 client-state.js 的同一规则 */
   const sel=window.jieduAiState?.homeSelection(allAis)||{shown:allAis,rest:[]},shown=sel.shown,rest=sel.rest;
   /* r40：「其余 N 个」不再一律算未接入——按里面的真实状态统计，外圈细弧按比例分色，状态点取最需要注意的那一种 */
@@ -297,7 +297,7 @@ function focusNode(n,quiet=false){
     clearTimeout(focusNode.t);focusNode.t=setTimeout(()=>{core.classList.remove('ripple');void core.offsetWidth;core.classList.add('ripple')},520)}
   if(n.kind==='cat')setCore({kicker:n.label,value:n.count,unit:n.hint,hint:'点一下打开'});
   else if(n.more)setCore({kicker:n.label,text:n.tone==='warn'?'有需重连':n.tone==='ok'?'含已连接':'未连接',unit:n.sub==='都还没连接'?n.hint:n.sub,hint:'点一下去「连接 AI」'});
-  else setCore({kicker:n.label,text:n.state==='ok'?'已连接':n.state==='warn'?'需重连':'未连接',unit:n.hint,hint:n.state==='ok'?'点一下查看权限':'点一下去连接'});
+  else setCore({kicker:n.label,text:n.statusLabel,unit:n.hint,hint:n.state==='ok'?'点一下查看权限':'点一下查看连接'});
 }
 function render(){
   if(!model||!host)return;
@@ -314,7 +314,7 @@ function render(){
   renderSub();renderPulse();
   $('#studioLegacy').hidden=!(model.connected&&model.cats.reduce((s,c)=>s+c.count,0)===0);
 }
-function sigOf(m){return JSON.stringify([m.recent,m.core,m.cats,m.ais.map(a=>[a.key,a.state,a.label,a.sub||"",a.tone||""]),m.next.map(n=>n.text),m.metrics.map(x=>[x.k,x.v,x.text]),m.connected])}
+function sigOf(m){return JSON.stringify([m.recent,m.core,m.cats,m.ais,m.next.map(n=>n.text),m.metrics.map(x=>[x.k,x.v,x.u,x.text,x.tip,x.warn]),m.connected])}
 function apply(m,force){const sig=sigOf(m);model=m;if(sig!==lastSig||force){lastSig=sig;render()}}
 /* 状态一变（任何页面读到新状态、切换模拟、改首页设置）就用已缓存的资料数据立即重算，不等下一轮轮询 */
 function relive(){if(lastRaw&&host)apply(buildModel(lastRaw))}

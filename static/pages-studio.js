@@ -255,13 +255,14 @@ function settingsCols(){const pg=$('#protection');if(!pg)return;let L=$('#protec
   for(const [col,sels] of want)sels.forEach((sel,i)=>{const e=$('#protection '+sel);if(e&&(e.parentElement!==col||col.children[i]!==e))col.insertBefore(e,col.children[i]||null)})}
 let aiWarn={t:0,msg:''};
 function syncAiShow(w){if(w)aiWarn={t:Date.now(),msg:w};const warn=Date.now()-aiWarn.t<2600?aiWarn.msg:'';if(w)setTimeout(()=>syncAiShow(),2700);const S=window.jieduAiState,c=$('#studioHomeAi');if(!S||!c)return;const {pick}=S.homePrefs(),sel=S.homeSelection(),list=S.list;
-  const box=$('#aiPick',c),on=new Set(sel.shown.map(a=>a.key)),word={ok:'已连接',warn:'需重连',idle:'未连接',off:'未连接'};
-  const html=list.map(a=>`<button type="button" class="ai-chip" data-ai-pick="${a.key}" data-state="${a.state}" aria-pressed="${on.has(a.key)}" title="${a.label} · ${word[a.state]}"><i></i>${a.label}</button>`).join('');
+  const box=$('#aiPick',c),on=new Set(sel.shown.map(a=>a.key));
+  const html=list.map(a=>`<button type="button" class="ai-chip" data-ai-pick="${a.key}" data-state="${a.state}" aria-pressed="${on.has(a.key)}" title="${a.label} · ${a.statusLabel}"><i></i>${a.label}</button>`).join('');
   if(box.dataset.html!==html){box.innerHTML=html;box.dataset.html=html}
   box.classList.toggle('auto',!pick);$('#aiPickReset',c).hidden=!pick;
   const restN=sel.rest.length,tail=restN?`，其余 ${restN} 个合并为「其余 ${restN} 个」`:'';
-  $('#aiPickNote',c).textContent=warn||(pick?`首页显示你选的 ${sel.shown.length} 个${tail}。`:`自动按「已连接 → 需重连 → 未连接」挑前 ${sel.shown.length} 个${tail}。点标签可改为自己指定。`);
-  $('#aiPickNote',c).classList.toggle('warn',!!warn);}
+  const note=$('#aiPickNote',c),text=warn||(pick?`首页显示你选的 ${sel.shown.length} 个${tail}。`:`自动优先显示已验证、需处理和待验证的连接，共 ${sel.shown.length} 个${tail}。点标签可指定首页显示的连接。`);
+  if(note.textContent!==text)note.textContent=text;
+  note.classList.toggle('warn',!!warn);}
 function syncLook(){let m='light';try{m=localStorage.getItem('jiedu.themeMode')||'light'}catch(e){}$$('#studioLook .look-tile').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.mode===m)))}
 function setupAbout(){aboutMark();settingsExtras();syncAiShow();const c=$('#protection .software-update-card');if(c)new MutationObserver(()=>{if(!$('.about-mark',c))aboutMark()}).observe(c,{childList:true});const pg=$('#protection');let wasOn=pg?.classList.contains('active');
   /* r46：去掉 1.2 秒轮询——切到设置页时补齐一次，主题切换时同步外观选中态；AI 状态监听只在这里挂一次 */

@@ -1,8 +1,4 @@
-"""Verify the approved v1 door artwork and derive raw window pixels unchanged.
-
-No image generation, resizing, palette changes or artwork replacement occurs.
-The ICO, tray and web assets remain the reviewed originals.
-"""
+"""Verify the native icon artwork generated from the web favicon."""
 from __future__ import annotations
 import argparse
 import hashlib
@@ -11,8 +7,9 @@ from pathlib import Path
 import struct
 import zlib
 
-ICO_SHA256 = 'bd2a59f784fcc8be199d0f7278537c70d2cf09cdcd232dc39a684499591557c7'
-TRAY_SHA256 = '2b35a5c8a7540053f59a526f832fffe9993ab4506114b942dfe71d04f94f8a85'
+ICO_SHA256 = 'ece20cceb6a7934f8bd7e75f7184fe226cafb85c74e7104f30a0ecbf226af79c'
+FAVICON_SHA256 = '8fdc0431eb40f6cefcbf1b7591e2ebab1c5d9ac999d41c08f9a0e20cd187dbe1'
+SPLASH_ICON_SHA256 = '21560ed704dd99e04070792c1a6a2eb93f6ebf5c3ee478fe895153610a4117ef'
 
 def ico_frames(data):
     reserved, kind, count = struct.unpack_from('<HHH', data)
@@ -86,20 +83,25 @@ def frame_rgba(data, size):
 def verify_assets(source, *, write_window=False):
     source=Path(source);icons=source/'desktop/icons'
     ico=(icons/'icon.ico').read_bytes();tray=(icons/'tray.rgba').read_bytes()
-    if hashlib.sha256(ico).hexdigest()!=ICO_SHA256 or hashlib.sha256(tray).hexdigest()!=TRAY_SHA256 or len(tray)!=1024:
-        raise ValueError('Approved v1 door artwork changed')
+    favicon=(source/'static/brand/favicon.svg').read_bytes()
+    splash=(source/'desktop/ui/logo.png').read_bytes()
+    if (hashlib.sha256(ico).hexdigest()!=ICO_SHA256 or hashlib.sha256(favicon).hexdigest()!=FAVICON_SHA256
+            or hashlib.sha256(splash).hexdigest()!=SPLASH_ICON_SHA256):
+        raise ValueError('Native artwork no longer matches the reviewed favicon assets')
     frames=ico_frames(ico)
     if set(frames)!={(n,n) for n in (16,20,24,32,40,48,64,96,128,256)}:
         raise ValueError('Approved multi-size ICO is incomplete')
     pixels=frame_rgba(frames[(32,32)],(32,32))
+    if tray!=frame_rgba(frames[(16,16)],(16,16)):
+        raise ValueError('Tray pixels must exactly match the 16px ICO frame')
     window=icons/'window.rgba'
     if write_window and not window.exists():window.write_bytes(pixels)
     if not window.is_file() or window.read_bytes()!=pixels:
         raise ValueError('Window pixels must exactly match the approved32px ICO frame')
-    return {'brand':'v1-door','ico_sha256':ICO_SHA256,'ico_sizes':sorted(w for w,h in frames),
-            'tray_size':[16,16],'tray_sha256':TRAY_SHA256,'window_size':[32,32],
+    return {'brand':'favicon','ico_sha256':ICO_SHA256,'ico_sizes':sorted(w for w,h in frames),
+            'favicon_sha256':FAVICON_SHA256,'tray_size':[16,16],'tray_sha256':hashlib.sha256(tray).hexdigest(),'window_size':[32,32],
             'window_sha256':hashlib.sha256(pixels).hexdigest(),'window_exact_ico_frame':True,
-            'artwork_replaced_or_resized':False}
+            'artwork_replaced_or_resized':True}
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
