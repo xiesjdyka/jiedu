@@ -38,8 +38,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 8990,
-      "sha256": "06c37c66778b43715297f497d6007499bf75094daecd08635530e6672c8520da"
+      "bytes": 8863,
+      "sha256": "cd51e1e3e0a50f62ffe38f154a76c8f1611fe153ff802b937d67e259df0d3c0a"
     },
     {
       "path": "RELEASE_NOTES.md",
@@ -59,7 +59,7 @@
     {
       "path": "VERSION",
       "bytes": 6,
-      "sha256": "d2d31534641da01801512a3ec793bc8d57132d4cefa19a5fb503e8995f39eb8f"
+      "sha256": "c8d83c2672c5e397ce16a2ee275ac45917002b9b36765f77d99f31bdf81ee828"
     },
     {
       "path": "butler-resources.lock.json",
@@ -79,12 +79,12 @@
     {
       "path": "desktop/Cargo.lock",
       "bytes": 118884,
-      "sha256": "ec097d46cc1f526765534848a1e440891fc73b1247dabad6b0259cbd00da5fff"
+      "sha256": "54536e20dfeadc7ee55c3c2a6be72c375263b9bea1578ada43192a8c46b9232a"
     },
     {
       "path": "desktop/Cargo.toml",
-      "bytes": 498,
-      "sha256": "26bdc7078ca46fdf97968103d1d25f75ba2aa387041c6e789450637a3ff660f1"
+      "bytes": 513,
+      "sha256": "4fc98df26f269c28da86874da2e2d5a02958e6213f2a3b1de29911903502e89c"
     },
     {
       "path": "desktop/build.rs",
@@ -103,23 +103,23 @@
     },
     {
       "path": "desktop/icon_assets.py",
-      "bytes": 5481,
-      "sha256": "550d3688986816ebce5524e5f319f9716ef0a2ab1464ff4dab5032d36a828ab5"
+      "bytes": 5802,
+      "sha256": "e458d27da6514324651194e68e4e747895fb1e33ded288576aadde7e2051d13d"
     },
     {
       "path": "desktop/icons/icon.ico",
-      "bytes": 134298,
-      "sha256": "bd2a59f784fcc8be199d0f7278537c70d2cf09cdcd232dc39a684499591557c7"
+      "bytes": 161588,
+      "sha256": "ece20cceb6a7934f8bd7e75f7184fe226cafb85c74e7104f30a0ecbf226af79c"
     },
     {
       "path": "desktop/icons/tray.rgba",
       "bytes": 1024,
-      "sha256": "2b35a5c8a7540053f59a526f832fffe9993ab4506114b942dfe71d04f94f8a85"
+      "sha256": "8f7d02759eb8148015667e06e4e6c6b68cad372024a1ba327701e59627b2aa22"
     },
     {
       "path": "desktop/icons/window.rgba",
       "bytes": 4096,
-      "sha256": "1815e5c7392c2b3ca03b35fd66fd5bd737948e41b15d00966f8f9839c35d94d1"
+      "sha256": "b46ec2b04b0a2a906ac1d7fc435282cb10b8f658357748794f646f0b028bd9c1"
     },
     {
       "path": "desktop/installer.iss",
@@ -133,8 +133,8 @@
     },
     {
       "path": "desktop/src/main.rs",
-      "bytes": 17558,
-      "sha256": "d6e05cdc479ea8c370f10206b4c10e5d9af2f4cedc5d299ad5db0513b8cd2d1b"
+      "bytes": 18998,
+      "sha256": "77afd0b6625e702d3426c4c5accdd521be0f15bef30c39a97dd9968513c0e25d"
     },
     {
       "path": "desktop/src/update_stop.rs",
@@ -144,7 +144,7 @@
     {
       "path": "desktop/tauri.conf.json",
       "bytes": 394,
-      "sha256": "61b2c93a9337efeda7081d2e16ca753ffe2f2dc85b087f1ae2af5569ac51c2ec"
+      "sha256": "6eb3d60f02c9ea2b1ad5b77d1334e04f771c9902c2110c93abfa6fd2b38ccd21"
     },
     {
       "path": "desktop/ui/index.html",
@@ -153,8 +153,8 @@
     },
     {
       "path": "desktop/ui/logo.png",
-      "bytes": 22246,
-      "sha256": "9be8665dc576f77ec6c3c628407dae3a86e46dabe4722f6110ece616293817f9"
+      "bytes": 3064,
+      "sha256": "21560ed704dd99e04070792c1a6a2eb93f6ebf5c3ee478fe895153610a4117ef"
     },
     {
       "path": "desktop/update_release.py",
@@ -222,6 +222,11 @@
       "sha256": "bd0d676fda332e21055ac60b830edae8797c50dfe982b69a88061b93c4fbc55d"
     },
     {
+      "path": "docs/changes-1.2.9.md",
+      "bytes": 1143,
+      "sha256": "b9713c5b2de89c1a64303aa972d57ab406079bebdb0cd9cff346ad39f5d1a45e"
+    },
+    {
       "path": "docs/changes-20261024.md",
       "bytes": 4063,
       "sha256": "2173cd4185c0787a3da3d3d0e0f376b5955e648c2111e104482e3c02b01c8d7f"
@@ -258,8 +263,8 @@
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 13505,
-      "sha256": "9a1a4eebbd7c79fe64ff799e1395a59d6491bf7e50e3d56eaaccb8fc70ea23ee"
+      "bytes": 13633,
+      "sha256": "bd1721a057613e30deb1a01d784031cfad49a83573e6ea4e22f0c770ac0e23ac"
     },
     {
       "path": "docs/release-version.md",
@@ -319,7 +324,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 22,
-      "sha256": "09f5579b4c3094a3d6d2484e730856c3ad53a60b5988b8a309e3ec00838adda5"
+      "sha256": "3a1dd8e82232a648408d6f9aaae053c8fdff700fa02a0293c2af44a5c5a98e9b"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -1028,13 +1033,13 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 13605,
-      "sha256": "93db45c6db27b27dce5de4c0d7ef2c01d6a97e5fe41106435b6d66a2b617c3a4"
+      "bytes": 13627,
+      "sha256": "8628f96b42189f3718d8b31b9e6574a9ec2876770df84557eafaf7c18bd3ccba"
     },
     {
       "path": "pyproject.toml",
       "bytes": 1108,
-      "sha256": "67cc16f8141776cc17277dd4ba9264b3e8831d981fcf5565c91c31a68e91de23"
+      "sha256": "efe0ad019faab6423721d6df9d2cac30d21884722d7409666e8352989336f91f"
     },
     {
       "path": "requirements.lock.txt",
@@ -1098,13 +1103,13 @@
     },
     {
       "path": "static/app.js",
-      "bytes": 389486,
-      "sha256": "498c0fd0e697597c6edaa9651f75e0d3bf2e8ff739d187f2251ff6b7cd02ea40"
+      "bytes": 384228,
+      "sha256": "79601945933654129666e0db9f06251fd8968432fa1c6fd52b0278ce6ad6fb63"
     },
     {
       "path": "static/archives-studio.css",
-      "bytes": 18100,
-      "sha256": "7de62dd13fd07ee49ef29b2f8e4f179e615d9c89cf5e3b1d1c1e69df0146d8f8"
+      "bytes": 16385,
+      "sha256": "ca54328ab7037903ad7a2e2a3f311734a857f791239d27b87930c0ff09cc2a05"
     },
     {
       "path": "static/boot-pulse.css",
@@ -1158,8 +1163,8 @@
     },
     {
       "path": "static/client-state.js",
-      "bytes": 8355,
-      "sha256": "a070f28b3357de6cc24b30e0c0f5796b63c2b899995e6cac847f8f0372c1418f"
+      "bytes": 10269,
+      "sha256": "4dc432853cbdaa5f7cec464a5e6d54ee7e57864841f06c931ca2948f67cf1572"
     },
     {
       "path": "static/codex-archive.js",
@@ -1173,13 +1178,13 @@
     },
     {
       "path": "static/diagnostics.css",
-      "bytes": 7502,
-      "sha256": "54bf9be7957b09e400d3e0e84154a7f63f116b9152612b75abf0d75208460344"
+      "bytes": 7539,
+      "sha256": "417d71cf5953983594fbf884f25e52b32612436477b814be2a0add9513eb76a3"
     },
     {
       "path": "static/diagnostics.js",
-      "bytes": 10687,
-      "sha256": "102b95d0d4775a5c275063abbb84ed04290442b67e8d3240bcf77314bd7bf213"
+      "bytes": 9904,
+      "sha256": "e526a391f18b1437e46374ff42b73e6c2dfd5a7b16d011985ed6e0a327dcef47"
     },
     {
       "path": "static/home-studio.css",
@@ -1188,13 +1193,13 @@
     },
     {
       "path": "static/home-studio.js",
-      "bytes": 59665,
-      "sha256": "3c313ddddf41804797011d3d8f3efe5eb60fbd2f10837511491d941be9b61f9d"
+      "bytes": 59533,
+      "sha256": "49d532034094759f34156bf90a1d858d4c5f74047b08333417d5a570bd88b8c6"
     },
     {
       "path": "static/index.html",
-      "bytes": 56066,
-      "sha256": "6e3813c1c677dfbb631f43c3adcf8b6e829b2e1fbf76baa2e56faaa766f3b2d6"
+      "bytes": 56092,
+      "sha256": "72221f2fffa3d790a8557b38c75293f906a40065fa9a4dbbd5c9c746fe906bce"
     },
     {
       "path": "static/knowledge-studio.css",
@@ -1253,8 +1258,8 @@
     },
     {
       "path": "static/pages-studio.js",
-      "bytes": 36345,
-      "sha256": "3a3cfce337aa2ec94d122754ea335b18669667335008ae8948f637587ca704a4"
+      "bytes": 36332,
+      "sha256": "cd5c59dc376fa9e47e92a77a59cfb79e5c100111843442effc444730d1d8148f"
     },
     {
       "path": "static/prompt-workflow.js",
@@ -1633,8 +1638,8 @@
     },
     {
       "path": "tests/test_client_status_frontend.js",
-      "bytes": 17673,
-      "sha256": "38682451d0dec7d743a148296bd15c6dc75b5ecdf72c19a385193c6f67271724"
+      "bytes": 18021,
+      "sha256": "92d96883b79006d9eae78111873e160303f52bebac34fafd6db8214c5661a9c7"
     },
     {
       "path": "tests/test_codex_format_repair.py",
@@ -1913,8 +1918,8 @@
     },
     {
       "path": "tests/test_native_icon_assets.py",
-      "bytes": 1611,
-      "sha256": "e28ffd443bd7831e4d015cb80bbb9ac5704af27609fb0935525833809941ddb2"
+      "bytes": 1650,
+      "sha256": "85d2ec7c2fb913cf021c6cc1959bb5f32f292c5e7c44c2e12564513755461900"
     },
     {
       "path": "tests/test_object_reading.py",
