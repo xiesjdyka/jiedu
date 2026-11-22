@@ -9,7 +9,7 @@ from .workspace import WorkspaceContext, require_active_workspace
 
 
 def _records(context: WorkspaceContext, source: str):
-    if source not in {"dsh", "cursor", "workbuddy", "opencode", "zcode", "kimi"}:
+    if source not in {"dsh", "cursor", "antigravity", "workbuddy", "opencode", "zcode", "kimi"}:
         raise ValueError("该来源没有可查看的进度原文")
     store = ArchiveStore(context, recover=False)
     sessions = [item for item in store._registry().get("sessions", {}).values()
@@ -101,7 +101,7 @@ def conversation(source, sid, context: WorkspaceContext | None = None):
                      "message_id": None} for x in progress)
     if source == "cursor":
         timeline.sort(key=lambda x: (int(x.get("turn") or 0), int(x.get("position") or 0)))
-    elif source in {"workbuddy", "opencode", "zcode", "kimi"}:
+    elif source in {"antigravity", "workbuddy", "opencode", "zcode", "kimi"}:
         timeline.sort(key=lambda x: (float(x.get("source_offset")) if x.get("source_offset") is not None else float("inf"),
                                      str(x.get("timestamp") or "")))
     else:

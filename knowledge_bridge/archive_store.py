@@ -93,6 +93,7 @@ class SourceRegistry:
         "dsh": ("DSH", "DSH", "desktop_agent"),
         "claude": ("Claude", "Claude", "desktop_agent"),
         "cursor": ("Cursor", "Cursor", "desktop_agent"),
+        "antigravity": ("Antigravity", "Antigravity", "desktop_agent"),
         "workbuddy": ("WorkBuddy", "WorkBuddy", "desktop_agent"),
         "opencode": ("OpenCode", "OpenCode", "desktop_agent"),
         "zcode": ("ZCode", "ZCode", "desktop_agent"),

@@ -412,6 +412,16 @@ def _four_probe(source: str) -> dict:
                 searchable_archive="verified_messages_only", knowledge_organization_input="review_required")}
 
 
+def _antigravity_probe():
+    result = _four_probe("antigravity")
+    result["detail"] = ("仅归档获准范围内本机当前分支的可核实用户与助手可见消息；保留正文代码，"
+                        "不将工具输出或内部思考作为聊天。附件仅关联可读的本地原件。")
+    result["capabilities"].update(
+        user_text="verified_local_messages", assistant_final_text="verified_visible_messages",
+        attachments="local_image_references", continuous_collection="polling_after_owner_selection")
+    return result
+
+
 def _workbuddy_probe(): return _four_probe("workbuddy")
 def _opencode_probe(): return _four_probe("opencode")
 def _zcode_probe(): return _four_probe("zcode")
@@ -424,6 +434,7 @@ ADAPTERS = (
     ("dsh_local", "DSH", "authorized_local_read", _dsh_probe),
     ("claude_local", "Claude", "authorized_local_read", _claude_probe),
     ("cursor_local", "Cursor", "authorized_local_read", _cursor_probe),
+    ("antigravity_local", "Antigravity", "authorized_local_read", _antigravity_probe),
     ("workbuddy_local", "WorkBuddy", "authorized_local_read", _workbuddy_probe),
     ("opencode_local", "OpenCode", "authorized_local_read", _opencode_probe),
     ("zcode_local", "ZCode", "authorized_local_read", _zcode_probe),
@@ -436,7 +447,7 @@ ADAPTERS = (
 def adapter_id_for(client_type: str | None) -> str:
     return {"codex": "codex_local", "hermes": "hermes_local",
             "dsh": "dsh_local", "claude": "claude_local", "cursor": "cursor_local",
-            "workbuddy": "workbuddy_local", "opencode": "opencode_local",
+            "antigravity": "antigravity_local", "workbuddy": "workbuddy_local", "opencode": "opencode_local",
             "zcode": "zcode_local", "kimi": "kimi_local",
             "doubao_work": "doubao_work_local"}.get(
         (client_type or "").strip().casefold(), "generic_mcp_push")
@@ -489,7 +500,7 @@ def connection_status(client: dict, archive: dict, policies: list[dict], adapter
     adapter_id = adapter.get("adapter_id")
     runtime = adapter.get("runtime") or adapter
     if adapter_id in {"codex_local", "hermes_local", "dsh_local", "claude_local", "cursor_local",
-                      "workbuddy_local", "opencode_local", "zcode_local", "kimi_local", "doubao_work_local"}:
+                      "antigravity_local", "workbuddy_local", "opencode_local", "zcode_local", "kimi_local", "doubao_work_local"}:
         return {"state": "independent_collector_" + str(runtime.get("state") or "unverified"),
                 "summary": (runtime.get("summary") or "本机采集状态未验证") + "（独立于此连接）",
                 "detail": (runtime.get("detail") or "") + " 该采集器独立运行；MCP 读取和主动提交权限另行判定。"}

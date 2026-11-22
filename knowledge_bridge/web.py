@@ -2182,7 +2182,7 @@ def api_local_sources_status(request:Request):
 
 
 def _local_chat_collector(source: str, profile_id: str | None = None):
-    if source in {"workbuddy", "opencode", "zcode", "kimi"}:
+    if source in {"antigravity", "workbuddy", "opencode", "zcode", "kimi"}:
         from .four_local_collectors import LocalCompletedCollector
         return LocalCompletedCollector(source)
     if source == "cursor":

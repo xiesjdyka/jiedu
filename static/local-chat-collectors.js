@@ -1,9 +1,9 @@
 /* Explicit Owner entry for local conversation collection. */
 (() => {
   const sources = [{id:'dsh',label:'DSH'}, {id:'claude',label:'Claude'}, {id:'cursor',label:'Cursor'},
-    {id:'workbuddy',label:'WorkBuddy'}, {id:'opencode',label:'OpenCode'},
+    {id:'antigravity',label:'Antigravity'}, {id:'workbuddy',label:'WorkBuddy'}, {id:'opencode',label:'OpenCode'},
     {id:'zcode',label:'ZCode'}, {id:'kimi',label:'Kimi Work'}];
-  const fourSources = new Set(['workbuddy','opencode','zcode','kimi']);
+  const fourSources = new Set(['antigravity','workbuddy','opencode','zcode','kimi']);
   const host = document.getElementById('localChatCollectorCards');
   if (!host) return;
   const safe = value => String(value ?? '').replace(/[&<>"']/g, ch =>
@@ -54,6 +54,8 @@
       '仅保存用户正文和已完成的最终答复；思考、工具与系统记录不入档。' :
       id === 'cursor' ?
       '已完成的用户正文和最终答复进入标准档案，进度原文另存。来源移除后原档案和采集范围保留。' :
+      id === 'antigravity' ?
+      '只读本地聊天。正文里的代码会保留；工具调用、终端输出和内部思考不作为对话正文。归档不需要配置 MCP。' :
       fourSources.has(id) ?
       '真实读取后采集本机可读聊天；只保存已完成轮次的用户正文和最终答复。' :
       '仅覆盖本机当前可读缓存，不能代表云端全部历史。';
