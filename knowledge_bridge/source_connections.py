@@ -49,7 +49,7 @@ class SourceConnections:
         registry = json.loads(self.context.archive_registry.read_text('utf-8')) if self.context.archive_registry.exists() else {'sessions': {}}
         rows = [r for r in registry['sessions'].values() if r.get('source_instance') == internal_id]
         local_doubao = descriptor.get('source_key') == 'doubao_work'
-        local_collector = descriptor.get('source_key') in {'cursor','workbuddy','opencode','zcode','kimi'}
+        local_collector = descriptor.get('source_key') in {'antigravity','cursor','workbuddy','opencode','zcode','kimi'}
         return {**descriptor, 'bound': True,
                 'archive_path': '90_原始档案/' + descriptor['product_family'],
                 'session_count': len(rows), 'message_count': sum(r.get('message_count', 0) for r in rows),

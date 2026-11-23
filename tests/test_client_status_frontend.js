@@ -77,6 +77,15 @@ test('近期读取不冒充实时在线；配置破损、不可读、停用、�
  assert.equal(c.clientReadLabel({...base,installation_state:'absent'}),'未接入');
  assert.equal(c.clientReadLabel({...base,status:'revoked'}),'已撤销');
 });
+test('Antigravity 只认当前 MCP 配置的真实读取，聊天归档独立',()=>{
+ const c=environment().c;
+ const row={client_type:'antigravity',configuration_current:true,configuration_present:true,archive:{enabled:true}};
+ assert.equal(c.accessConnectionLabel(row),'未连接');
+ const verified={...row,connection_read_verified:true};
+ assert.equal(c.accessConnectionLabel(verified),'已连接');
+ assert.equal(c.clientRecentRead(verified),false);
+ assert.equal(c.accessConnectionLabel({...verified,configuration_current:false}),'未连接');
+});
 test('排序只依据当前配置/近期验证，不把旧读取排为已接入',()=>{
  const c=environment().c;c.clientAccessState={};const rows=[{client_type:'opencode',last_read_at:'2026-10-01',configuration_current:null,installation_state:'present'},
  {client_type:'zcode',configuration_current:true,installation_state:'present'}];const order=c.orderedBrandedKinds(rows);assert.equal(order[0],'zcode');

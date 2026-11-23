@@ -12,7 +12,7 @@ def main():
     sub.add_parser("status"); mcp=sub.add_parser("mcp")
     mcp.add_argument('--transport',choices=['stdio','localhost_http'])
     handoff=sub.add_parser('handoff')
-    handoff.add_argument('--client',choices=['codex','hermes','dsh','claude','cursor'],required=True)
+    handoff.add_argument('--client',choices=['codex','hermes','dsh','claude','cursor','antigravity'],required=True)
     handoff.add_argument('--console',required=True)
     handoff.add_argument('--workspace-id',required=True)
     handoff.add_argument('--program-root',required=True)

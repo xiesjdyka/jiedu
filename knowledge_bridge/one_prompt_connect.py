@@ -25,7 +25,7 @@ def redeem(client: str, console: str, workspace_id: str, program_root: str,
     parsed=urlsplit(console)
     if parsed.scheme!='http' or parsed.hostname!='127.0.0.1' or not parsed.port or parsed.path not in {'','/'} or parsed.query or parsed.fragment:
         raise ValueError('控制台地址必须是本机 127.0.0.1 端口')
-    if client not in {'codex','hermes','dsh','claude','cursor'} or not token or len(token)>128:
+    if client not in {'codex','hermes','dsh','claude','cursor','antigravity'} or not token or len(token)>128:
         raise ValueError('接入参数无效')
     root=Path(program_root).resolve()
     if Path(__file__).resolve().parents[1]!=root:

@@ -1030,7 +1030,7 @@ def api_protection_auto_lock(request:Request,payload:ProtectionAutoLockRequest):
     except OwnerSessionRequired:raise HTTPException(403,"Owner 会话无效或已过期")
     return manager.status(request.cookies.get(OWNER_COOKIE))
 
-def _client_read_verification_current(row,policies,permissions,configuration_current=True,configuration_modified_at=None):
+def _client_read_verification_current(row,policies,permissions,configuration_current=True,configuration_modified_at=None,*,recent=True):
     last_read=row.get('last_read_at')
     if not last_read or row.get('status')=='revoked' or configuration_current is False:return False
     # A historical read cannot prove current connectivity for any client.
@@ -1038,14 +1038,14 @@ def _client_read_verification_current(row,policies,permissions,configuration_cur
     # new successful read before the UI can claim a verified connection.
     try:
         age=(datetime.now(timezone.utc)-datetime.fromisoformat(last_read.replace('Z','+00:00'))).total_seconds()
-        if not 0<=age<=300:return False
+        if age<0 or (recent and age>300):return False
     except (ValueError,TypeError,OverflowError):return False
     # These collectors do not own a readable MCP config file, so also require
     # independent evidence that the application is installed.
     if row.get('client_type') in {'workbuddy','opencode','zcode','kimi'}:
         from .client_installation import state as installation_state
         if installation_state(row['client_type'])!='present':return False
-    if row.get('client_type')=='cursor' and configuration_modified_at:
+    if row.get('client_type') in {'cursor','antigravity'} and configuration_modified_at:
         try:
             if datetime.fromisoformat(configuration_modified_at)>datetime.fromisoformat(last_read):return False
         except ValueError:return False
@@ -1097,7 +1097,7 @@ def _client_configuration_evidence(row,registry):
                      registry.configured_secret_matches(row['internal_id'],bundle['secret']))
         # This verifies the prepared bundle, not whether Claude enabled it.
         return {'current':matches,'present':bool(bundle),'state':'bundle_prepared' if matches else 'unknown'}
-    if row.get('client_type') not in {'codex','hermes','dsh','cursor'}:return unknown
+    if row.get('client_type') not in {'codex','hermes','dsh','cursor','antigravity'}:return unknown
     from .client_config import ADAPTERS, _entry_identity, _valid_entry
     try:
         adapter=ADAPTERS[row['client_type']]
@@ -1108,7 +1108,7 @@ def _client_configuration_evidence(row,registry):
             return {'current':False,'present':False,'state':'missing'}
         if isinstance(entry,dict) and entry.get('invalid_existing'):
             return {'current':False,'present':True,'state':'invalid'}
-        if isinstance(entry,dict) and entry.get('enabled') is False:
+        if isinstance(entry,dict) and (entry.get('enabled') is False or entry.get('disabled') is True):
             return {'current':False,'present':True,'state':'disabled'}
         env=entry.get('env') if isinstance(entry,dict) else None
         secret=env.get('KNOWLEDGE_BRIDGE_CLIENT_SECRET') if isinstance(env,dict) else None
@@ -1124,9 +1124,9 @@ def _client_configuration_evidence(row,registry):
         return {'current':False,'present':None,'state':'invalid'} if isinstance(exc,(ValueError,TypeError,AttributeError,yaml.YAMLError)) else unknown
 
 def _cursor_configuration_detail(row):
-    if row.get('client_type')!='cursor':return {'present':None,'modified_at':None}
+    if row.get('client_type') not in {'cursor','antigravity'}:return {'present':None,'modified_at':None}
     from .client_config import ADAPTERS, NAME
-    path=ADAPTERS['cursor'].path
+    path=ADAPTERS[row['client_type']].path
     try:
         file_stat=path.stat()
     except FileNotFoundError:return {'present':False,'modified_at':None}
@@ -1168,6 +1168,9 @@ def api_client_access_status(request:Request):
             client_adapter=source_adapter_for_client(archive_status.get("source_key"),adapter_matrix)
         client_policies=permissions.policies(row["internal_id"])
         client_adapter=client_adapter|{"connection":source_connection_status(row,archive_status,client_policies,client_adapter)}
+        if row.get('client_type')=='antigravity':
+            row=dict(row,connection_read_verified=configuration_current is True and
+                     _client_read_verification_current(row,client_policies,permissions,True,configuration_detail['modified_at'],recent=False))
         registered.append(row|{"archive":archive_status,"policies":client_policies,
             "read_verification_current":_client_read_verification_current(row,client_policies,permissions,configuration_current,configuration_detail['modified_at']),
             "configuration_current":configuration_current,

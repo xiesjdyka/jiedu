@@ -61,7 +61,7 @@ class PairingTransactionManager:
 
     def issue_handoff(self, client_type: str) -> dict:
         """Owner-issued, short-lived capability for one local branded pairing."""
-        if client_type not in {'codex','hermes','dsh','claude','cursor'}:raise ValueError('该客户端尚无已验证的接入流程')
+        if client_type not in {'codex','hermes','dsh','claude','cursor','antigravity'}:raise ValueError('该客户端尚无已验证的接入流程')
         with self._lock:
             self._expire()
             token=secrets.token_urlsafe(32)
@@ -88,7 +88,7 @@ class PairingTransactionManager:
         if transport!='stdio':raise ValueError('通用 HTTP 配对尚未就绪：现有 /mcp 分支缺少逐客户端 Headers 认证与独立服务接线，请选择 STDIO')
         if adapter in {'custom','other','local_agent','workbuddy','opencode','zcode','kimi'}:return 'manual'
         if adapter == 'doubao_work':return 'doubao_work'
-        if adapter not in {'codex','hermes','dsh','claude','cursor'}:raise ValueError('未知客户端类型')
+        if adapter not in {'codex','hermes','dsh','claude','cursor','antigravity'}:raise ValueError('未知客户端类型')
         return adapter
 
     def presets(self) -> list[dict]:
@@ -104,6 +104,7 @@ class PairingTransactionManager:
             {"id":"codex","label":"Codex","display_name":"我的 Codex","suggested_claimed_id":unique("codex"),"configuration":"verified_template","transport":"stdio","template_note":"连接后由界渡后台补齐可读取的本机 JSONL 历史并持续采集；MCP 配置应用后需重启 Codex。"},
             {"id":"hermes","label":"Hermes Agent","display_name":"我的 Hermes","suggested_claimed_id":unique("hermes"),"configuration":"verified_template","transport":"stdio","template_note":"连接后由界渡后台补齐可访问历史并持续采集新消息。"},
             {"id":"dsh","label":"DSH","display_name":"我的 DSH","suggested_claimed_id":unique("dsh"),"configuration":"verified_patch","transport":"stdio","template_note":"通过 DSH 桌面 profile 补丁接入；已有配置条目保持不变。"},
+            {"id":"antigravity","label":"Antigravity","display_name":"Antigravity","suggested_claimed_id":unique("antigravity"),"configuration":"verified_template","transport":"stdio"},
             {"id":"cursor","label":"Cursor","display_name":"我的 Cursor","suggested_claimed_id":unique("cursor"),"configuration":"verified_template","transport":"stdio","template_note":"由你在 Cursor 接入 MCP 并完成真实读取后，首次连接自动采集本机可读历史及新消息；已有暂停与范围保留。"},
             {"id":"workbuddy","label":"WorkBuddy","display_name":"我的 WorkBuddy","suggested_claimed_id":unique("workbuddy"),"configuration":"manual_fields","transport":"stdio","template_note":"交付独立 STDIO 字段，由你在 WorkBuddy 完成接入；成功读取后才启用本机历史采集。"},
             {"id":"opencode","label":"OpenCode","display_name":"我的 OpenCode","suggested_claimed_id":unique("opencode"),"configuration":"manual_fields","transport":"stdio","template_note":"交付独立 STDIO 字段，由你在 OpenCode 完成接入；成功读取后才启用本机历史采集。"},
@@ -122,7 +123,7 @@ class PairingTransactionManager:
             raise ValueError('该客户端已从当前工作区隐藏；请先恢复入口')
         if client_type in {'workbuddy','opencode','zcode','kimi'}:
             return self._quick_connect_manual(client_type)
-        if client_type not in {'codex', 'hermes', 'dsh', 'claude', 'cursor'}:
+        if client_type not in {'codex', 'hermes', 'dsh', 'claude', 'cursor', 'antigravity'}:
             raise ValueError('该客户端尚无已验证的快捷接入流程')
         if client_type=='claude':
             return self._quick_connect_claude_extension(profile_id)
@@ -252,7 +253,7 @@ class PairingTransactionManager:
     def _ensure_existing_collection(self, client_type: str, profile_id: str | None = None) -> str:
         """Only fill an absent collector state; preserve pause, scope and cursors."""
         try:
-            if client_type=='cursor':
+            if client_type in {'cursor','antigravity'}:
                 return 'waiting_for_verified_read'
             if client_type=='codex':
                 from .codex_source_adapter import CodexSourceAdapter

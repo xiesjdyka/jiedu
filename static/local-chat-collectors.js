@@ -184,7 +184,7 @@
     }
   }
   window.jieduLocalCollectors = {
-    supports: id => sources.some(source => source.id === id),
+    supports: id => id === antigravity.id || sources.some(source => source.id === id),
     mount(id) {
       const card = document.getElementById('local-chat-' + id);
       if (!card || card.dataset.mounted) return;

@@ -5,7 +5,7 @@
  * 订阅方立即重绘，所以两边不会出现一边新一边旧。 */
 (function(){
   'use strict';
-  const NAMES={codex:'Codex',hermes:'Hermes',dsh:'DSH',claude:'Claude',cursor:'Cursor',workbuddy:'WorkBuddy',opencode:'OpenCode',zcode:'ZCode',kimi:'Kimi Work'};
+  const NAMES={antigravity:'Antigravity',codex:'Codex',hermes:'Hermes',dsh:'DSH',claude:'Claude',cursor:'Cursor',workbuddy:'WorkBuddy',opencode:'OpenCode',zcode:'ZCode',kimi:'Kimi Work'};
   const ORDER=Object.keys(NAMES);
   const CONFIG_LABEL={bundle_prepared:'扩展包已准备',disabled:'配置已停用',unreadable:'配置无法核对',invalid:'配置格式需检查',missing:'配置未检出',mismatch:'配置不匹配'};
   const REPAIR_STATES=new Set(['disabled','unreadable','invalid','mismatch']);
@@ -20,6 +20,7 @@
     if(!client)return legacy?.configured?result('warn','需处理','发现旧连接，需要重新接入'):
       result('off','未接入',source?.detected?'本机已发现，还没有配置':'本机没有发现');
     const config=configurationLabel(client);
+    if(client.client_type==='antigravity'&&client.configuration_current===true&&client.connection_read_verified===true)return result('ok','已连接','已通过当前配置读取验证');
     if(client.configuration_state==='bundle_prepared')return result('idle',config,'在客户端安装并启用扩展后，请实际读取一次');
     if(client.configuration_present===false||client.configuration_state==='missing')return result('off','未接入',config);
     if(REPAIR_STATES.has(client.configuration_state)||client.status==='configuration_failed'||
@@ -27,7 +28,7 @@
     if(client.read_verification_current===true&&client.configuration_current!==false)return result('ok','最近读取成功','当前权限下已验证实际读取');
     return result('idle',config,client.configuration_current===true?'已配置，等待第一次读取验证':'等待核对连接配置');
   }
-  function recentRead(client){return connection(client).state==='ok'}
+  function recentRead(client){return client?.read_verification_current===true&&connection(client).state==='ok'}
   function derive(status,sources){
     const hidden=new Set(status?.hidden_client_types||[]);
     const reg=(status?.registered||[]).filter(r=>r.status!=='revoked');

@@ -733,7 +733,7 @@ async function loadRawSessions(){
   const params=new URLSearchParams({offset:String(archiveListState.offset),limit:String(archiveListState.limit),client:archiveListState.client,status:archiveListState.status,query:archiveListState.query,t:String(Date.now())});
   try{
     const data=await api('/api/session-archives?'+params.toString(),{ttl:0,force:true});if(sequence!==archiveListSequence||activePage!=='archives')return;
-    const rows=data.items||[],controls=`<div class="archive-list-controls"><label class="archive-query-field"><span>搜索对话</span><input id="archiveQuery" type="search" value="${esc(archiveListState.query)}" placeholder="搜索标题或会话编号"></label><label class="archive-filter-field"><span>来源</span><select id="archiveClientFilter"><option value="all">全部来源</option><option value="codex">Codex</option><option value="chatgpt">ChatGPT Web</option><option value="hermes">Hermes</option><option value="dsh">DSH</option><option value="claude">Claude</option><option value="cursor">Cursor</option><option value="workbuddy">WorkBuddy</option><option value="opencode">OpenCode</option><option value="zcode">ZCode</option>${hiddenClientTypes.has('kimi')?'':'<option value="kimi">Kimi Work</option><option value="antigravity">Antigravity</option>'}</select></label><label class="archive-filter-field"><span>状态</span><select id="archiveStatusFilter"><option value="all">全部状态</option><option value="complete">已归档</option><option value="attention">需要关注</option></select></label><span class="archive-result-count">${data.total||0} 个会话</span></div>`;
+    const rows=data.items||[],controls=`<div class="archive-list-controls"><label class="archive-query-field"><span>搜索对话</span><input id="archiveQuery" type="search" value="${esc(archiveListState.query)}" placeholder="搜索标题或会话编号"></label><label class="archive-filter-field"><span>来源</span><select id="archiveClientFilter"><option value="all">全部来源</option><option value="codex">Codex</option><option value="chatgpt">ChatGPT Web</option><option value="hermes">Hermes</option><option value="dsh">DSH</option><option value="claude">Claude</option><option value="cursor">Cursor</option><option value="workbuddy">WorkBuddy</option><option value="opencode">OpenCode</option><option value="zcode">ZCode</option>${hiddenClientTypes.has('kimi')?'':'<option value="kimi">Kimi Work</option>'}${hiddenClientTypes.has('antigravity')?'':'<option value="antigravity">Antigravity</option>'}</select></label><label class="archive-filter-field"><span>状态</span><select id="archiveStatusFilter"><option value="all">全部状态</option><option value="complete">已归档</option><option value="attention">需要关注</option></select></label><span class="archive-result-count">${data.total||0} 个会话</span></div>`;
     const items=rows.map(x=>`<button type="button" data-raw-session="${esc(x.session_id)}" title="打开 ${esc(archiveDisplayName(x))}" aria-label="打开会话 ${esc(archiveDisplayName(x))}"><b>${esc(archiveTitleOnly(x))}</b><small>${esc(x.client==='codex'?'Codex':x.client==='chatgpt'?'ChatGPT Web':x.client==='hermes'?'Hermes':x.client==='dsh'?'DSH':x.client||'未知来源')} · ${esc(formatTime(x.updated_at||x.started_at))}</small><span class="archive-message-count">${Number(x.message_count||0).toLocaleString('zh-CN')} 条</span></button>`).join('')||'<div class="memory-test-empty"><span>没有找到会话</span><p>换个关键词或来源试试</p></div>';
     const start=data.total?archiveListState.offset+1:0,pages=`<div class="archive-list-pages"><button id="archivePrev" type="button" class="copy-button" ${archiveListState.offset===0?'disabled':''}>上一页</button><span>${start}–${Math.min(archiveListState.offset+archiveListState.limit,data.total||0)} / ${data.total||0}</span><button id="archiveNext" type="button" class="copy-button" ${data.has_more?'':'disabled'}>下一页</button></div>`;
     const priorScroll=host.querySelector('.archive-session-items')?.scrollTop||0,priorFocus=host.contains(document.activeElement)?document.activeElement.id:'',priorSelection=priorFocus==='archiveQuery'?[document.activeElement.selectionStart,document.activeElement.selectionEnd]:null;
@@ -792,6 +792,7 @@ function clientSelector(){const kind=$('#clientScopeKind')?.value||'all',value=$
 function clientRecentRead(client){return window.jieduAiState.recentRead(client)}
 function clientConfigurationLabel(client){return window.jieduAiState.configurationLabel(client)}
 function accessConnectionLabel(client,legacy){
+  if(client?.client_type==='antigravity')return (client.connection_read_verified===true||client.read_verification_current===true)&&client.configuration_current===true?'已连接':'未连接';
   const state=window.jieduAiState.connection(client,legacy);
   const connected=client ? state.state==='ok'||(state.state==='idle'&&client.configuration_current===true&&client.configuration_state!=='bundle_prepared') :
     legacy?.configured&&legacy.public_access_unchanged!==false;
@@ -869,9 +870,13 @@ function quickConnectionState(kind){
 }
 function psLiteral(value){return "'"+String(value).replace(/'/g,"''")+"'"}
 function quickConnectPrompt(kind,health,ticket){
-  const name={codex:'Codex（ChatGPT 工作客户端）',hermes:'Hermes',dsh:'DSH',cursor:'Cursor'}[kind]||kind;
+  const name={antigravity:'Antigravity',codex:'Codex（ChatGPT 工作客户端）',hermes:'Hermes',dsh:'DSH',cursor:'Cursor'}[kind]||kind;
   const root=ticket.program_root,origin=`http://127.0.0.1:${Number(health.port)}`;
   const command=`Set-Location -LiteralPath ${psLiteral(root)}; & ${psLiteral(ticket.python_executable)} -B -X utf8 -m knowledge_bridge.cli handoff --client ${kind} --console ${psLiteral(origin)} --workspace-id ${psLiteral(ticket.workspace_id)} --program-root ${psLiteral(root)} --console-pid ${Number(ticket.console_pid)} --token ${psLiteral(ticket.token)}`;
+  if(kind==='antigravity')return `请在本机 PowerShell 中执行这条界渡接入命令。接入码仅能使用一次，请勿输出或转发。
+${command}
+
+命令会将界渡的 STDIO 服务合并到 ~/.gemini/config/mcp_config.json 的 mcpServers，保留其他服务。完成后请在 Antigravity 的 MCP Servers 中刷新，实际调用界渡获准的只读工具。只报告读取是否成功，无需回显接入码、密钥或知识正文。`;
   return `请在这台电脑的 ${name} 中完成界渡接入。优先用本机 PowerShell 7 执行下面这一条命令；若未安装，可用系统自带的 Windows PowerShell 执行，不需要另装环境。不要打印、复述或保存命令中的一次性接入码。接入码仅限 ${name}，5 分钟内使用一次，过期后请回界渡重新复制提示词。\n\n${command}\n\n命令会先核对运行中的界渡程序、工作区与进程，再通过本机限时授权调用界渡正式配对事务。新接入会备份客户端配置，并启用该来源可读取的历史及新消息自动归档；已有身份、明确权限、采集暂停或排除范围及游标保留。命令若报告发现未验证的旧配置或采集失败，请如实报告并停在该步骤。不要自己修改配置、轮换密钥或扩大权限。\n\n完成命令后检查本客户端的界渡 MCP。若它尚未加载新配置，按客户端正常方式重新加载；命令要求重开 ${name} 时请告诉我，重开后继续。必须实际调用一个当前获准的只读工具并成功读取，再到界渡“AI连接”核对当前读取状态。initialize、tools/list、配置存在或过去的成功记录都不算本次成功。若被拒绝，保留原权限并报告。\n\n分别报告两项真实状态：MCP 读取是否成功；界渡后台采集是否已同步来源与新消息。读取成功不能替代采集证据，采集运行也不能替代读取验证。不要输出知识正文、配对秘密或一次性接入码。`;
 }
 function renderQuickConnect(){
@@ -890,8 +895,7 @@ function renderQuickConnect(){
     }catch(error){if(!isRequestCancelled(error))feedback.textContent=protectionMessage(error,'接入未完成；原配置保持不变');button.disabled=false}
   });
 }
-const brandedClientNames={codex:'Codex',hermes:'Hermes',dsh:'DSH',claude:'Claude',cursor:'Cursor',workbuddy:'WorkBuddy',opencode:'OpenCode',zcode:'ZCode',kimi:'Kimi Work'};
-const antigravitySelection='local:antigravity';
+const brandedClientNames={antigravity:'Antigravity',codex:'Codex',hermes:'Hermes',dsh:'DSH',claude:'Claude',cursor:'Cursor',workbuddy:'WorkBuddy',opencode:'OpenCode',zcode:'ZCode',kimi:'Kimi Work'};
 let hiddenClientTypes=new Set();
 const manualBrandedKinds=new Set(['workbuddy','opencode','zcode','kimi']);
 function orderedBrandedKinds(rows){const hidden=new Set(clientAccessState?.hidden_client_types||[]),original=Object.keys(brandedClientNames).filter(kind=>!hidden.has(kind));return [...original].sort((left,right)=>{const a=rows.find(row=>row.client_type===left),b=rows.find(row=>row.client_type===right),joined=row=>Boolean(row&&row.installation_state!=='absent'&&(clientRecentRead(row)||row.configuration_current===true&&row.configuration_state!=='bundle_prepared')),aJoined=joined(a),bJoined=joined(b);if(aJoined!==bJoined)return aJoined?-1:1;if(aJoined&&bJoined){const newer=Date.parse(b.created_at||'')-Date.parse(a.created_at||'');if(Number.isFinite(newer)&&newer)return newer}return original.indexOf(left)-original.indexOf(right)})}
@@ -927,13 +931,14 @@ document.addEventListener('focusout',event=>{if($('#clientAccessControl')?.conta
 document.addEventListener('close',event=>{if(event.target?.matches?.('dialog'))setTimeout(()=>{if(clientAccessRefreshVisible())loadClientAccessControl({quiet:true,automatic:true})},0)},true);
 function resolveSelectedClient(){const rows=clientAccessState?.registered||[];return clientAccessSelected.startsWith('preset:')?rows.find(row=>row.client_type===clientAccessSelected.slice(7)&&row.status!=='revoked'):rows.find(row=>row.internal_id===clientAccessSelected)}
 function brandedClientCard(kind,client,legacy){
-  const state=accessConnectionLabel(client,legacy);
+  const state=kind==='antigravity'&&!client?'未连接':accessConnectionLabel(client,legacy);
   const selected=clientAccessSelected===`preset:${kind}`||clientAccessSelected===client?.internal_id?' selected':'';
   return `<button type="button" class="client-identity-card preset${selected}" data-select-client="preset:${kind}" aria-pressed="${!!selected}"><span class="identity-status ${clientRecentRead(client)?'status-read_verified':''}">${state}</span><b>${brandedClientNames[kind]}</b><small>${clientRecentRead(client)?'查看读取时间与权限；不代表实时在线':client?'查看配置、权限与历史记录':legacy?'查看现有配置与记录':'选择后查看接入步骤'}</small></button>`;
 }
 function brandedConnectPanel(kind,client,ownerReady){
   const name=brandedClientNames[kind],sent=Boolean(client)&&sessionStorage.getItem(`jiedu.connect.sent.${kind}`)==='1';
   if(sent)ensureBrandedConnectPoll();
+  if(kind==='antigravity')return `<section aria-label="Antigravity 接入"><h3>连接 Antigravity</h3><p>复制提示词到 Antigravity，完成 MCP 配置并读取一次后即可管理权限。</p><button type="button" class="primary" data-copy-branded="antigravity" ${ownerReady?'':'disabled'}>复制接入提示词</button><p class="branded-connect-feedback" role="status"></p></section>`;
   const pendingKimi=kind==='kimi'&&!client?Number((clientAccessState?.adapter_matrix||[]).find(row=>row.adapter_id==='kimi_local')?.runtime?.history?.pending_turns||0):0;
   const note=kind==='claude'?'先下载界渡扩展，在 Claude 桌面版安装并启用；之后请 Claude 实际读取一次。':'把提示词交给本机的 '+name+'；完成后请它实际读取一次。';
   const archiveNote=kind==='cursor'||manualBrandedKinds.has(kind)?'你把接入提示词交给客户端并完成真实读取后，界渡才会采集本机可读历史及新消息；已有暂停或范围设置保持。接入前不会采集。附件尚未真实验证。':'首次接入会归档该来源可读取的历史并持续接收新消息；已有暂停和范围设置保持。没有可读来源时显示等待，不会假报已归档。';
@@ -949,7 +954,7 @@ async function downloadClaudeExtension(){
   const url=URL.createObjectURL(await response.blob()),link=document.createElement('a');link.href=url;link.download='jiedu-claude.mcpb';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 async function bindBrandedConnect(){
-  $$('[data-copy-branded]').forEach(button=>button.onclick=async()=>{const kind=button.dataset.copyBranded,feedback=button.closest('.branded-connect')?.querySelector('.branded-connect-feedback');button.disabled=true;if(feedback)feedback.textContent='正在准备接入提示词…';try{
+  $$('[data-copy-branded]').forEach(button=>button.onclick=async()=>{const kind=button.dataset.copyBranded,feedback=button.closest('section')?.querySelector('.branded-connect-feedback');button.disabled=true;if(feedback)feedback.textContent='正在准备接入提示词…';try{
     if(kind==='claude'){
       const confirmed=await confirmClaudeExtensionAction();
       if(!confirmed){if(feedback)feedback.textContent='已取消，未准备扩展包。';return}
@@ -966,7 +971,7 @@ async function bindBrandedConnect(){
       const ticket=await clientAccessPost('/api/client-access/handoff/'+kind,{}),prompt=quickConnectPrompt(kind,health,ticket),copied=await copyText(prompt);if(!copied)showManualConnectPrompt(prompt);if(feedback)feedback.textContent=copied?'接入提示词已复制。请交给 '+brandedClientNames[kind]+'，完成后实际读取一次。':'请从弹窗手动复制提示词；一次性接入码 5 分钟内有效。';
     }
   }catch(error){if(feedback)feedback.textContent=protectionMessage(error,'接入提示词准备失败')}finally{button.disabled=false}});
-  $$('[data-sent-branded]').forEach(button=>button.onclick=async()=>{const kind=button.dataset.sentBranded,feedback=button.closest('.branded-connect')?.querySelector('.branded-connect-feedback');button.disabled=true;button.textContent='正在核对…';try{const latest=await loadClientAccessControl({quiet:true});if(!latest)throw Error('状态未更新，请稍后重试');const client=latest.registered?.find(row=>row.client_type===kind&&row.status!=='revoked');if(!client){sessionStorage.removeItem(`jiedu.connect.sent.${kind}`);if(feedback)feedback.textContent='尚未准备接入身份。请先点“复制接入提示词”，交给 '+brandedClientNames[kind]+' 完成配置。';return}if(clientRecentRead(client)){sessionStorage.removeItem(`jiedu.connect.sent.${kind}`);await loadClientAccessControl({quiet:true});return}sessionStorage.setItem(`jiedu.connect.sent.${kind}`,'1');ensureBrandedConnectPoll();if(feedback)feedback.textContent='已记录你发出指令；界渡仍在等待 '+brandedClientNames[kind]+' 实际读取。请核对客户端工具清单，不必反复新建会话。'}catch(error){if(feedback)feedback.textContent=protectionMessage(error,'连接状态暂时无法核对')}finally{button.disabled=false;button.textContent='已发指令到智能体'}});
+  $$('[data-sent-branded]').forEach(button=>button.onclick=async()=>{const kind=button.dataset.sentBranded,feedback=button.closest('section')?.querySelector('.branded-connect-feedback');button.disabled=true;button.textContent='正在核对…';try{const latest=await loadClientAccessControl({quiet:true});if(!latest)throw Error('状态未更新，请稍后重试');const client=latest.registered?.find(row=>row.client_type===kind&&row.status!=='revoked');if(!client){sessionStorage.removeItem(`jiedu.connect.sent.${kind}`);if(feedback)feedback.textContent='尚未准备接入身份。请先点“复制接入提示词”，交给 '+brandedClientNames[kind]+' 完成配置。';return}if(clientRecentRead(client)){sessionStorage.removeItem(`jiedu.connect.sent.${kind}`);await loadClientAccessControl({quiet:true});return}sessionStorage.setItem(`jiedu.connect.sent.${kind}`,'1');ensureBrandedConnectPoll();if(feedback)feedback.textContent='已记录你发出指令；界渡仍在等待 '+brandedClientNames[kind]+' 实际读取。请核对客户端工具清单，不必反复新建会话。'}catch(error){if(feedback)feedback.textContent=protectionMessage(error,'连接状态暂时无法核对')}finally{button.disabled=false;button.textContent='已发指令到智能体'}});
 }
 /* r40：「连接 AI」页只做差分更新——左侧列表按卡片逐个比对，只改变化的文字 / 样式；右侧面板和顶部提示有变化才替换。
    客户端切换用委托在容器上的一次性点击监听，列表不再被整块销毁，点击不会被吞掉。 */
@@ -998,10 +1003,8 @@ function renderClientAccess(){
   const hiddenKinds=new Set(clientAccessState.hidden_client_types||[]),connections=clientConnectionGroups(clientAccessState),registered=connections.active.filter(row=>!hiddenKinds.has(row.client_type)),revoked=connections.revoked,legacy=configuredLegacyClients(clientAccessState).filter(row=>!hiddenKinds.has(row.client_type)&&!hiddenKinds.has(row.claimed_id));hiddenClientTypes=hiddenKinds;
   const kimiPairOption=$('#pairedClientType option[value="kimi"]');if(kimiPairOption){kimiPairOption.hidden=hiddenKinds.has('kimi');kimiPairOption.disabled=hiddenKinds.has('kimi');if(kimiPairOption.disabled&&$('#pairedClientType').value==='kimi')$('#pairedClientType').value='custom'}
   $('#pairClient').hidden=false;
-  const showAntigravity=!hiddenKinds.has('antigravity');
-  if(clientAccessSelected&&!(showAntigravity&&clientAccessSelected===antigravitySelection)&&!registered.some(row=>row.internal_id===clientAccessSelected)&&!legacy.some(row=>'legacy:'+row.claimed_id===clientAccessSelected)&&!orderedBrandedKinds(registered).some(kind=>clientAccessSelected==='preset:'+kind))clientAccessSelected='';
+  if(clientAccessSelected&&!registered.some(row=>row.internal_id===clientAccessSelected)&&!legacy.some(row=>'legacy:'+row.claimed_id===clientAccessSelected)&&!orderedBrandedKinds(registered).some(kind=>clientAccessSelected==='preset:'+kind))clientAccessSelected='';
   if(!clientAccessSelected)clientAccessSelected='preset:codex';
-  const antigravitySelected=clientAccessSelected===antigravitySelection;
   const selectedKind=clientAccessSelected.startsWith('preset:')?clientAccessSelected.slice(7):'';
   const selectedLegacy=legacy.find(row=>'legacy:'+row.claimed_id===clientAccessSelected);
   const selected=selectedKind?registered.find(row=>row.client_type===selectedKind):registered.find(row=>row.internal_id===clientAccessSelected),ownerReady=Boolean(protectionStatus?.owner_session_active),notice=clientProtectionNotice();
@@ -1020,22 +1023,17 @@ function renderClientAccess(){
   const collectorInfo=(visibleAdapterRows.length?`<details class="archive-collector-overview" aria-label="自动归档状态"><summary><b>自动归档状态</b><small>${esc(archiveSummary)}</small></summary><div class="archive-collector-body">${visibleAdapterRows.map(row=>`<article class="archive-collector-row"><div class="collector-summary"><b>${esc(row.label==='通用 MCP'?'其他客户端':row.label)}</b><small>${esc(collectorSavedText(row))}</small></div><span class="identity-status status-${collectorState(row)==='automatic'?'authenticated':'legacy_unverified'}">${esc(archiveStateText[collectorState(row)]||row.runtime?.summary||row.summary||'待核对')}</span></article>`).join('')}${hermesLegacyNote}<details><summary>查看采集范围和保存位置</summary><div>${visibleAdapterRows.map(row=>`<p><b>${esc(row.label)}：</b>${esc(row.runtime?.detail||row.detail||'暂无说明')}${row.saved?.location?`<br>保存位置：${esc(row.saved.location)}`:''}</p>`).join('')}<p>${esc(clientAccessState.adapter_generator?.model_dependency||'其他客户端需要适配或主动提交，不能由 MCP 连接自动推断。')}</p></div></details></div></details>`:'');
 
   const legacyFold='';
-  const antigravityCard=showAntigravity?`<button type="button" class="client-identity-card preset${antigravitySelected?' selected':''}" data-select-client="${antigravitySelection}" aria-pressed="${antigravitySelected}"><span class="identity-status">${['automatic','degraded','awaiting_first_sync'].includes(collectorState(localCollectors.find(r=>r.adapter_id==='antigravity_local')||{}))?'已连接':'未连接'}</span><b>Antigravity</b><small>查看采集范围与状态</small></button>`:'';
-  const presets=antigravityCard+orderedBrandedKinds(registered).map(kind=>brandedClientCard(kind,registered.find(row=>row.client_type===kind),legacy.find(row=>row.claimed_id===kind))).join('');
+  const presets=orderedBrandedKinds(registered).map(kind=>brandedClientCard(kind,registered.find(row=>row.client_type===kind),legacy.find(row=>row.claimed_id===kind))).join('');
   const extra=registered.filter(row=>!Object.hasOwn(brandedClientNames,row.client_type)||registered.filter(x=>x.client_type===row.client_type).indexOf(row)>0);
-  const connected=selected?.read_verification_current===true,localInstallUnclear=['workbuddy','opencode','zcode','kimi'].includes(selected?.client_type)&&selected?.installation_state!=='present',manageable=localInstallUnclear||selected?.client_type==='cursor'&&selected.configuration_present===false?false:connected||Boolean(selected?.last_read_at||selected?.verified_at)||accessConnectionLabel(selected)==='已连接';
+  const connected=selected?.read_verification_current===true,localInstallUnclear=['workbuddy','opencode','zcode','kimi'].includes(selected?.client_type)&&selected?.installation_state!=='present',manageable=selected?.client_type==='antigravity'?accessConnectionLabel(selected)==='已连接':localInstallUnclear||selected?.client_type==='cursor'&&selected.configuration_present===false?false:connected||Boolean(selected?.last_read_at||selected?.verified_at)||accessConnectionLabel(selected)==='已连接';
   const setupKind=selectedKind||(!manageable&&Object.hasOwn(brandedClientNames,selected?.client_type)?selected.client_type:'');
-  const body=antigravitySelected?(ownerReady?
-    '<article class="local-chat-card local-chat-main" id="local-chat-antigravity" aria-label="Antigravity 本地聊天"><h3>Antigravity 本地聊天</h3><p role="status">正在读取本地采集状态…</p></article>':
-    '<section class="client-access-empty"><b>Antigravity 本地聊天</b><p>恢复本机管理后可以查看会话和设置采集范围。</p></section>'):
-    selectedLegacy?renderLegacyClient(selectedLegacy):setupKind&&!manageable?brandedConnectPanel(setupKind,selected,ownerReady):renderClientPermissions(selected);
-  const clientRequests=antigravitySelected?'':`<details class="pending-confirmations"><summary><span><b>一次性请求</b><small>${pendingRows.length} 项待处理 · ${confirmedRows.length} 项已允许待使用</small></span></summary><div>${pendingBody}</div></details><details class="client-access-audit"><summary><span><b>最近访问记录</b><small>只显示脱敏的身份、动作和结果</small></summary><div>${(clientAccessState.audit||[]).slice(0,12).map(row=>`<article><time>${esc(formatTime(row.at))}</time><b>${esc(row.action||'操作')}</b><span>${esc(row.claimed_identity||'未声明')} · ${esc(row.result||'未知')}</span></article>`).join('')||'<p>当前没有可显示的记录。</p>'}</div></details>`;
+  const body=selectedLegacy?renderLegacyClient(selectedLegacy):setupKind&&!manageable?brandedConnectPanel(setupKind,selected,ownerReady):renderClientPermissions(selected);
+  const clientRequests=`<details class="pending-confirmations"><summary><span><b>一次性请求</b><small>${pendingRows.length} 项待处理 · ${confirmedRows.length} 项已允许待使用</small></span></summary><div>${pendingBody}</div></details><details class="client-access-audit"><summary><span><b>最近访问记录</b><small>只显示脱敏的身份、动作和结果</small></summary><div>${(clientAccessState.audit||[]).slice(0,12).map(row=>`<article><time>${esc(formatTime(row.at))}</time><b>${esc(row.action||'操作')}</b><span>${esc(row.claimed_identity||'未声明')} · ${esc(row.result||'未知')}</span></article>`).join('')||'<p>当前没有可显示的记录。</p>'}</div></details>`;
   const source=selectedKind||selected?.client_type||selectedLegacy?.claimed_id;
   const collector=ownerReady&&window.jieduLocalCollectors?.supports(source)?
     `<details class="collector-settings"><summary>本地聊天采集</summary><article class="local-chat-card local-chat-main" id="local-chat-${esc(source)}"><p role="status">正在读取采集状态…</p></article></details>`:'';
   const patched=patchClientAccess(root,`${gate}<aside class="client-identity-list"><div class="client-list-summary"><b>选择 AI 客户端</b><small>各连接独立管理</small></div>${presets}${extra.length||legacy.length?`<details class="other-client-identities"><summary>其他连接 · ${extra.length+legacy.length}</summary>${extra.map(clientAccessCard).join('')}${legacy.map(clientLegacyCard).join('')}</details>`:''}${legacyFold}</aside><section class="client-permission-panel">${body}${collector}${selected&&manageable?'<details class="connection-technical"><summary>连接检查与使用说明</summary>'+connectionCheckGuide()+'</details>':''}${clientRequests}</section>`);
   if(patched.full||patched.panel)bindClientAccess();if(patched.full||patched.panel||patched.gate)bindClientGateActions();if(patched.full||patched.panel)bindBrandedConnect();
-  if(antigravitySelected)window.jieduLocalCollectors?.mount('antigravity');
   const settings=root.querySelector('.collector-settings');
   if(settings)settings.ontoggle=()=>{if(settings.open)window.jieduLocalCollectors.mount(source)};
   if(focusedClient)[...root.querySelectorAll('[data-select-client]')].find(node=>node.dataset.selectClient===focusedClient)?.focus({preventScroll:true});

@@ -249,9 +249,7 @@ class ClaudeAdapter(Adapter):
         if not isinstance(json.loads(text),dict):raise ValueError("Claude 桌面配置根节点必须是对象")
 
 
-class CursorAdapter(Adapter):
-    id="cursor"; label="Cursor"
-    def __init__(self): self.path=Path.home()/".cursor"/"mcp.json"
+class JsonStdioAdapter(Adapter):
     def detect(self):
         try:data=json.loads(self.path.read_text("utf-8")) if self.path.is_file() else {}
         except (OSError,ValueError):data={}
@@ -260,10 +258,10 @@ class CursorAdapter(Adapter):
                 "config_exists":self.path.is_file(),"entry":servers.get(NAME) if isinstance(servers,dict) else None}
     def render(self,old,client_id=None,secret=None):
         data=json.loads(old) if old.strip() else {}
-        if not isinstance(data,dict):raise ValueError("Cursor MCP 根节点必须是对象")
+        if not isinstance(data,dict):raise ValueError(f"{self.label} MCP 根节点必须是对象")
         servers=data.setdefault("mcpServers",{})
-        if not isinstance(servers,dict):raise ValueError("Cursor MCP 服务配置无效")
-        c=_command(client_id or "cursor",secret)
+        if not isinstance(servers,dict):raise ValueError(f"{self.label} MCP 服务配置无效")
+        c=_command(client_id or self.id,secret)
         servers[NAME]={key:c[key] for key in ("command","args","env")}
         return json.dumps(data,ensure_ascii=False,indent=2)+"\n"
     def remove(self,old):
@@ -272,10 +270,18 @@ class CursorAdapter(Adapter):
         if isinstance(servers,dict):servers.pop(NAME,None)
         return json.dumps(data,ensure_ascii=False,indent=2)+"\n"
     def validate(self,text):
-        if not isinstance(json.loads(text),dict):raise ValueError("Cursor MCP 根节点必须是对象")
+        if not isinstance(json.loads(text),dict):raise ValueError(f"{self.label} MCP 根节点必须是对象")
 
 
-ADAPTERS={"cursor":CursorAdapter(),"codex":CodexAdapter(),"hermes":HermesAdapter(),
+class CursorAdapter(JsonStdioAdapter):
+    id="cursor"; label="Cursor"
+    def __init__(self): self.path=Path.home()/".cursor"/"mcp.json"
+
+class AntigravityAdapter(JsonStdioAdapter):
+    id="antigravity"; label="Antigravity"
+    def __init__(self): self.path=Path.home()/".gemini"/"config"/"mcp_config.json"
+
+ADAPTERS={"antigravity":AntigravityAdapter(),"cursor":CursorAdapter(),"codex":CodexAdapter(),"hermes":HermesAdapter(),
           "dsh":DSHAdapter(),"claude":ClaudeAdapter(),"other":Adapter()}
 def _entry_identity(entry):
     return entry.get("env",{}).get("KNOWLEDGE_BRIDGE_CLIENT_ID") if isinstance(entry,dict) and isinstance(entry.get("env",{}),dict) else None
