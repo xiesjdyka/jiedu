@@ -38,8 +38,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 8783,
-      "sha256": "79ea9f981b345b726b0126317945d891ee4a26dc92882e4006b368f562d630db"
+      "bytes": 8792,
+      "sha256": "5ac48413aace5df908290ced56e05f331933d5cecbb27c99d3fcae38b4ce9cdb"
     },
     {
       "path": "RELEASE_NOTES.md",
@@ -59,7 +59,7 @@
     {
       "path": "VERSION",
       "bytes": 7,
-      "sha256": "4304275f30e076c76abdc0f280f0fdd5537f1ac700953ba1908e29a64d531919"
+      "sha256": "37310c7f348165122ccb9f4a854c29485395bb3af0659ba5a77be066c1511679"
     },
     {
       "path": "butler-resources.lock.json",
@@ -232,6 +232,11 @@
       "sha256": "8ccafc1c59f1c825491041539b97f4dc7f7e434b8045dc84be88ef8d2e6769fd"
     },
     {
+      "path": "docs/changes-1.2.11.md",
+      "bytes": 537,
+      "sha256": "31507364733efc2599c5ff14c0cf28cc4f32e688666856de17164347ab8c65ab"
+    },
+    {
       "path": "docs/changes-20261024.md",
       "bytes": 4063,
       "sha256": "2173cd4185c0787a3da3d3d0e0f376b5955e648c2111e104482e3c02b01c8d7f"
@@ -268,8 +273,8 @@
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 13781,
-      "sha256": "242506dd65e91de25ff1b2f1cf06db28361b42c2a694655fabfbb9a899f0e180"
+      "bytes": 13917,
+      "sha256": "b9364881a767f06c92430aaa7162020b87027778a3c42ec45ca0ddb8fd2e61d7"
     },
     {
       "path": "docs/release-version.md",
@@ -329,7 +334,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 23,
-      "sha256": "188e2b832990b0f59d936fddf7a360999051b8533ac8e641fa4cac9eb8c18d5a"
+      "sha256": "681599b026225d771252c509af7b4e4d05ac1fb643a89cf23187506ce77942d7"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -1043,13 +1048,13 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 13725,
-      "sha256": "bb687bbe393c0e935ac809c3a744dfe5680bd01a489dcf004c594a48121e6bd7"
+      "bytes": 13748,
+      "sha256": "5899e1384366d7acc28b5ecd226e45db39d242d0e4dc8452204b842a9bd913da"
     },
     {
       "path": "pyproject.toml",
       "bytes": 1109,
-      "sha256": "baa66f12a63610cdc726487f3dc97ab0c0e36f2a75912734062bd4a125aca447"
+      "sha256": "c9adf8909089159a4a4731712433bb2ceb55ffddd41b4e8d716ef4d79635e779"
     },
     {
       "path": "requirements.lock.txt",
@@ -1108,13 +1113,13 @@
     },
     {
       "path": "static/access-v2.css",
-      "bytes": 32374,
-      "sha256": "d540c7dd96f8e3a8d45a8a5bb7acc33ebb1950368883c83add03659530e9dda5"
+      "bytes": 34097,
+      "sha256": "86980ddae46a0abbc70d979a2cad9eba15cd0378df29e8d264a35f8ba8f4d313"
     },
     {
       "path": "static/app.js",
-      "bytes": 384410,
-      "sha256": "416f3a4f4ac8d38c2a587a0efc5fad659e4805dafdb83df21b69e37d0781374f"
+      "bytes": 385567,
+      "sha256": "2e571b13eb1dda1b21d12784354ee3789b979d3c14d4abb0940910e647f29326"
     },
     {
       "path": "static/archives-studio.css",
@@ -1208,8 +1213,8 @@
     },
     {
       "path": "static/index.html",
-      "bytes": 56079,
-      "sha256": "bb63bca1e95e038c9c173138c62ffdbbefbe8f1d617ca650674813dbf94379f9"
+      "bytes": 56086,
+      "sha256": "71c4b9bc1e4df74b622ea3e91417a4339c81c6a0570f03df849867bd9a8bfba1"
     },
     {
       "path": "static/knowledge-studio.css",
@@ -1248,8 +1253,8 @@
     },
     {
       "path": "static/local-chat-collectors.js",
-      "bytes": 10969,
-      "sha256": "5642d0056da7e798c4f9f7cc013e4ea103ad3abe7083377419bff8fb321a4e9e"
+      "bytes": 14501,
+      "sha256": "19f27f71bd1d7747a684b452efda86d9d54935dc5e3acb9328af6698ff6e8ac4"
     },
     {
       "path": "static/mist-v3.css",
