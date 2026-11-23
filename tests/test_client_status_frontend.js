@@ -80,8 +80,8 @@ test('近期读取不冒充实时在线；配置破损、不可读、停用、�
 test('排序只依据当前配置/近期验证，不把旧读取排为已接入',()=>{
  const c=environment().c;c.clientAccessState={};const rows=[{client_type:'opencode',last_read_at:'2026-10-01',configuration_current:null,installation_state:'present'},
  {client_type:'zcode',configuration_current:true,installation_state:'present'}];const order=c.orderedBrandedKinds(rows);assert.equal(order[0],'zcode');
- const html=c.brandedClientCard('opencode',rows[0]);assert.match(html,/配置待核对/);assert.doesNotMatch(html,/已接入|已连接/);
- const daily=c.clientDailyStatus(rows[0]);assert.match(daily,/历史成功读取/);assert.match(daily,/连接状态与聊天采集分开/);
+ const html=c.brandedClientCard('opencode',rows[0]);assert.match(html,/未连接/);assert.match(c.brandedClientCard('zcode',rows[1]),/已连接/);assert.doesNotMatch(html,/已接入|已连接/);
+ const daily=c.clientDailyStatus(rows[0]);assert.match(daily,/历史成功读取/);assert.match(daily,/<details><summary>连接检查详情/);
 });
 test('所有客户端安装/配置/权限/读取/增删均在同一5秒刷新中更新',async()=>{
  const e=environment(),c=e.c;c.status={registered:clone(sample.registered)};await c.loadClientAccessControl();const count=e.renders.length;

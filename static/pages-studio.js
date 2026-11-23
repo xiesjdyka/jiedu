@@ -101,9 +101,10 @@ function setupButler(){
 /* ---------- 连接 AI：按状态文字给客户端 / 聊天来源打上颜色 ---------- */
 const toneOf=t=>/需要|失效|异常|失败|错误|重新/.test(t)?'warn':/已连接|已验证|持续|正常|已启用|运行中|读取已验证|读取成功/.test(t)?'ok':'idle';
 function tagAccess(){
-  /* r39：品牌客户端的色调与首页同源（client-state.js 的同一判定），不再靠文字猜 */
-  const st=window.jieduAiState&&typeof clientAccessState!=='undefined'&&clientAccessState?new Map(window.jieduAiState.derive(clientAccessState,null).map(a=>[a.key,a.state])):null;
-  $$('#access .client-identity-card').forEach(c=>{const id=c.dataset.selectClient||'',s=id.startsWith('preset:')&&st?st.get(id.slice(7)):null;const v=s?(s==='ok'||s==='warn'?s:'idle'):toneOf($('.identity-status',c)?.textContent||'');if(c.dataset.tone!==v)c.dataset.tone=v});
+  $$('#access .client-identity-card').forEach(card=>{
+    const tone=$('.identity-status',card)?.textContent==='已连接'?'ok':'idle';
+    if(card.dataset.tone!==tone)card.dataset.tone=tone;
+  });
   const other=$('#access .other-client-identities');if(other&&!other.dataset.studioOpen){other.dataset.studioOpen='1';other.open=true}
   $$('#access .local-chat-card').forEach(c=>{const t=$('.local-chat-card-head strong',c)?.textContent||'';const v=toneOf(t);if(c.dataset.tone!==v)c.dataset.tone=v});
   accessDedupe();accessLock();

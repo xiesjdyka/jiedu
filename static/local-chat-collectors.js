@@ -5,8 +5,6 @@
     {id:'workbuddy',label:'WorkBuddy'}, {id:'opencode',label:'OpenCode'},
     {id:'zcode',label:'ZCode'}, {id:'kimi',label:'Kimi Work'}];
   const fourSources = new Set(['antigravity','workbuddy','opencode','zcode','kimi']);
-  const host = document.getElementById('localChatCollectorCards');
-  if (!host) return;
   const safe = value => String(value ?? '').replace(/[&<>"']/g, ch =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
   const url = (id, action) => '/api/local-chat-collectors/' + id + '/' + action;
@@ -125,7 +123,7 @@
         card.querySelector('.local-chat-feedback').textContent = '请先选择一个 Claude 资料目录。';
         button.disabled = false; return;
       }
-      if (isAntigravity) { await refreshAntigravity(card); return; }
+      if (isAntigravity) { await refreshCollector(card,id); return; }
       try { discoveries.set(id, await api(url(id,'discover') +
         (profile ? '?profile_id=' + encodeURIComponent(profile) : ''), {force:true,ttl:0})); render(id); }
       catch (error) { card.querySelector('.local-chat-feedback').textContent = fail(error); button.disabled = false; }
@@ -160,13 +158,13 @@
       catch (error) { card.querySelector('.local-chat-feedback').textContent = fail(error); button.disabled = false; }
     });
   }
-  async function refreshAntigravity(card) {
+  async function refreshCollector(card,id) {
     card.setAttribute('aria-busy','true');
     try {
-      const status = await api(url(antigravity.id,'status'), {force:true,ttl:0});
+      const status = await api(url(id,'status'), {force:true,ttl:0});
       if (!card.isConnected) return;
-      states.set(antigravity.id, status);
-      render(antigravity.id);
+      states.set(id, status);
+      render(id);
     } catch (error) {
       if (!card.isConnected) return;
       const feedback = card.querySelector('.local-chat-feedback');
@@ -174,46 +172,25 @@
         feedback.textContent = fail(error);
         card.querySelector('[data-discover]').disabled = false;
       } else {
-        card.innerHTML = '<h3>Antigravity 本地聊天</h3><p role="status">' + safe(fail(error)) +
+        card.innerHTML = '<p role="status">' + safe(fail(error)) +
           '</p><button type="button" class="copy-button">重试读取</button>';
         card.querySelector('button').addEventListener('click', event => {
           event.currentTarget.disabled = true;
-          refreshAntigravity(card);
+          refreshCollector(card,id);
         });
       }
     } finally {
       card.removeAttribute('aria-busy');
     }
   }
-  window.jieduLocalCollectors = {mountAntigravity() {
-    const card = document.getElementById('local-chat-antigravity');
-    if (!card || card.dataset.mounted) return;
-    card.dataset.mounted = 'true';
-    refreshAntigravity(card);
-  }};
-  async function refresh() {
-    let visible;
-    try {
-      const preference = await api('/api/client-access/visibility?t=' + Date.now(), {force:true,ttl:0});
-      const hidden = new Set(preference.hidden_client_types || []);
-      visible = sources.filter(source => !hidden.has(source.id));
-    } catch {
-      host.innerHTML = '<p role="status">暂时无法核对本机归档入口，请刷新重试。</p>';
-      return;
+  window.jieduLocalCollectors = {
+    supports: id => sources.some(source => source.id === id),
+    mount(id) {
+      const card = document.getElementById('local-chat-' + id);
+      if (!card || card.dataset.mounted) return;
+      card.dataset.mounted = 'true';
+      discoveries.delete(id);
+      refreshCollector(card,id);
     }
-    host.innerHTML = visible.map(source =>
-      '<article class="local-chat-card" id="local-chat-' + source.id +
-      '"><h3>' + source.label + '</h3><p>正在读取状态…</p></article>').join('');
-    await Promise.all(visible.map(async source => {
-      try { states.set(source.id, await api(url(source.id,'status'),{force:true,ttl:0})); }
-      catch { states.delete(source.id); }
-      render(source.id);
-    }));
-  }
-  document.getElementById('refreshLocalChatCollectors')?.addEventListener('click', refresh);
-  const page = document.getElementById('access');
-  if (page) new MutationObserver(() => {
-    if (page.classList.contains('active')) refresh();
-  }).observe(page, {attributes:true,attributeFilter:['class']});
-  document.addEventListener('DOMContentLoaded', refresh, {once:true});
+  };
 })();

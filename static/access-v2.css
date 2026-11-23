@@ -57,7 +57,7 @@ html[data-theme] #access#access#access .client-identity-card:focus-visible{outli
 html[data-theme] #access#access#access .other-client-identities{margin:10px 0 0!important;padding:10px 0 0!important;border:0!important;border-top:1px solid var(--line-soft,var(--line))!important;background:transparent!important}
 html[data-theme] #access#access#access .other-client-identities>summary{min-height:30px!important;padding:0 10px!important;font-size:11.5px!important;font-weight:600;letter-spacing:.04em;color:var(--muted)!important;background:transparent!important}
 html[data-theme] #access#access#access .other-client-identities>:not(summary){margin-left:0!important;max-width:none!important}
-html[data-theme] #access#access#access .other-client-identities .client-identity-card>.identity-status{display:none!important}
+html[data-theme] #access#access#access .other-client-identities .client-identity-card>.identity-status{display:inline!important}
 
 /* 右侧：面板 */
 html[data-theme] #access#access#access .client-permission-panel{grid-area:panel;display:block!important;min-width:0;padding:26px 30px 28px!important;margin:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:auto}
