@@ -65,6 +65,7 @@ importers/raw_chat_importer.py
 knowledge_bridge/__init__.py
 knowledge_bridge/ai_access.py
 knowledge_bridge/ai_chat_bridge.py
+knowledge_bridge/antigravity_source.py
 knowledge_bridge/archive_store.py
 knowledge_bridge/attachment_cache.py
 knowledge_bridge/attachment_integrity.py
@@ -287,6 +288,7 @@ tests/test_ai_access.py
 tests/test_ai_chat_bridge.py
 tests/test_ai_chat_provider_config.py
 tests/test_alias_snapshots.py
+tests/test_antigravity_collector.py
 tests/test_application_paths.py
 tests/test_archive_concurrency.py
 tests/test_archive_notice_listing.py

@@ -337,9 +337,14 @@
       "sha256": "6b36a4355999ae8afcfd1f543cabdc2ca00518f44ff375de709ea2a650ef8889"
     },
     {
+      "path": "knowledge_bridge/antigravity_source.py",
+      "bytes": 7211,
+      "sha256": "86dd98f710929d72cf57a83aca4044c4f3c6e29baab2807c33d73b76596e14f7"
+    },
+    {
       "path": "knowledge_bridge/archive_store.py",
-      "bytes": 45190,
-      "sha256": "1564fd67e0da307011d62471f97085890c56fd2a8192dabca15516ba24f9622d"
+      "bytes": 45262,
+      "sha256": "700ef1f1b9e26a98daff639e77147aae8cd4cd48d8d29c0ff09d230b82011b59"
     },
     {
       "path": "knowledge_bridge/attachment_cache.py",
@@ -608,8 +613,8 @@
     },
     {
       "path": "knowledge_bridge/four_local_collectors.py",
-      "bytes": 40381,
-      "sha256": "b4e5bbadd0917ca513b16a85afb2daa65b75708fd7e0b885ef73789fa99ded40"
+      "bytes": 45575,
+      "sha256": "dcc3561698a59bc9e1e01fa0687a2678a2d7af04733cb51961f17f3a4a66943e"
     },
     {
       "path": "knowledge_bridge/full_installer_update.py",
@@ -808,8 +813,8 @@
     },
     {
       "path": "knowledge_bridge/product_capabilities.json",
-      "bytes": 70751,
-      "sha256": "105b1f01faf596e3642aef10a8f9f453ffc132cd0fa59eadde33c9277c11b378"
+      "bytes": 70926,
+      "sha256": "32fc5f1baa59a77c00fc8a9d8e44b7d8289e59bb00b35f4ab7aaa223578123ab"
     },
     {
       "path": "knowledge_bridge/product_help.py",
@@ -888,8 +893,8 @@
     },
     {
       "path": "knowledge_bridge/source_adapters.py",
-      "bytes": 31503,
-      "sha256": "800b09c204c204ccc40a2bd2826d4be26d123a1e4aebd3511ff5be84a4974c29"
+      "bytes": 32211,
+      "sha256": "117ace92b8c4eabe8acb6c6ad9513a2a32774f329439bfe242dac19af0c7e259"
     },
     {
       "path": "knowledge_bridge/source_connections.py",
@@ -943,8 +948,8 @@
     },
     {
       "path": "knowledge_bridge/visible_conversations.py",
-      "bytes": 6217,
-      "sha256": "ecfa5364185f5ba89005b8375631bd3b48b79c956c94116fe9ab79a804370b66"
+      "bytes": 6247,
+      "sha256": "645eeb7eac11026de51a717c859db67a5e1a6aa63be1296df6794e59b213f7f9"
     },
     {
       "path": "knowledge_bridge/watcher.py",
@@ -953,8 +958,8 @@
     },
     {
       "path": "knowledge_bridge/web.py",
-      "bytes": 195501,
-      "sha256": "56c7100b727000b82670fd2ed6120ff15692a0baa5abffcd3024f4dea66377f4"
+      "bytes": 195516,
+      "sha256": "e07919c2f3c22c7cefdd06de11c1d4ea3affc9e883d5561462938fa34a852a9f"
     },
     {
       "path": "knowledge_bridge/wiki_daily_runs.py",
@@ -1033,8 +1038,8 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 13627,
-      "sha256": "8628f96b42189f3718d8b31b9e6574a9ec2876770df84557eafaf7c18bd3ccba"
+      "bytes": 13702,
+      "sha256": "fcc7533566b2c271cafcb3d540db9521734badc107f680374e9a240e23be29bd"
     },
     {
       "path": "pyproject.toml",
@@ -1103,8 +1108,8 @@
     },
     {
       "path": "static/app.js",
-      "bytes": 384228,
-      "sha256": "79601945933654129666e0db9f06251fd8968432fa1c6fd52b0278ce6ad6fb63"
+      "bytes": 384410,
+      "sha256": "416f3a4f4ac8d38c2a587a0efc5fad659e4805dafdb83df21b69e37d0781374f"
     },
     {
       "path": "static/archives-studio.css",
@@ -1198,8 +1203,8 @@
     },
     {
       "path": "static/index.html",
-      "bytes": 56092,
-      "sha256": "72221f2fffa3d790a8557b38c75293f906a40065fa9a4dbbd5c9c746fe906bce"
+      "bytes": 56079,
+      "sha256": "bb63bca1e95e038c9c173138c62ffdbbefbe8f1d617ca650674813dbf94379f9"
     },
     {
       "path": "static/knowledge-studio.css",
@@ -1238,8 +1243,8 @@
     },
     {
       "path": "static/local-chat-collectors.js",
-      "bytes": 10730,
-      "sha256": "26cf371f18b29524eecbc894bc75e381239906f8a3c5b9e108f893ae119f1367"
+      "bytes": 10969,
+      "sha256": "5642d0056da7e798c4f9f7cc013e4ea103ad3abe7083377419bff8fb321a4e9e"
     },
     {
       "path": "static/mist-v3.css",
@@ -1445,6 +1450,11 @@
       "path": "tests/test_alias_snapshots.py",
       "bytes": 6794,
       "sha256": "540eaabfbf94be12fe8cea5abacea4701b30b17fb87a8e80a2042bd9b5a6a2db"
+    },
+    {
+      "path": "tests/test_antigravity_collector.py",
+      "bytes": 5487,
+      "sha256": "8119f75356144eb7e43903b382cf8047824046487d429010958f4137a86303dd"
     },
     {
       "path": "tests/test_application_paths.py",
@@ -2078,8 +2088,8 @@
     },
     {
       "path": "tests/test_source_adapter_selection.py",
-      "bytes": 477,
-      "sha256": "75f35a5ec2e8f023d4bb271fe4c0fedd26aab5836f8e291a418bc822738a1c57"
+      "bytes": 1842,
+      "sha256": "4dd0371bfb08cfb79def640098c42857a2893a3edd5365f3a20031fca0f038e8"
     },
     {
       "path": "tests/test_source_adapters.py",

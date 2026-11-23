@@ -23,7 +23,7 @@ from .workspace import WorkspaceContext, require_active_workspace
 
 
 SOURCES = {"workbuddy": "WorkBuddy", "opencode": "OpenCode",
-           "zcode": "ZCode", "kimi": "Kimi Work"}
+           "zcode": "ZCode", "kimi": "Kimi Work", "antigravity": "Antigravity"}
 PARSER_VERSION = "four-local-completed-v1"
 MAX_TEXT = 512 * 1024
 MAX_LINE = 8 * 1024 * 1024
@@ -411,6 +411,8 @@ class LocalCompletedCollector:
 
     def _paths(self):
         home = self.root
+        if self.source == "antigravity":
+            return home / ".gemini/antigravity/conversation_summaries.db", None
         if self.source == "workbuddy":
             return home / ".workbuddy/workbuddy.db", home / ".workbuddy/projects"
         if self.source == "opencode":
@@ -420,6 +422,9 @@ class LocalCompletedCollector:
         return home / "daimon-share/daimon/agents/main/sessions/hosted-logical/conversations.sqlite", home / "daimon-share/daimon/runtime"
 
     def discover(self):
+        if self.source == "antigravity":
+            from .antigravity_source import discover
+            return discover(self.root)
         database, auxiliary = self._paths()
         if not database.is_file():
             return []
@@ -492,7 +497,13 @@ class LocalCompletedCollector:
 
     def status(self):
         state = self._load()
-        found = self.discover()
+        source_error = None
+        try:
+            found = self.discover()
+        except (ValueError, OSError, sqlite3.Error):
+            if self.source != "antigravity":
+                raise
+            found, source_error = [], "无法核验来源索引，等待稳定快照；原归档保留"
         gaps = self._indexed_gaps(found, state)
         rows = state["sessions"]
         attachment_available = sum(int(r.get("attachment_available") or 0) for r in rows.values())
@@ -501,7 +512,7 @@ class LocalCompletedCollector:
                 "enabled": state["policy"] != "paused", "ever_configured": self.state_path.exists(),
                 "policy": state["policy"], "resume_policy": state["resume_policy"],
                 "selected_session_ids": state["selected_session_ids"],
-                "source_detected": bool(found or gaps["count"]), "source_readable": bool(found),
+                "source_detected": bool(source_error or found or gaps["count"]), "source_readable": any(x.get("source_bytes") for x in found) if self.source == "antigravity" else bool(found),
                 "discovered_sessions": found,
                 "indexed_without_transcript": gaps,
                 "history": {"known_sessions": len(found), "checked_sessions": len(rows),
@@ -519,8 +530,8 @@ class LocalCompletedCollector:
                                   "attachment_available": v.get("attachment_available", 0),
                                   "attachment_missing": v.get("attachment_missing", 0),
                                   "last_error": v.get("last_error")} for k, v in rows.items()},
-                "last_sync_at": state["last_sync_at"], "last_error": state["last_error"],
-                "history_coverage": "仅本机可读且获准的已完成用户/最终答复；思考、工具和系统注入排除。"
+                "last_sync_at": state["last_sync_at"], "last_error": source_error or state["last_error"],
+                "history_coverage": "本机当前分支可核实的用户与助手可见消息；正文代码保留，工具及思考排除，正在写入时等候重试。用户图片仅关联可读本地原件。" if self.source == "antigravity" else "仅本机可读且获准的已完成用户/最终答复；思考、工具和系统注入排除。"
                                     + (f"范围内另有 {gaps['in_scope_count']} 个索引会话缺少可读转录，未入档。"
                                        if gaps["in_scope_count"] else "")
                                     + ("WorkBuddy 用户图片按源文件大小及 SHA-256 核验后关联；缺失原件保留引用。"
@@ -534,13 +545,14 @@ class LocalCompletedCollector:
         if policy not in {"paused", "all", "selected"}:
             raise ValueError("采集范围无效")
         selected = sorted(set(selected_session_ids))
-        found = {r["session_id"]: r["path"] for r in self.discover()}
+        found = {r["session_id"]: r["path"] for r in self.discover()} if policy != "paused" else {}
         if policy != "paused":
-            from .client_access import ClientIdentityRegistry
-            connected = any(row.get("client_type") == self.source and row.get("status") != "revoked" and
-                            row.get("last_read_at") for row in ClientIdentityRegistry(self.context).list_clients())
-            if not connected:
-                raise PermissionError("请先在客户端完成真实连接与读取验证")
+            if self.source != "antigravity":
+                from .client_access import ClientIdentityRegistry
+                connected = any(row.get("client_type") == self.source and row.get("status") != "revoked" and
+                                row.get("last_read_at") for row in ClientIdentityRegistry(self.context).list_clients())
+                if not connected:
+                    raise PermissionError("请先在客户端完成真实连接与读取验证")
             if policy == "selected" and not selected:
                 raise ValueError("请选择至少一个会话")
             if any(sid not in found for sid in selected):
@@ -583,6 +595,70 @@ class LocalCompletedCollector:
                 continue
             write_object(target, value, backup=False)
 
+    def _sync_antigravity(self, state):
+        from .antigravity_source import messages, snapshot
+        try:
+            found = self.discover()
+        except (OSError, ValueError, sqlite3.Error):
+            state["last_error"] = "无法核验来源索引，等待稳定快照；原归档保留"
+            write_object(self.state_path, state, backup=True)
+            return {**self.status(), "saved_this_sync": 0}
+        store = ArchiveStore(self.context, recover=False)
+        saved = 0
+        allowed = set(state["selected_session_ids"]) if state["policy"] == "selected" else None
+        missing = (allowed if allowed is not None else set(state["sessions"])) - {x["session_id"] for x in found}
+        failed = bool(missing)
+        for item in found:
+            sid = item["session_id"]
+            if allowed is not None and sid not in allowed:
+                continue
+            row = state["sessions"].setdefault(sid, {})
+            try:
+                path = Path(item["path"])
+                if allowed is not None and state["selected_sources"].get(sid) != str(path):
+                    raise ValueError("选定会话路径已变化")
+                st = path.stat()
+                token = [st.st_ino, st.st_size, st.st_mtime_ns]
+                if row.get("snapshot") == token and not row.get("last_error") and not row.get("attachment_missing"):
+                    with snapshot(path):
+                        pass
+                    continue
+                visible, pending = messages(item)
+                hashes = dict(row.get("message_hashes", {}))
+                digests = {m.message_id: hashlib.sha256(m.content.encode()).hexdigest() for m in visible}
+                edited = {k for k,v in digests.items() if k in hashes and hashes[k] != v}
+                removed = hashes.keys() - digests.keys()
+                session_key = row.get("session_key")
+                if visible and not session_key:
+                    session_key = store.ensure_session(source_key=self.source, source_session_id=sid,
+                        source_instance=self.source + ":" + hashlib.sha256(str(self.root).encode()).hexdigest()[:16],
+                        title=item["title"], acquisition_method="antigravity_local_readonly")["session_key"]
+                available = absent = 0
+                for m in visible:
+                    if m.message_id in edited or (m.message_id in hashes and not m.attachments):
+                        continue
+                    result = store.append_normalized_message(session_key, m)
+                    saved += int(result["saved"])
+                    refs = result["record"].get("attachments", ())
+                    available += sum(not x.get("missing") for x in refs)
+                    absent += sum(bool(x.get("missing")) for x in refs)
+                hashes.update((k,v) for k,v in digests.items() if k not in edited)
+                row.update(session_key=session_key, snapshot=token, message_hashes=hashes,
+                           saved_messages=len(hashes), pending_turns=pending,
+                           attachment_available=available, attachment_missing=absent, last_error=None)
+                if edited or removed:
+                    failed = True
+                    row["last_error"] = "来源有改写或分叉，保留已归档版本；其他可核实的新消息已同步"
+            except (ValueError, OSError, sqlite3.Error, OverflowError) as exc:
+                failed = True
+                row["last_error"] = "当前会话无法核验，原归档保留：" + type(exc).__name__
+            write_object(self.state_path, state, backup=True)
+        state["last_error"] = "有来源尚未核验，原归档保留" if failed else None
+        if not failed:
+            state["last_sync_at"] = _now()
+        write_object(self.state_path, state, backup=True)
+        return {**self.status(), "saved_this_sync": saved}
+
     def sync(self):
         with self.lock:
             state = self._load()
@@ -590,7 +666,12 @@ class LocalCompletedCollector:
                 return {**self.status(), "saved_this_sync": 0}
             database, _ = self._paths()
             if not database.is_file():
+                if self.source == "antigravity":
+                    state["last_error"] = "来源索引缺失；原归档保留"
+                    write_object(self.state_path, state, backup=True)
                 return {**self.status(), "saved_this_sync": 0}
+            if self.source == "antigravity":
+                return self._sync_antigravity(state)
             found = self.discover()
             found_ids = {x["session_id"] for x in found}
             allowed = found_ids if state["policy"] == "all" else set(state["selected_session_ids"])
