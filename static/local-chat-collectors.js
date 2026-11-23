@@ -1,7 +1,8 @@
 /* Explicit Owner entry for local conversation collection. */
 (() => {
+  const antigravity = {id:'antigravity',label:'Antigravity'};
   const sources = [{id:'dsh',label:'DSH'}, {id:'claude',label:'Claude'}, {id:'cursor',label:'Cursor'},
-    {id:'antigravity',label:'Antigravity'}, {id:'workbuddy',label:'WorkBuddy'}, {id:'opencode',label:'OpenCode'},
+    {id:'workbuddy',label:'WorkBuddy'}, {id:'opencode',label:'OpenCode'},
     {id:'zcode',label:'ZCode'}, {id:'kimi',label:'Kimi Work'}];
   const fourSources = new Set(['antigravity','workbuddy','opencode','zcode','kimi']);
   const host = document.getElementById('localChatCollectorCards');
@@ -20,18 +21,35 @@
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? '时间待核对' : date.toLocaleString('zh-CN', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
   };
+  function sessionLabel(row, status, isAntigravity) {
+    const id = String(row.session_id);
+    const title = String(row.title ?? '').trim() || '未命名会话 · ' + id.slice(0, 8);
+    const result = Object.hasOwn(status.sessions || {}, id) ? status.sessions[id] : null;
+    const saved = Number(result?.saved_messages || 0);
+    const notes = [];
+    if (isAntigravity && !row.source_bytes) notes.push('仅有会话索引，正文暂不可用');
+    else if (result?.last_error || result?.unverified_turns) notes.push('有内容待核对');
+    else if (result?.pending_turns) notes.push('有回合待完成');
+    else if (isAntigravity && !saved) notes.push('发现本地正文，尚未归档');
+    if (saved) notes.push('已保存 ' + saved + ' 条消息');
+    if (!isAntigravity && !notes.length) notes.push(row.available_messages == null ?
+      '已发现本地缓存' : '当前可见 ' + row.available_messages + ' 条缓存消息');
+    return '<span class="local-chat-session-text"><b>' + safe(title) + '</b><small>' +
+      safe(notes.join(' · ')) + '</small></span>';
+  }
   function render(id) {
-    const config = sources.find(item => item.id === id);
+    const isAntigravity = id === antigravity.id;
+    const config = isAntigravity ? antigravity : sources.find(item => item.id === id);
     const status = states.get(id);
     const discovery = discoveries.get(id);
     const card = document.getElementById('local-chat-' + id);
     if (!card) return;
     if (!status) { card.innerHTML = '<p>状态尚未取得。请刷新。</p>'; return; }
-    const found = discovery?.sessions || [];
+    const found = discovery?.sessions || (isAntigravity ? status.discovered_sessions : null) || [];
     const checked = status.history?.archived_messages || 0;
     const enabled = Boolean(status.enabled);
     const wasConnected = Boolean(status.ever_configured);
-    const mode = status.policy || 'paused';
+    const mode = status.policy === 'paused' ? status.resume_policy : status.policy;
     const selectedIds = new Set(status.selected_session_ids || []);
     const profiles = status.available_profiles || [];
     const selectedProfile = discovery?.selected_profile || status.selected_profile || '';
@@ -45,7 +63,12 @@
       (status.indexed_without_transcript?.in_scope_count || 0) > 0);
     const stateLabel = sourceMissing ? '来源暂不可用 · 设置已保留' :
       attention ? '需要检查' : stale ? '最近检查较久' :
-      enabled ? '正在采集' : wasConnected ? '已暂停' : '等待接入';
+      enabled ? (isAntigravity && !status.last_sync_at ? '等待首次检查' : '正在采集') :
+      wasConnected ? '已暂停' : isAntigravity ? '等待授权' : '等待接入';
+    const scope = mode === 'all' ? '当前及以后发现的会话' :
+      mode === 'selected' && selectedIds.size ? '已选 ' + selectedIds.size + ' 个会话' : '尚未授权';
+    const sourceNote = status.source_detected === false ? '未发现本机聊天来源' :
+      status.source_readable === false ? (issue ? '来源待核对' : '没有可读正文') : '';
     const attachments = status.attachments || {};
     const imageNote = attachments.available || attachments.missing ?
       ' · 图片已保存 ' + Number(attachments.available || 0) + ' 张' +
@@ -60,37 +83,39 @@
       '真实读取后采集本机可读聊天；只保存已完成轮次的用户正文和最终答复。' :
       '仅覆盖本机当前可读缓存，不能代表云端全部历史。';
     card.innerHTML =
-      '<div class="local-chat-card-head"><h3>' + config.label + '</h3><strong>' +
+      '<div class="local-chat-card-head"><h3>' + config.label + (isAntigravity ? ' 本地聊天' : '') + '</h3><strong>' +
       safe(stateLabel) + '</strong></div>' +
       '<p class="local-chat-summary">已保存 ' + checked + ' 条消息 · 最近检查 ' + safe(localTime(status.last_sync_at)) +
       (pending ? ' · ' + safe(pending) + ' 个回合未结束' : '') + safe(imageNote) + '</p>' +
+      (isAntigravity ? '<p class="local-chat-scope">' + (enabled ? '当前范围' : '保存的范围') + ' · ' +
+        safe(scope) + (sourceNote ? ' · ' + safe(sourceNote) : '') + '</p>' : '') +
       '<details class="local-chat-details"><summary>查看采集范围与待核对项</summary><p>' + safe(description) + '</p>' +
       (issue ? '<p class="local-chat-issue" role="status">' + safe(issue) + '</p>' : '') +
       (pending ? '<p role="status">' + safe(pending) + ' 个回合仍在生成；最终答复尚未归档。</p>' : '') +
       '<p class="local-chat-boundary">' + safe(status.history_coverage || '') + '</p></details>' +
       (id === 'claude' && profiles.length > 1 ?
-        '<label>选择 Claude 本机资料目录<select data-profile><option value="">请选择</option>' +
+        '<label class="local-chat-profile">选择 Claude 本机资料目录<select data-profile><option value="">请选择</option>' +
         profiles.map(profile => '<option value="' + safe(profile.id) + '"' +
           (profile.id === selectedProfile ? ' selected' : '') + '>' +
           safe(profile.label) + '</option>').join('') + '</select></label>' : '') +
-      '<button type="button" class="copy-button" data-discover="' + id + '">查看本机会话</button>' +
+      '<div class="local-chat-actions"><button type="button" class="copy-button" data-discover="' + id + '">' +
+        (isAntigravity ? '刷新本机会话' : '查看本机会话') + '</button>' +
       (enabled ? '<button type="button" class="copy-button" data-sync="' + id + '">立即检查</button>' +
-        '<button type="button" class="copy-button" data-pause="' + id + '">暂停采集</button>' : '') +
-      (discovery ? '<div class="local-chat-choice"><p>当前本机可读会话：' + found.length +
-        (discovery.current_decode_errors ? '；另有 ' + discovery.current_decode_errors + ' 条缓存记录不可读' : '') + '</p>' +
+        '<button type="button" class="copy-button" data-pause="' + id + '">暂停采集</button>' : '') + '</div>' +
+      (discovery || isAntigravity ? '<div class="local-chat-choice"><p>' +
+        (isAntigravity ? '发现 ' + found.length + ' 个本机会话' : '当前本机可读会话：' + found.length) +
+        (discovery?.current_decode_errors ? '；另有 ' + discovery.current_decode_errors + ' 条缓存记录不可读' : '') + '</p>' +
         (found.length ? '<label><input type="radio" name="scope-' + id + '" value="selected"' +
           (mode !== 'all' ? ' checked' : '') + '>只采集勾选会话</label>' +
           '<label><input type="radio" name="scope-' + id + '" value="all"' +
           (mode === 'all' ? ' checked' : '') + '>采集当前及以后发现的本机会话</label>' +
           '<div class="local-chat-session-list">' + found.map(row =>
             '<label><input type="checkbox" data-session-id="' + safe(row.session_id) + '"' +
-            (selectedIds.has(row.session_id) ? ' checked' : '') + '>' +
-            config.label + ' · ' + safe(row.session_id.slice(0, 8)) +
-            ' · 当前可见 ' + safe(row.available_messages ?? row.source_bytes ?? '未知') +
-            (row.available_messages == null ? ' 字节' : ' 条缓存消息') + '</label>').join('') + '</div>' +
+            (selectedIds.has(row.session_id) ? ' checked' : isAntigravity && !row.source_bytes ? ' disabled' : '') + '>' +
+            sessionLabel(row, status, isAntigravity) + '</label>').join('') + '</div>' +
           '<label class="local-chat-confirm"><input type="checkbox" data-owner-confirm>我确认按上述范围保存本机聊天</label>' +
           '<button type="button" class="primary" data-enable="' + id + '">' +
-          (enabled ? '更新采集范围' : '开始归档') + '</button>' : '<p>没有可选择的会话。</p>') +
+          (enabled ? '更新采集范围' : wasConnected && isAntigravity ? '恢复采集' : '开始归档') + '</button>' : '<p>没有可选择的会话。</p>') +
         '</div>' : '') +
       '<p class="local-chat-feedback" role="status"></p>';
     card.querySelector('[data-discover]')?.addEventListener('click', async buttonEvent => {
@@ -100,6 +125,7 @@
         card.querySelector('.local-chat-feedback').textContent = '请先选择一个 Claude 资料目录。';
         button.disabled = false; return;
       }
+      if (isAntigravity) { await refreshAntigravity(card); return; }
       try { discoveries.set(id, await api(url(id,'discover') +
         (profile ? '?profile_id=' + encodeURIComponent(profile) : ''), {force:true,ttl:0})); render(id); }
       catch (error) { card.querySelector('.local-chat-feedback').textContent = fail(error); button.disabled = false; }
@@ -117,23 +143,54 @@
       const button = buttonEvent.currentTarget; button.disabled = true;
       try {
         states.set(id, await apiPost(url(id,'configure'),
-          {policy,selected_session_ids:selected,profile_id:discovery?.selected_profile || null,
+          {policy,selected_session_ids:isAntigravity && policy === 'all' ? [] : selected,profile_id:discovery?.selected_profile || null,
            owner_confirmed:true}));
-        render(id);
+        if (card.isConnected) render(id);
       } catch (error) { current.querySelector('.local-chat-feedback').textContent = fail(error); button.disabled = false; }
     });
     card.querySelector('[data-pause]')?.addEventListener('click', async event => {
       const button = event.currentTarget; button.disabled = true;
       try { states.set(id, await apiPost(url(id,'configure'),
-        {policy:'paused',selected_session_ids:[],owner_confirmed:true})); render(id); }
+        {policy:'paused',selected_session_ids:[],owner_confirmed:true})); if (card.isConnected) render(id); }
       catch (error) { card.querySelector('.local-chat-feedback').textContent = fail(error); button.disabled = false; }
     });
     card.querySelector('[data-sync]')?.addEventListener('click', async event => {
       const button = event.currentTarget; button.disabled = true;
-      try { states.set(id, await apiPost(url(id,'sync'),{owner_confirmed:true})); render(id); }
+      try { states.set(id, await apiPost(url(id,'sync'),{owner_confirmed:true})); if (card.isConnected) render(id); }
       catch (error) { card.querySelector('.local-chat-feedback').textContent = fail(error); button.disabled = false; }
     });
   }
+  async function refreshAntigravity(card) {
+    card.setAttribute('aria-busy','true');
+    try {
+      const status = await api(url(antigravity.id,'status'), {force:true,ttl:0});
+      if (!card.isConnected) return;
+      states.set(antigravity.id, status);
+      render(antigravity.id);
+    } catch (error) {
+      if (!card.isConnected) return;
+      const feedback = card.querySelector('.local-chat-feedback');
+      if (feedback) {
+        feedback.textContent = fail(error);
+        card.querySelector('[data-discover]').disabled = false;
+      } else {
+        card.innerHTML = '<h3>Antigravity 本地聊天</h3><p role="status">' + safe(fail(error)) +
+          '</p><button type="button" class="copy-button">重试读取</button>';
+        card.querySelector('button').addEventListener('click', event => {
+          event.currentTarget.disabled = true;
+          refreshAntigravity(card);
+        });
+      }
+    } finally {
+      card.removeAttribute('aria-busy');
+    }
+  }
+  window.jieduLocalCollectors = {mountAntigravity() {
+    const card = document.getElementById('local-chat-antigravity');
+    if (!card || card.dataset.mounted) return;
+    card.dataset.mounted = 'true';
+    refreshAntigravity(card);
+  }};
   async function refresh() {
     let visible;
     try {
