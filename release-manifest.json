@@ -38,8 +38,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 8758,
-      "sha256": "f4c146b46b2fea5ae4d1bac153f50053f85af8d4ee7530898c8951fcefba2b50"
+      "bytes": 8767,
+      "sha256": "e783835a8f88110134474217b386ba2745f4c822538ba7cd1718e074b43a1cb6"
     },
     {
       "path": "RELEASE_NOTES.md",
@@ -59,7 +59,7 @@
     {
       "path": "VERSION",
       "bytes": 7,
-      "sha256": "c21698334b1e2308b8556ac1d10402342b8d3e837f65fa1c431eb23392824b1d"
+      "sha256": "22e988bfb2127d8584cc829f76868c2c85e138af32fe0989b29f7580b88a00a5"
     },
     {
       "path": "butler-resources.lock.json",
@@ -247,6 +247,11 @@
       "sha256": "bd38ab9a208cf639e83070a7f9d6f67332313c62db2d4e160393ca3b8d514e1d"
     },
     {
+      "path": "docs/changes-1.2.14.md",
+      "bytes": 457,
+      "sha256": "7aa2d95e866348818125e2d8b05f2be5b16cbf633ecda952c72fef5af591dc4c"
+    },
+    {
       "path": "docs/changes-20261024.md",
       "bytes": 4063,
       "sha256": "2173cd4185c0787a3da3d3d0e0f376b5955e648c2111e104482e3c02b01c8d7f"
@@ -283,8 +288,8 @@
     },
     {
       "path": "docs/release-status.md",
-      "bytes": 14180,
-      "sha256": "2d303793e10171c2c9397ba352ef24b8e064deb0ade16498695149ada0fadf2b"
+      "bytes": 14301,
+      "sha256": "cbacd1ec7bc343a8816561c91168faa22fa23f3a5573847d4db8a2808e22f3e1"
     },
     {
       "path": "docs/release-version.md",
@@ -344,7 +349,7 @@
     {
       "path": "knowledge_bridge/__init__.py",
       "bytes": 23,
-      "sha256": "ad04a53dc7e3e324f892b22ae9ea53550c81cc85f87ad54e81fba956433e4675"
+      "sha256": "9b1ce31b207e8a1251d39a4761c06251efd74f95fdc23e9c0472f139706101e3"
     },
     {
       "path": "knowledge_bridge/ai_access.py",
@@ -573,8 +578,8 @@
     },
     {
       "path": "knowledge_bridge/desktop_update.py",
-      "bytes": 11116,
-      "sha256": "d539576f9959f67ca0d5b937f8d7d66ae3b132f6e4cb2232d19627e2444d1c0c"
+      "bytes": 11207,
+      "sha256": "194bf6ce7657535efefa71b82dda3b1cba0fcb4bdae48e102ef4515199ccee5a"
     },
     {
       "path": "knowledge_bridge/device_keys.py",
@@ -638,8 +643,8 @@
     },
     {
       "path": "knowledge_bridge/full_installer_update.py",
-      "bytes": 51089,
-      "sha256": "1388ca89c8d46067962854eb3237d02fc5cefab779b12599a7999d16c972cb5a"
+      "bytes": 60261,
+      "sha256": "f908f432dba6a4546a2276b1501f8524f7d544c8f9ee382fb965ced03625ffee"
     },
     {
       "path": "knowledge_bridge/hermes_client.py",
@@ -793,8 +798,8 @@
     },
     {
       "path": "knowledge_bridge/online_update.py",
-      "bytes": 32064,
-      "sha256": "8ccbeb9bf9a7c193d27ff701f0b3afcd85988f6da7e633496916e52e4eb96b0e"
+      "bytes": 32622,
+      "sha256": "561d30aeb00629a8186cc82cc8248c1a4975dde04c667936badc2e9bda71fd86"
     },
     {
       "path": "knowledge_bridge/organization_review.py",
@@ -948,8 +953,8 @@
     },
     {
       "path": "knowledge_bridge/update_notice.py",
-      "bytes": 10057,
-      "sha256": "d08883e4a4cbb7bb09efe75527aad6df6649dd6a5a8869a1ccc8bd8739c9e453"
+      "bytes": 10366,
+      "sha256": "96383c8a6640dc275b283edea8b829e88d35c3bdaa40d78e49acbedeaca16f3c"
     },
     {
       "path": "knowledge_bridge/update_quiesce.py",
@@ -1058,13 +1063,13 @@
     },
     {
       "path": "public-source-files.txt",
-      "bytes": 13794,
-      "sha256": "bf6bc132ea9e57d3059bd9949b57eb7cce20d199ffe315af10b8e24d3826b4cb"
+      "bytes": 13817,
+      "sha256": "3471eb9f0211f207d636a11454813086eb05f9d5789dae5602faed3f0224f84d"
     },
     {
       "path": "pyproject.toml",
       "bytes": 1109,
-      "sha256": "f967ce5d484e17d7e9269d4eb37f0e16f28c60cc54451f16c0967054d3a92a8a"
+      "sha256": "9672f6962c61ee4f0779a5203f627de0d4d6186b41e43ead9f8bf7d87cfb9cac"
     },
     {
       "path": "requirements.lock.txt",
@@ -2163,8 +2168,8 @@
     },
     {
       "path": "tests/test_update_workflow.py",
-      "bytes": 42432,
-      "sha256": "4708f3656cdee19b52b4c99022013a4faf7508dc8ebe852649851700b4bfcb26"
+      "bytes": 46548,
+      "sha256": "12638ae937b0ebe92d4d797f35faba788e35e8f220dce62f27f2c34af16b0a4d"
     },
     {
       "path": "tests/test_wiki_daily_runs.py",
