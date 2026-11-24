@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import uuid
@@ -36,9 +37,87 @@ def digest(path):
 def no_links(path):
     path = Path(path).absolute()
     for part in (path, *path.parents):
-        if part.is_symlink() or (hasattr(part, 'is_junction') and part.is_junction()):
+        try:
+            info = part.lstat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
             raise ValueError('更新路径不能经过符号链接或目录联接')
     return path.resolve()
+
+
+def _store_locator(target):
+    appdata = Path(os.environ.get('LOCALAPPDATA') or Path.home() / '.local/share')
+    key = hashlib.sha256(str(target).lower().encode('utf-8')).hexdigest()
+    return no_links(appdata / 'Jiedu/update-locations' / (key + '.txt'))
+
+
+def _same_volume(target, path):
+    # Mount points can differ even under the same filesystem anchor.
+    while not path.exists():
+        if path == path.parent:
+            return False
+        path = path.parent
+    return path.stat().st_dev == target.parent.stat().st_dev
+
+
+def update_store(target, *, create=False, vault=None, local_data=None):
+    """Pin one verified same-volume location across workspace and program swaps."""
+    target = no_links(target)
+    locator = _store_locator(target)
+    if locator.exists():
+        root = no_links(locator.read_text('utf-8'))
+    else:
+        root = target.with_name(target.name + '.updates')
+        if not create and not root.exists():
+            return no_links(root)  # Nothing managed has been initialized yet.
+        candidates = []
+        if local_data and Path(local_data).name == 'control' and Path(local_data).parent.name == '.jiedu':
+            candidates.append(Path(local_data).parent)
+        if vault:
+            candidates.append(Path(vault) / '.jiedu')
+        appdata = locator.parent.parent
+        for candidate in ([*candidates, appdata] if create else []):
+            candidate = no_links(candidate)
+            if (candidate.is_dir() or candidate == appdata) and not candidate.is_relative_to(target) and _same_volume(target, candidate):
+                root = candidate / 'update-maintenance' / locator.stem
+                break
+    root = no_links(root)
+    if (root.is_relative_to(target) or target.is_relative_to(root) or not _same_volume(target, root)
+            or (root != target.with_name(target.name + '.updates') and
+                (root.name != locator.stem or root.parent.name != 'update-maintenance'))):
+        raise ValueError('更新目录与安装目录的归属或卷不匹配')
+    marker = no_links(root / 'installation.txt')
+    if create and not root.exists() and not locator.exists():
+        root.mkdir(parents=True)
+        with marker.open('x', encoding='utf-8') as stream:
+            stream.write(str(target))
+    if not marker.is_file() or marker.read_text('utf-8') != str(target):
+        raise ValueError('更新目录已被占用或归属不匹配')
+    if create and not locator.exists():
+        locator.parent.mkdir(parents=True, exist_ok=True)
+        # Publish an entire locator or none, even on process interruption.
+        tmp = locator.with_suffix('.' + uuid.uuid4().hex + '.tmp')
+        try:
+            tmp.write_text(str(root), 'utf-8')
+            os.link(tmp, locator)
+        finally:
+            tmp.unlink(missing_ok=True)
+    return root
+
+
+def transaction_paths(target, token, *, legacy=False):
+    if not re.fullmatch('[0-9a-f]{32}', token):
+        raise ValueError('更新事务标识无效')
+    target = no_links(target)
+    parent = target.parent if legacy else update_store(target)
+    return tuple(no_links(parent / name) for name in
+                 ('.jiedu-update-' + token, target.name + '.previous-' + token,
+                  target.name + '.failed-' + token))
+
+
+def transaction_roots(target):
+    return (update_store(target), target.parent)
 
 
 def tree_inventory(root, *, excluded=()):
@@ -187,6 +266,31 @@ def check_workspace_boundary(target, vault, *, selected=False):
         raise ValueError('工作区位于安装目录内，完整升级已暂停；请先独立安装程序并连接原工作区，资料不会自动搬移')
 
 
+def verify_finished_trees(work, backup, job):
+    if backup.exists():
+        from .release_version import version_info
+        if ((backup / 'jiedu-install.txt').read_text('utf-8-sig').strip() != INSTALL_IDENTITY
+                or digest(backup / '界渡.exe') != job.get('old_native_sha256')
+                or version_info(backup / '.jiedu/program')['product_version'] != job.get('old_version')):
+            raise ValueError('上一回退副本已变化；请先审阅，未删除任何内容')
+        baseline = work / 'backup-files.json'
+        outcome = json.loads((work / 'result.json').read_text('utf-8'))
+        if not baseline.is_file() or digest(baseline) != outcome.get('backup_inventory_sha256'):
+            raise ValueError('旧回退目录缺少完成时精确清单，自动清理已暂停')
+        if tree_inventory(backup) != json.loads(baseline.read_text('utf-8-sig')).get('files'):
+            raise ValueError('回退副本后来新增或修改了文件，自动升级及清理已暂停，资料未删除')
+    helper_baseline = work / 'helper-files.json'
+    outcome = json.loads((work / 'result.json').read_text('utf-8'))
+    if not helper_baseline.is_file() or digest(helper_baseline) != outcome.get('helper_inventory_sha256'):
+        raise ValueError('旧更新助手材料后来新增或变化，自动清理已暂停')
+    expected_helper_files = json.loads(helper_baseline.read_text('utf-8-sig')).get('files')
+    excluded = {'result.json','helper-files.json'}
+    if isinstance(expected_helper_files, dict) and 'helper.log' not in expected_helper_files:
+        excluded.add('helper.log')
+    if tree_inventory(work, excluded=excluded) != expected_helper_files:
+        raise ValueError('旧更新助手材料后来新增或变化，自动清理已暂停')
+
+
 def retention_plan(target):
     """Only old successful, fully attributed transactions may be retired.
 
@@ -196,7 +300,7 @@ def retention_plan(target):
     """
     target = no_links(target)
     result = []
-    for work in target.parent.glob('.jiedu-update-*'):
+    for work in (work for root in transaction_roots(target) for work in root.glob('.jiedu-update-*')):
         no_links(work)
         file = work / 'job.json'
         if not file.is_file():
@@ -212,45 +316,79 @@ def retention_plan(target):
                 or job.get('format') != HANDOFF_FORMAT
                 or (work / 'helper-identity.txt').read_text('ascii').strip() != HANDOFF_FORMAT):
             raise ValueError('旧更新材料归属无法核验；请先审阅恢复材料，未删除任何内容')
-        backup = no_links(target.with_name(target.name + '.previous-' + token))
-        failed = no_links(target.with_name(target.name + '.failed-' + token))
+        _, backup, failed = transaction_paths(target, token, legacy=work.parent == target.parent)
         try:
             state = json.loads((work / 'result.json').read_text('utf-8')).get('state')
         except (OSError, ValueError):
             state = None
         if state != 'complete':
             raise ValueError('存在未完成或失败的更新恢复材料；请先恢复或审阅，避免反复下载和累积完整副本')
+        if job.get('kind') == 'program-only' and not (backup.exists() or failed.exists()):
+            continue  # Program handoffs have no full-install rollback inventory.
         if failed.exists():
             raise ValueError('旧更新含失败副本，请先审阅恢复材料；不会自动删除')
-        if backup.exists():
-            from .release_version import version_info
-            if ((backup / 'jiedu-install.txt').read_text('utf-8-sig').strip() != INSTALL_IDENTITY
-                    or digest(backup / '界渡.exe') != job.get('old_native_sha256')
-                    or version_info(backup / '.jiedu/program')['product_version'] != job.get('old_version')):
-                raise ValueError('上一回退副本已变化；请先审阅，未删除任何内容')
-            baseline = work / 'backup-files.json'
-            outcome = json.loads((work / 'result.json').read_text('utf-8'))
-            if not baseline.is_file() or digest(baseline) != outcome.get('backup_inventory_sha256'):
-                raise ValueError('旧回退目录缺少完成时精确清单，自动清理已暂停')
-            if tree_inventory(backup) != json.loads(baseline.read_text('utf-8-sig')).get('files'):
-                raise ValueError('回退副本后来新增或修改了文件，自动升级及清理已暂停，资料未删除')
-        helper_baseline = work / 'helper-files.json'
-        outcome = json.loads((work / 'result.json').read_text('utf-8'))
-        if not helper_baseline.is_file() or digest(helper_baseline) != outcome.get('helper_inventory_sha256'):
-            raise ValueError('旧更新助手材料后来新增或变化，自动清理已暂停')
-        expected_helper_files = json.loads(helper_baseline.read_text('utf-8-sig')).get('files')
-        excluded = {'result.json','helper-files.json'}
-        if isinstance(expected_helper_files, dict) and 'helper.log' not in expected_helper_files:
-            excluded.add('helper.log')
-        if tree_inventory(work, excluded=excluded) != expected_helper_files:
-            raise ValueError('旧更新助手材料后来新增或变化，自动清理已暂停')
+        verify_finished_trees(work, backup, job)
         result.append({'token': token, 'work': str(work), 'backup': str(backup),
                        'target': str(target), 'old_native_sha256': job.get('old_native_sha256')})
     attributed = {row['backup'] for row in result}
-    for backup in target.parent.glob(target.name + '.previous-*'):
+    for backup in (b for root in transaction_roots(target) for b in root.glob(target.name + '.previous-*')):
         if str(no_links(backup)) not in attributed:
             raise ValueError('发现未归属的回退目录；请先审阅，未删除任何内容')
     return result
+
+
+def archive_finished(program, token):
+    """Move one finished old-layout job. Repeating after interruption converges."""
+    from filelock import FileLock
+    from .bridge_launcher import Launcher
+    from .update_quiesce import maintenance_identity, require_maintenance_open
+    program = no_links(program)
+    target = Path(installation_owner(program)['target'])
+    old_work, old_backup, old_failed = transaction_paths(target, token, legacy=True)
+    launcher = Launcher(program)
+    state = no_links(launcher.local_data / 'software-update')
+    if not state.is_dir():
+        raise ValueError('未找到安装更新状态目录')
+    with FileLock(str(no_links(state / 'workflow.lock')), timeout=0):
+        require_maintenance_open(program)
+        pointer_path = no_links(state / 'helper.json')
+        pointer = json.loads(pointer_path.read_text('utf-8-sig')) if pointer_path.exists() else {}
+        new_work, new_backup, new_failed = transaction_paths(target, token)
+        work = old_work if old_work.exists() else new_work
+        job = json.loads(no_links(work / 'job.json').read_text('utf-8-sig'))
+        outcome = json.loads(no_links(work / 'result.json').read_text('utf-8-sig'))
+        if (job.get('format') != HANDOFF_FORMAT or job.get('token') != token
+                or job.get('target') != str(target) or job.get('work') != str(old_work)
+                or job.get('backup') != str(old_backup) or job.get('failed') != str(old_failed)
+                or job.get('kind') not in {'program-only', 'complete-installer'}
+                or no_links(work / 'helper-identity.txt').read_text('ascii').strip() != HANDOFF_FORMAT
+                or outcome.get('token') != token or outcome.get('state') != 'complete'
+                or type(outcome.get('helper_pid')) is not int or outcome['helper_pid'] <= 0
+                or maintenance_identity(outcome['helper_pid'])):
+            raise ValueError('只可归档归属明确、成功完成且助手已退出的旧事务')
+        if (old_failed.exists() or new_failed.exists() or (old_work.exists() and new_work.exists())
+                or (old_backup.exists() and new_backup.exists())):
+            raise ValueError('旧事务含失败副本或目标目录冲突')
+        if pointer.get('token') == token and pointer.get('work') not in (str(old_work), str(new_work)):
+            raise ValueError('更新指针归属不匹配')
+        backup = old_backup if old_backup.exists() else new_backup
+        if job['kind'] == 'complete-installer':
+            verify_finished_trees(work, backup, job)
+        else:
+            allowed = {'job.json', 'helper-identity.txt', 'result.json', 'helper.log', 'update-helper.ps1'}
+            if backup.exists() or any(not no_links(item).is_file() or item.name not in allowed for item in work.iterdir()):
+                raise ValueError('旧程序更新目录含未归属文件，已保留原位')
+        update_store(target, create=True, vault=launcher.vault, local_data=launcher.local_data)
+        new_work, new_backup, new_failed = transaction_paths(target, token)
+        if new_failed.exists() or (new_work.exists() and old_work.exists()) or (new_backup.exists() and old_backup.exists()):
+            raise ValueError('归档目标已被占用')
+        if old_backup.exists():
+            old_backup.rename(new_backup)
+        if old_work.exists():
+            old_work.rename(new_work)
+        if pointer.get('token') == token and pointer.get('work') != str(new_work):
+            _atomic_report(pointer_path, {**pointer, 'work': str(new_work)})
+        return new_work
 
 
 def inspect_installer(path, record, *, version_reader=None):
@@ -357,7 +495,8 @@ def start_helper(request):
     if not proof.get('launch_id') or not proof.get('processes'):
         raise ValueError('无法核验当前服务身份，未关闭或安装任何程序')
     target = no_links(request['target'])
-    work = no_links(target.parent / ('.jiedu-update-' + request['token']))
+    update_store(target, create=True, vault=launcher.vault, local_data=launcher.local_data)
+    work, backup, failed = transaction_paths(target, request['token'])
     if work.exists():
         raise ValueError('更新助手目录已存在，请重新开始更新')
     host = _powershell(target)
@@ -371,8 +510,8 @@ def start_helper(request):
                      if (receipt := launcher._receipt(launcher.load(), role)) and launcher._owned(receipt)]
     job = {**request, 'proof': proof, 'work': str(work), 'cleanup': cleanup, 'helper_host': host,
            'required_acks': required_acks,
-           'backup': str(target.with_name(target.name + '.previous-' + request['token'])),
-           'failed': str(target.with_name(target.name + '.failed-' + request['token'])),
+           'backup': str(backup),
+           'failed': str(failed),
            'local_data': str(launcher.local_data), 'python': str(launcher.python)}
     job['maintenance_path'] = str(maintenance_path(launcher.bridge_dir))
     job_path = work / 'job.json'
@@ -407,17 +546,19 @@ def start_recovery(program, state):
     if not re.fullmatch('[0-9a-f]{32}', token):
         raise ValueError('恢复事务标识无效')
     work = no_links(pointer['work'])
-    if work != Path(owner['target']).parent / ('.jiedu-update-' + token):
+    target = Path(owner['target'])
+    expected, backup, failed = transaction_paths(target, token, legacy=work.parent == target.parent)
+    if work != expected:
         raise ValueError('恢复事务目录不匹配')
     job_path = work / 'job.json'
     job = json.loads(job_path.read_text('utf-8'))
     outcome = json.loads((work / 'result.json').read_text('utf-8'))
-    backup = no_links(Path(owner['target']).with_name(Path(owner['target']).name + '.previous-' + token))
     from .release_version import version_info
     journal = json.loads((work / 'transaction.json').read_text('utf-8-sig'))
     previous = backup if backup.exists() else Path(owner['target'])
     if (job.get('format') != HANDOFF_FORMAT or job.get('token') != token
             or job.get('target') != owner['target'] or job.get('backup') != str(backup)
+            or job.get('work') != str(work) or job.get('failed') != str(failed)
             or job.get('kind') != 'complete-installer' or outcome.get('state') != 'recovery_required'
             or (work / 'helper-identity.txt').read_text('ascii').strip() != HANDOFF_FORMAT
             or not journal.get('moved') or not isinstance(journal.get('privateMoves'), list)
@@ -489,6 +630,22 @@ function SafePath([string]$p) {
     $parent=[IO.Path]::GetDirectoryName($item)
     if($parent -eq $item){break};$item=$parent
   }
+}
+function TransactionParent([string]$workPath,[string]$token,[bool]$allowLegacy) {
+  $parent=Split-Path -Parent $target
+  if($allowLegacy -and $workPath -eq (Join-Path $parent ('.jiedu-update-'+$token))){return $parent}
+  $sha=[Security.Cryptography.SHA256]::Create()
+  try{$key=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($target.ToLowerInvariant()))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
+  $locator=Join-Path $env:LOCALAPPDATA ('Jiedu\update-locations\'+$key+'.txt')
+  SafePath $locator
+  $store=[IO.Path]::GetFullPath([IO.File]::ReadAllText($locator))
+  $storeParent=Split-Path -Parent $store
+  if([IO.Path]::GetPathRoot($store) -ne [IO.Path]::GetPathRoot($target) -or $store.StartsWith($target+'\',[StringComparison]::OrdinalIgnoreCase) -or $store -eq $target -or $target.StartsWith($store+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Invalid storage volume or boundary'}
+  if($store -ne ($target+'.updates') -and ((Split-Path -Leaf $store) -ne $key -or (Split-Path -Leaf $storeParent) -ne 'update-maintenance')){throw 'Invalid storage namespace'}
+  $marker=Join-Path $store 'installation.txt'
+  SafePath $marker
+  if($workPath -ne (Join-Path $store ('.jiedu-update-'+$token)) -or [IO.File]::ReadAllText($marker) -ne $target){throw 'Invalid managed update location'}
+  return $store
 }
 function Report([string]$state,[string]$message) {
   $r=@{state=$state;phase=$state;message=$message;token=$j.token;version=$j.version;backup=$backup;failed=$failed;force_stop_used=$false;helper_host=$j.helper_host;helper_pid=$PID}
@@ -637,8 +794,8 @@ function RestorePrevious {
     SafePath $old;SafePath $new
     if(Test-Path -LiteralPath $new){if(Test-Path -LiteralPath $old){throw 'Recovery destination exists; materials retained'};Move-Item -LiteralPath $new -Destination $old}
    }
-   if(Test-Path -LiteralPath $target){if(Test-Path -LiteralPath $failed){throw 'Failed destination already exists; retained'};Move-Item -LiteralPath $target -Destination $failed}
-   Move-Item -LiteralPath $backup -Destination $target
+   if(Test-Path -LiteralPath $target){if(Test-Path -LiteralPath $failed){throw 'Failed destination already exists; retained'};[IO.Directory]::Move($target,$failed)}
+   [IO.Directory]::Move($backup,$target)
   }
   $script:restoreStage='files_restored';SaveJournal
   RestoreRegistry
@@ -651,8 +808,10 @@ function RetireSuccessful {
   if(-not (Test-Path -LiteralPath $backup) -or (Get-Content -LiteralPath (Join-Path $backup 'jiedu-install.txt') -Raw).Trim() -ne $j.install_identity -or (Get-FileHash -LiteralPath (Join-Path $backup '界渡.exe') -Algorithm SHA256).Hash.ToLowerInvariant() -ne $j.old_native_sha256){throw 'Newest rollback is unavailable; older material retained'}
   foreach($old in $j.cleanup) {
     if($old.target -ne $target -or $old.token -notmatch '^[0-9a-f]{32}$' -or $old.token -eq $j.token){throw 'Invalid retention identity'}
-    $oldBackup=$target+'.previous-'+$old.token
-    $oldWork=Join-Path (Split-Path -Parent $target) ('.jiedu-update-'+$old.token)
+    $oldParent=TransactionParent $old.work $old.token $true
+    $oldBackup=Join-Path $oldParent ((Split-Path -Leaf $target)+'.previous-'+$old.token)
+    $oldWork=Join-Path $oldParent ('.jiedu-update-'+$old.token)
+    SafePath $oldWork;SafePath $oldBackup
     if($old.backup -ne $oldBackup -or $old.work -ne $oldWork){throw 'Invalid retention paths'}
     $oldJob=Get-Content -LiteralPath (Join-Path $oldWork 'job.json') -Raw -Encoding UTF8|ConvertFrom-Json
     $oldResult=Get-Content -LiteralPath (Join-Path $oldWork 'result.json') -Raw -Encoding UTF8|ConvertFrom-Json
@@ -675,10 +834,13 @@ function RetireSuccessful {
     }
   }
 }
+# Validate all destinations before any report or recovery write.
+if($j.format -ne 'jiedu-verified-update-handoff-v1' -or $j.token -notmatch '^[0-9a-f]{32}$'){throw 'Invalid handoff'}
+$parent=TransactionParent $work $j.token ([bool]$Recover)
+$base=Join-Path $parent (Split-Path -Leaf $target)
+if([IO.Path]::GetFullPath($JobFile) -ne (Join-Path $work 'job.json') -or $backup -ne ($base+'.previous-'+$j.token) -or $failed -ne ($base+'.failed-'+$j.token)){throw 'Invalid transaction paths'}
+foreach($p in @($work,$target,$backup,$failed,$j.artifact,$j.python,$j.request_path)){SafePath $p}
 try {
-  if($j.format -ne 'jiedu-verified-update-handoff-v1' -or $j.token -notmatch '^[0-9a-f]{32}$'){throw 'Invalid handoff'}
-  if($work -ne (Join-Path (Split-Path -Parent $target) ('.jiedu-update-'+$j.token)) -or $backup -ne ($target+'.previous-'+$j.token) -or $failed -ne ($target+'.failed-'+$j.token)){throw 'Invalid transaction paths'}
-  foreach($p in @($work,$target,$backup,$failed,$j.artifact,$j.python,$j.request_path)){SafePath $p}
   if(-not $Recover -and (Test-Path -LiteralPath $backup)){throw 'Backup already exists'}
   if(-not $Recover -and (Test-Path -LiteralPath $failed)){throw 'Recovery directory already exists'}
   $marker=Join-Path $j.local_data 'runtime\update-stop.json'
@@ -727,7 +889,7 @@ try {
   Move-Item -LiteralPath $j.artifact -Destination $setup
   if((Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant() -ne $j.sha256){throw 'Moved artifact verification failed'}
   Report 'applying' 'Installing full update; previous installation is retained for recovery.'
-  Move-Item -LiteralPath $target -Destination $backup
+  [IO.Directory]::Move($target,$backup)
   $moved=$true
   SaveJournal
   $arguments=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR="'+$target+'"'),('/LOG="'+(Join-Path $work 'installer.log')+'"'))
@@ -809,8 +971,9 @@ try {
 def main(argv=None):
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['check-handoff', 'verify-installation'])
+    parser.add_argument('action', choices=['check-handoff', 'verify-installation', 'archive-finished'])
     parser.add_argument('--request')
+    parser.add_argument('--token')
     parser.add_argument('--program', required=True)
     args = parser.parse_args(argv)
     try:
@@ -819,6 +982,10 @@ def main(argv=None):
                 raise ValueError('缺少更新交接请求')
             validate_handoff(args.request, args.program)
             print('Signed update handoff verified; no files changed.')
+        elif args.action == 'archive-finished':
+            if not args.token:
+                raise ValueError('缺少待归档事务标识')
+            print(archive_finished(args.program, args.token))
         else:
             program = no_links(args.program)
             report = verify_installation_inventory(program)

@@ -117,7 +117,7 @@ def main():
     if a.action=='check':print(f"界渡程序更新 {manifest['version']}\n签名与 {len(manifest['files'])} 个文件校验通过。\n不会替换知识库、模型、配置或归档进度。");return
     if not a.handoff:
         raise ValueError('请在界渡的软件更新页开始更新；安装前必须等待任务自然完成，命令行不会强制停止服务')
-    from .full_installer_update import validate_handoff
+    from .full_installer_update import no_links, update_store, validate_handoff
     request=validate_handoff(a.handoff,program)
     if request['kind']!='program-only' or Path(request['artifact']).resolve()!=Path(a.package).resolve():
         raise ValueError('更新交接与程序包不一致')
@@ -139,7 +139,7 @@ def main():
         raise ValueError('安装维护状态已结束，请重新开始更新')
     if maintenance and (maintenance['phase']!='helper' or maintenance['token']!=request['token']):
         raise ValueError('更新维护记录与已核验的交接不一致')
-    history=launcher.vault/'.jiedu/history/software-updates';history.mkdir(parents=True,exist_ok=True)
+    history=no_links(update_store(request['target'], create=True, vault=launcher.vault, local_data=launcher.local_data) / 'program-history');history.mkdir(exist_ok=True)
     with FileLock(str(history/'update.lock'),timeout=1):
         if maintenance:
             claim_program_replacement(program, request['token'], os.getppid())

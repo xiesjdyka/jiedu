@@ -17,6 +17,7 @@ import uuid
 from packaging.version import Version
 
 from .release_version import version_info
+from .full_installer_update import no_links, transaction_paths, transaction_roots
 
 FORMAT = "jiedu-install-notice-v1"
 INSTALL_IDENTITY = "jiedu-consumer-install-v1"
@@ -76,8 +77,12 @@ def _helper_state(target: Path, token: str) -> str | None:
     if not _TOKEN.fullmatch(token):
         return None
     try:
-        result = json.loads((target.parent / (".jiedu-update-" + token) / "result.json").read_text("utf-8"))
-        return result.get("state") if result.get("token") == token else None
+        for root in transaction_roots(target):
+            path = no_links(root / (".jiedu-update-" + token) / "result.json")
+            if path.is_file():
+                result = json.loads(path.read_text("utf-8-sig"))
+                return result.get("state") if result.get("token") == token else None
+        return None
     except (OSError, ValueError):
         return None
 
@@ -85,9 +90,9 @@ def _helper_state(target: Path, token: str) -> str | None:
 def _active_update_previous(target: Path, current: str) -> tuple[str, str] | None:
     """Read an old 1.1.5 helper job while its original tree is safely backed up."""
     try:
-        candidates = sorted(target.parent.glob(".jiedu-update-*/job.json"),
+        candidates = sorted((p for root in transaction_roots(target) for p in root.glob(".jiedu-update-*/job.json")),
                             key=lambda path: path.stat().st_mtime, reverse=True)[:16]
-    except OSError:
+    except (ValueError, OSError):
         return None
     for path in candidates:
         token = path.parent.name.removeprefix(".jiedu-update-")
@@ -95,7 +100,7 @@ def _active_update_previous(target: Path, current: str) -> tuple[str, str] | Non
             continue
         try:
             job = json.loads(path.read_text("utf-8"))
-            backup = target.with_name(target.name + ".previous-" + token)
+            _, backup, _ = transaction_paths(target, token, legacy=path.parent.parent == target.parent)
             previous = job.get("old_version")
             if (job.get("token") != token or job.get("kind") != "complete-installer"
                     or job.get("target") != str(target) or job.get("backup") != str(backup)

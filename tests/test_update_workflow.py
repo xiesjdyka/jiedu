@@ -21,7 +21,7 @@ from knowledge_bridge.online_update import OnlineUpdate, public_url
 from knowledge_bridge.full_installer_update import (installation_owner, inspect_installer,
     prepare_handoff, validate_handoff, HANDOFF_FORMAT, HELPER_SCRIPT,
     check_workspace_boundary, retention_plan, tree_inventory, verify_installation_inventory,
-    INVENTORY_FORMAT)
+    INVENTORY_FORMAT, archive_finished, update_store, transaction_paths)
 
 
 class WorkflowTests(unittest.TestCase):
@@ -303,6 +303,64 @@ class WorkflowTests(unittest.TestCase):
         self.updater._save('helper.json',{'work':str(work),'token':token,'helper_pid':12345})
         return work,prior
 
+    def test_store_pinned_across_workspace_switch_and_install_swap(self):
+        vault=self.root/'vault'; (vault/'.jiedu').mkdir(parents=True)
+        with patch.dict(os.environ, LOCALAPPDATA=str(self.root/'appdata')):
+            root=update_store(self.target,create=True,vault=vault)
+            self.assertEqual(root.parent, vault/'.jiedu/update-maintenance')
+            work,backup,failed=transaction_paths(self.target,'a'*32)
+            self.assertTrue(all(path.parent == root for path in (work,backup,failed)))
+            self.target.rename(backup)
+            self.assertEqual(update_store(self.target,create=True,vault=self.root/'other'),root)
+            backup.rename(self.target)
+            (root/'installation.txt').write_text('different installation','utf-8')
+            with self.assertRaisesRegex(ValueError,'归属'):
+                transaction_paths(self.target,'a'*32)
+
+    def test_cross_volume_vault_uses_independent_application_data(self):
+        vault=self.root/'foreign-vault'; (vault/'.jiedu').mkdir(parents=True)
+        local=self.root/'appdata'
+        with patch.dict(os.environ, LOCALAPPDATA=str(local)), patch(
+                'knowledge_bridge.full_installer_update._same_volume',
+                side_effect=lambda target,path:not path.is_relative_to(vault)):
+            root=update_store(self.target,create=True,vault=vault)
+            self.assertTrue(root.is_relative_to(local/'Jiedu/update-maintenance'))
+            self.assertEqual(list((vault/'.jiedu').iterdir()),[])
+            self.assertFalse(self.target.with_name(self.target.name+'.updates').exists())
+
+    def test_archive_finished_retries_pointer_and_preserves_program_job(self):
+        token='d'*32
+        old,prior,failed=transaction_paths(self.target,token,legacy=True)
+        old.mkdir()
+        (old/'helper-identity.txt').write_text(HANDOFF_FORMAT,'ascii')
+        job=dict(format=HANDOFF_FORMAT,token=token,target=str(self.target),kind='program-only',
+                 work=str(old),backup=str(prior),failed=str(failed))
+        (old/'job.json').write_text(json.dumps(job),'utf-8')
+        result=old/'result.json'
+        vault=self.root/'vault';(vault/'.jiedu').mkdir(parents=True)
+        pointer=dict(token=token,work=str(old),helper_pid=12345)
+        self.updater._save('helper.json',pointer)
+        with patch.dict(os.environ,LOCALAPPDATA=str(self.root/'appdata')), patch(
+                'knowledge_bridge.full_installer_update.installation_owner',return_value={'target':str(self.target)}), patch(
+                'knowledge_bridge.bridge_launcher.Launcher') as launcher, patch(
+                'knowledge_bridge.update_quiesce.maintenance_identity',return_value=None):
+            launcher.return_value.local_data=self.updater.root.parent
+            launcher.return_value.vault=vault
+            for state in ('waiting_exit','applying','rolled_back','recovery_required','failed','complete'):
+                result.write_text(json.dumps(dict(token=token,state=state,helper_pid=12345)),'utf-8')
+                if state!='complete':
+                    with self.assertRaises(ValueError):archive_finished(self.program,token)
+                    self.assertTrue(old.is_dir())
+            with patch('knowledge_bridge.full_installer_update._atomic_report',side_effect=OSError('interrupted')):
+                with self.assertRaises(OSError):archive_finished(self.program,token)
+            self.assertEqual(self.updater._helper_outcome()['state'],'complete')
+            moved=archive_finished(self.program,token)
+            self.assertFalse(old.exists())
+            self.assertEqual(moved.parent.parent, vault/'.jiedu/update-maintenance')
+            self.assertEqual(self.updater._read('helper.json'),{**pointer,'work':str(moved)})
+            self.assertEqual(json.loads((moved/'job.json').read_text()),job)
+            self.assertEqual(retention_plan(self.target),[])
+
     def test_uninstaller_entries_require_exact_000_names_and_regular_files(self):
         control=self.root/'unins-control'
         shutil.copytree(self.target,control)
@@ -333,7 +391,7 @@ class WorkflowTests(unittest.TestCase):
         hosts=[('ps7',ps7,7)]
         legacy=Path(os.environ.get('SystemRoot',r'C:\Windows'))/'System32/WindowsPowerShell/v1.0/powershell.exe'
         if legacy.is_file():hosts.append(('ps51-compatibility',str(legacy),5))
-        prefix=HELPER_SCRIPT.split("\ntry {\n  if($j.format",1)[0]
+        prefix=HELPER_SCRIPT.split("\n# Validate all destinations",1)[0]
         body=r'''
 $states=@('waiting_exit','applying','installed','finalizing','complete')
 foreach($state in $states) {
@@ -384,7 +442,7 @@ foreach($state in $states) {
         token = 'd' * 32
         program = target / '.jiedu/program'
         script = work / 'wait.ps1'
-        prefix = HELPER_SCRIPT.split("\ntry {\n  if($j.format", 1)[0]
+        prefix = HELPER_SCRIPT.split("\n# Validate all destinations", 1)[0]
         script.write_text(prefix + r'''
 $until=[DateTime]::UtcNow.AddSeconds(8)
 while(-not (MaintenanceOwned)) {
@@ -584,11 +642,11 @@ $work=$j.work
         # Invoke only reviewed function definitions, replacing process/native
         # operations; no main installer code, registry calls or real executable.
         script=self.root/'helper-functions.ps1'
-        prefix=HELPER_SCRIPT.split("\ntry {\n  if($j.format",1)[0]
+        prefix=HELPER_SCRIPT.split("\n# Validate all destinations",1)[0]
         token='c'*32
-        backup=self.target.with_name(self.target.name+'.previous-'+token)
-        failed=self.target.with_name(self.target.name+'.failed-'+token)
-        work=self.root/('.jiedu-update-'+token);work.mkdir()
+        env=patch.dict(os.environ,LOCALAPPDATA=str(self.root/'appdata'));env.start();self.addCleanup(env.stop)
+        store=update_store(self.target,create=True)
+        work,backup,failed=transaction_paths(self.target,token);work.mkdir()
         backup.mkdir();(backup/'.jiedu/control').mkdir(parents=True)
         (backup/'.jiedu/program').mkdir()
         (backup/'.jiedu/program/VERSION').write_text('1.0.0')
@@ -602,6 +660,7 @@ $work=$j.work
              'helper_host':executable,'format':HANDOFF_FORMAT,'install_identity':'jiedu-consumer-install-v1','cleanup':[]}
         job_path=self.root/'helper-job.json';job_path.write_text(json.dumps(job),'utf-8')
         checks=r'''
+if((TransactionParent $work $j.token $false) -ne (Split-Path -Parent $work)){throw 'Managed helper path mismatch'}
 function TargetProcesses { return @() }
 function Start-Process { param($FilePath,$WorkingDirectory,$WindowStyle) }
 function Get-CimInstance { param($ClassName) return @() }

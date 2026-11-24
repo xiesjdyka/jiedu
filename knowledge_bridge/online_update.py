@@ -70,13 +70,20 @@ class OnlineUpdate:
         helper = self._read('helper.json')
         if not re.fullmatch('[0-9a-f]{32}', helper.get('token', '')) or not helper.get('work'):
             return {}
-        from .full_installer_update import no_links
+        from .full_installer_update import no_links, transaction_paths
         try:
-            work = no_links(helper['work'])
-            expected = self.program.parent.parent.parent / ('.jiedu-update-' + helper['token'])
-            if work != expected.resolve():
+            candidate = no_links(helper['work'])
+            target = self.program.parent.parent
+            expected, _, _ = transaction_paths(target, helper['token'], legacy=candidate.parent == target.parent)
+            if candidate != expected:
                 return {}
-            outcome = json.loads((work / 'result.json').read_text('utf-8'))
+            if candidate.parent == target.parent and not candidate.exists():
+                candidate, _, _ = transaction_paths(target, helper['token'])
+            work = candidate
+            outcome = json.loads(no_links(work / 'result.json').read_text('utf-8-sig'))
+            if outcome.get('token') == helper['token'] and outcome.get('state') == 'complete' and work.parent != target.parent:
+                _, backup, failed = transaction_paths(target, helper['token'])
+                outcome.update(backup=str(backup), failed=str(failed))
             if (outcome.get('token') == helper['token'] and outcome.get('state') in
                     {'waiting_exit','applying','installed','finalizing'} and self._helper_exited(helper)):
                 return self._interrupted_helper(helper, outcome)
