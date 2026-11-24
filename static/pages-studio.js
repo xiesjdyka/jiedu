@@ -107,17 +107,8 @@ function tagAccess(){
   });
   const other=$('#access .other-client-identities');if(other&&!other.dataset.studioOpen){other.dataset.studioOpen='1';other.open=true}
   $$('#access .local-chat-card').forEach(c=>{const t=$('.local-chat-card-head strong',c)?.textContent||'';const v=toneOf(t);if(c.dataset.tone!==v)c.dataset.tone=v});
-  accessDedupe();accessLock();
+  accessLock();
 }
-/* r24：其他连接里不重复列出上面已有的客户端 */
-function presetNames(){return $$('#access .client-identity-list>.client-identity-card b').map(b=>b.textContent.trim()).filter(Boolean)}
-function legacyFor(name){return $$('#access .other-client-identities .client-identity-card').find(c=>{const n=$('b',c)?.textContent.trim()||'';return n===name||n.startsWith(name+' ')})}
-function accessDedupe(){const names=presetNames(),other=$('#access .other-client-identities');if(!other)return;let shown=0;
-  $$('.client-identity-card',other).forEach(c=>{const n=$('b',c)?.textContent.trim()||'';const dup=names.some(p=>n===p||n.startsWith(p+' '));if(c.hidden!==dup)c.hidden=dup;if(!dup)shown++});
-  const sum=$('summary',other);if(sum){const t=sum.textContent.replace(/\d+\s*$/,'')+shown;if(!sum.dataset.base)sum.dataset.base=sum.textContent.replace(/[·\s]*\d+\s*$/,'');const want=sum.dataset.base+' · '+shown;if(sum.textContent!==want)sum.textContent=want}
-  const hide=shown===0;if(other.hidden!==hide)other.hidden=hide;
-  const cur=$$('.client-identity-card',other).find(c=>c.hidden&&c.getAttribute('aria-pressed')==='true');const curName=cur?($('b',cur)?.textContent.trim()||''):'';
-  $$('#access .client-identity-list>.client-identity-card').forEach(c=>{const n=$('b',c)?.textContent.trim()||'';const on=!!curName&&(curName===n||curName.startsWith(n+' '));if(c.classList.contains('sl-current')!==on)c.classList.toggle('sl-current',on)})}
 /* r24：未连接时，权限组照常展示但覆一层磨砂锁定；连接后平滑解锁 */
 const LOCK_GROUPS=[['知识读取',['读取核心背景','读取项目资料','搜索普通知识','读取已有聊天原文']],['聊天保存',['允许客户端提交聊天']],['允许操作',['创建整理建议','提交建议供核对']]];
 const lockSwitch=(b,s,on)=>`<label class="client-access-switch"><span><b>${b}</b>${s?`<small>${s}</small>`:''}</span><input type="checkbox" ${on?'checked':''} disabled tabindex="-1"><i></i></label>`;
@@ -126,7 +117,7 @@ function accessLock(){const bc=$('#access .branded-connect');
   if(bc&&!$('.studio-lock',bc)){const name=$('.branded-connect-overlay h3',bc)?.textContent.replace(/^连接\s*/,'').trim()||'';const lk=document.createElement('div');lk.className='studio-lock';
     lk.innerHTML=`<div class="sl-body" inert><section class="legacy-permissions"><h4>${escH(name)} 的权限</h4>${lockSwitch('允许此连接访问界渡','连接成功后，可随时在这里收回',true)}<div class="permission-groups">${LOCK_GROUPS.map(([g,items])=>`<details open><summary><b>${g}</b></summary><div>${items.map(t=>lockSwitch(t,'',true)).join('')}</div></details>`).join('')}</div></section></div><div class="sl-veil"><span class="sl-pill"><i></i>复制接入提示词发给智能体，连接成功后自动解锁</span></div>`;
     bc.append(lk);
-    const leg=legacyFor(name);if(leg){const b=document.createElement('button');b.type='button';b.className='secondary sl-legacy';b.textContent='查看已有的 '+name+' 连接权限';b.addEventListener('click',()=>leg.click());$('.branded-connect-actions',bc)?.append(b)}}
+  }
   const key=$('#access .client-identity-card[aria-pressed="true"]')?.dataset.selectClient||'';const panel=$('#access .client-permission-panel');if(!panel||!key)return;
   const tone=$('#access .client-identity-card[aria-pressed="true"]')?.dataset.tone||'';if(panel.dataset.tone!==tone)panel.dataset.tone=tone;
   const state=$('.branded-connect',panel)?'locked':$('.legacy-permissions,.permission-groups',panel)?'open':'other';
